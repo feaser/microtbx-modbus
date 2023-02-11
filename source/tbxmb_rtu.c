@@ -30,7 +30,7 @@
 ****************************************************************************************/
 #include "microtbx.h"                            /* MicroTBX module                    */
 #include "microtbxmodbus.h"                      /* MicroTBX-Modbus module             */
-#include "tbxmb_priv.h"                          /* MicroTBX-Modbus private            */
+#include "tbxmb_private.h"                       /* MicroTBX-Modbus private            */
 
 
 /************************************************************************************//**

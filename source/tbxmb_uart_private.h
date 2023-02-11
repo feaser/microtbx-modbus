@@ -1,6 +1,6 @@
 /************************************************************************************//**
-* \file         tbxmb_priv.h
-* \brief        MicroTBX-Modbus private header file.
+* \file         tbxmb_uart_private.h
+* \brief        Modbus UART interface private header file.
 * \internal
 *----------------------------------------------------------------------------------------
 *                          C O P Y R I G H T
@@ -24,23 +24,26 @@
 *
 * \endinternal
 ****************************************************************************************/
-#ifndef TBXMB_PRIV_H
-#define TBXMB_PRIV_H
+#ifndef TBXMB_UART_PRIVATE_H
+#define TBXMB_UART_PRIVATE_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /****************************************************************************************
-* Include files
+* Function prototypes
 ****************************************************************************************/
-#include "tbxmb_uart_priv.h"                     /* MicroTBX-Modbus UART private       */
-#include "tbxmb_rtu_priv.h"                      /* MicroTBX-Modbus RTU private        */
+void TbxMbUartInit(uint8_t serial_port, 
+                   tTbxMbUartBaudrate baudrate,
+                   tTbxMbUartDatabits databits, 
+                   tTbxMbUartStopbits stopbits,
+                   tTbxMbUartParity parity);
 
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TBXMB_PRIV_H */
-/*********************************** end of tbxmb_priv.h *******************************/
+#endif /* TBXMB_UART_PRIVATE_H */
+/*********************************** end of tbxmb_uart_private.h ***********************/

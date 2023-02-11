@@ -1,5 +1,5 @@
 /************************************************************************************//**
-* \file         tbxmb_rtu_priv.h
+* \file         tbxmb_rtu_private.h
 * \brief        Modbus RTU transport layer private header file.
 * \internal
 *----------------------------------------------------------------------------------------
@@ -24,8 +24,8 @@
 *
 * \endinternal
 ****************************************************************************************/
-#ifndef TBXMB_RTU_PRIV_H
-#define TBXMB_RTU_PRIV_H
+#ifndef TBXMB_RTU_PRIVATE_H
+#define TBXMB_RTU_PRIVATE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,5 +36,5 @@ extern "C" {
 }
 #endif
 
-#endif /* TBXMB_RTU_PRIV_H */
-/*********************************** end of tbxmb_rtu_priv.h ***************************/
+#endif /* TBXMB_RTU_PRIVATE_H */
+/*********************************** end of tbxmb_rtu_private.h ************************/
