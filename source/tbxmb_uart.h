@@ -1,5 +1,5 @@
 /************************************************************************************//**
-* \file         tbxmodbusuart.h
+* \file         tbxmb_uart.h
 * \brief        Modbus UART interface header file.
 * \internal
 *----------------------------------------------------------------------------------------
@@ -24,8 +24,8 @@
 *
 * \endinternal
 ****************************************************************************************/
-#ifndef TBXMODBUSUART_H
-#define TBXMODBUSUART_H
+#ifndef TBXMB_UART_H
+#define TBXMB_UART_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,66 +38,66 @@ extern "C" {
 typedef enum
 {
   /* Communication speed of 1200 bits per second. */
-  TBX_MODBUS_UART_1200BPS,
+  TBX_MB_UART_1200BPS,
   /* Communication speed of 2400 bits per second. */
-  TBX_MODBUS_UART_2400BPS,
+  TBX_MB_UART_2400BPS,
   /* Communication speed of 4800 bits per second. */
-  TBX_MODBUS_UART_4800BPS,
+  TBX_MB_UART_4800BPS,
   /* Communication speed of 9600 bits per second. */
-  TBX_MODBUS_UART_9600BPS,
+  TBX_MB_UART_9600BPS,
   /* Communication speed of 19200 bits per second. */
-  TBX_MODBUS_UART_19200BPS,
+  TBX_MB_UART_19200BPS,
   /* Communication speed of 38400 bits per second. */
-  TBX_MODBUS_UART_38400BPS,
+  TBX_MB_UART_38400BPS,
   /* Communication speed of 57600 bits per second. */
-  TBX_MODBUS_UART_57600BPS,
+  TBX_MB_UART_57600BPS,
   /* Communication speed of 115200 bits per second. */
-  TBX_MODBUS_UART_115200BPS
-} tTbxModbusUartBaudrate;
+  TBX_MB_UART_115200BPS
+} tTbxMbUartBaudrate;
 
 /** \brief Enumerated type with all supported UART data bits modes. */
 typedef enum
 {
   /* 7 data bits mode. */
-  TBX_MODBUS_UART_7_DATABITS,
+  TBX_MB_UART_7_DATABITS,
   /* 8 data bits mode. */
-  TBX_MODBUS_UART_8_DATABITS
-} tTbxModbusUartDatabits;
+  TBX_MB_UART_8_DATABITS
+} tTbxMbUartDatabits;
 
 /** \brief Enumerated type with all supported UART stop bits modes. */
 typedef enum
 {
   /* 1 stop bit mode. */
-  TBX_MODBUS_UART_1_STOPBITS,
+  TBX_MB_UART_1_STOPBITS,
   /* 2 stop bits mode. */
-  TBX_MODBUS_UART_2_STOPBITS
-} tTbxModbusUartStopbits;
+  TBX_MB_UART_2_STOPBITS
+} tTbxMbUartStopbits;
 
 /** \brief Enumerated type with all supported parity modes. */
 typedef enum
 {
   /* Odd parity mode. */
-  TBX_MODBUS_ODD_PARITY,
+  TBX_MB_ODD_PARITY,
   /* Even parity mode. */
-  TBX_MODBUS_EVEN_PARITY,
+  TBX_MB_EVEN_PARITY,
   /* No parity mode. */
-  TBX_MODBUS_NO_PARITY
-} tTbxModbusUartParity;
+  TBX_MB_NO_PARITY
+} tTbxMbUartParity;
 
 
 /****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
-void TbxModbusUartInit(uint8_t serial_port, 
-                       tTbxModbusUartBaudrate baudrate,
-                       tTbxModbusUartDatabits databits, 
-                       tTbxModbusUartStopbits stopbits,
-                       tTbxModbusUartParity parity);
+void TbxMbUartInit(uint8_t serial_port, 
+                   tTbxMbUartBaudrate baudrate,
+                   tTbxMbUartDatabits databits, 
+                   tTbxMbUartStopbits stopbits,
+                   tTbxMbUartParity parity);
 
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TBXMODBUSUART_H */
-/*********************************** end of tbxmodbusuart.h ****************************/
+#endif /* TBXMB_UART_H */
+/*********************************** end of tbxmb_uart.h *******************************/

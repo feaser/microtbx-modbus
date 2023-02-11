@@ -30,7 +30,7 @@
 /****************************************************************************************
 * Include files
 ****************************************************************************************/
-#include "tbxmodbusuart.h"                  /* Modbus UART interface                   */
+#include "tbxmb_uart.h"                  /* Modbus UART interface                   */
 
 
 #ifdef __cplusplus

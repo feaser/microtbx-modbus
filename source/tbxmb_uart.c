@@ -1,5 +1,5 @@
 /************************************************************************************//**
-* \file         tbxmodbusuart.c
+* \file         tbxmb_uart.c
 * \brief        Modbus UART interface source file.
 * \internal
 *----------------------------------------------------------------------------------------
@@ -43,11 +43,11 @@
 ** \param     parity Parity bit type to use.
 **
 ****************************************************************************************/
-void TbxModbusUartInit(uint8_t serial_port, 
-                       tTbxModbusUartBaudrate baudrate,
-                       tTbxModbusUartDatabits databits, 
-                       tTbxModbusUartStopbits stopbits,
-                       tTbxModbusUartParity parity)
+void TbxMbUartInit(uint8_t serial_port, 
+                   tTbxMbUartBaudrate baudrate,
+                   tTbxMbUartDatabits databits, 
+                   tTbxMbUartStopbits stopbits,
+                   tTbxMbUartParity parity)
 {
   TBX_UNUSED_ARG(baudrate);
   TBX_UNUSED_ARG(databits);
@@ -60,9 +60,9 @@ void TbxModbusUartInit(uint8_t serial_port,
   /* Only continue with valid parameters. */
   if ((serial_port >= 1U) && (serial_port <= 8U))
   {
-    /* TODO Implement TbxModbusUartInit(). */
+    /* TODO Implement TbxMbUartInit(). */
   }
-} /*** end of TbxModbusUartInit ***/  
+} /*** end of TbxMbUartInit ***/  
 
 
-/*********************************** end of tbxmodbusuart.c ****************************/
+/*********************************** end of tbxmb_uart.c *******************************/

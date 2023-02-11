@@ -2,7 +2,7 @@
 add_library(microtbx-modbus INTERFACE)
 
 target_sources(microtbx-modbus INTERFACE
-    "${CMAKE_CURRENT_LIST_DIR}/source/tbxmodbusuart.c"
+    "${CMAKE_CURRENT_LIST_DIR}/source/tbxmb_uart.c"
 )
 
 target_include_directories(microtbx-modbus INTERFACE 
