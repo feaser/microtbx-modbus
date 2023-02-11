@@ -34,7 +34,7 @@ extern "C" {
 /****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
-void TbxMbUartInit(uint8_t serial_port, 
+void TbxMbUartInit(tTbxMbUartPort port, 
                    tTbxMbUartBaudrate baudrate,
                    tTbxMbUartDatabits databits, 
                    tTbxMbUartStopbits stopbits,

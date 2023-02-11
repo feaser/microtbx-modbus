@@ -1,6 +1,6 @@
 /************************************************************************************//**
-* \file         microtbxmodbus.h
-* \brief        MicroTBX-Modbus header file.
+* \file         tbxmb_checks.h
+* \brief        MicroTBX-Modbus configuration checks header file.
 * \internal
 *----------------------------------------------------------------------------------------
 *                          C O P Y R I G H T
@@ -24,34 +24,28 @@
 *
 * \endinternal
 ****************************************************************************************/
-#ifndef MICROTBXMODBUS_H
-#define MICROTBXMODBUS_H
-
-/****************************************************************************************
-* Include files
-****************************************************************************************/
-#include "tbxmb_rtu.h"                           /* MicroTBX-Modbus RTU                */
-
+#ifndef TBXMB_CHECKS_H
+#define TBXMB_CHECKS_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 /****************************************************************************************
-* Version definitions
+* Configuration checks
 ****************************************************************************************/
-/** \brief Main version number of MicroTBX-Modbus. */
-#define TBX_MB_VERSION_MAIN                  (0U)
+#if !defined(TBX_MB_CONF_OSAL)
+#error "Missing configuration setting for TBX_MB_CONF_OSAL"
+#endif
 
-/** \brief Minor version number of MicroTBX-Modbus. */
-#define TBX_MB_VERSION_MINOR                 (9U)
-
-/** \brief Patch number of MicroTBX-Modbus. */
-#define TBX_MB_VERSION_PATCH                 (0U)
+#if (TBX_MB_CONF_OSAL < 0U) || (TBX_MB_CONF_OSAL > TBX_MB_OPT_OSAL_FREERTOS)
+#error "Invalid configuration setting for TBX_MB_CONF_OSAL"
+#endif
 
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* MICROTBXMODBUS_H */
-/*********************************** end of microtbxmodbus.h ***************************/
+#endif /* TBXMB_CHECKS_H */
+/*********************************** end of tbxmb_checks.h *****************************/

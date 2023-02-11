@@ -50,6 +50,17 @@ extern "C" {
 #define TBX_CONF_HEAP_SIZE                       (2048U)
 
 
+/****************************************************************************************
+*   M O D B U S   M O D U L E   C O N F I G U R A T I O N
+****************************************************************************************/
+/** \brief Configure the type of the operating system abstraction layer to use. Currently
+ *         supported options are:
+ *         - TBX_MB_OPT_OSAL_NONE     -> Traditional super loop that drives the program.
+ *         - TBX_MB_OPT_OSAL_FREERTOS -> FreeRTOS real-time operating system.
+ */
+#define TBX_MB_CONF_OSAL                         (TBX_MB_OPT_OSAL_FREERTOS)
+
+
 #ifdef __cplusplus
 }
 #endif

@@ -34,11 +34,34 @@ extern "C" {
 /****************************************************************************************
 * Type definitions
 ****************************************************************************************/
+/** \brief Enumerated type with all supported UART ports. */
+typedef enum
+{
+  /* UART serial port number  1. */
+  TBX_MB_UART_PORT1 = 0U,
+  /* UART serial port number  2. */
+  TBX_MB_UART_PORT2,
+  /* UART serial port number  3. */
+  TBX_MB_UART_PORT3,
+  /* UART serial port number  4. */
+  TBX_MB_UART_PORT4,
+  /* UART serial port number  5. */
+  TBX_MB_UART_PORT5,
+  /* UART serial port number  6. */
+  TBX_MB_UART_PORT6,
+  /* UART serial port number  7. */
+  TBX_MB_UART_PORT7,
+  /* UART serial port number  8. */
+  TBX_MB_UART_PORT8,
+  /* Extra entry to obtain the number of elements. */
+  TBX_MB_UART_NUM_PORT
+} tTbxMbUartPort;
+
 /** \brief Enumerated type with all supported UART baudrates. */
 typedef enum
 {
   /* Communication speed of 1200 bits per second. */
-  TBX_MB_UART_1200BPS,
+  TBX_MB_UART_1200BPS = 0U,
   /* Communication speed of 2400 bits per second. */
   TBX_MB_UART_2400BPS,
   /* Communication speed of 4800 bits per second. */
@@ -52,47 +75,45 @@ typedef enum
   /* Communication speed of 57600 bits per second. */
   TBX_MB_UART_57600BPS,
   /* Communication speed of 115200 bits per second. */
-  TBX_MB_UART_115200BPS
+  TBX_MB_UART_115200BPS,
+  /* Extra entry to obtain the number of elements. */
+  TBX_MB_UART_NUM_BAUDRATE
 } tTbxMbUartBaudrate;
 
 /** \brief Enumerated type with all supported UART data bits modes. */
 typedef enum
 {
   /* 7 data bits mode. */
-  TBX_MB_UART_7_DATABITS,
+  TBX_MB_UART_7_DATABITS = 0U,
   /* 8 data bits mode. */
-  TBX_MB_UART_8_DATABITS
+  TBX_MB_UART_8_DATABITS,
+  /* Extra entry to obtain the number of elements. */
+  TBX_MB_UART_NUM_DATABITS
 } tTbxMbUartDatabits;
 
 /** \brief Enumerated type with all supported UART stop bits modes. */
 typedef enum
 {
   /* 1 stop bit mode. */
-  TBX_MB_UART_1_STOPBITS,
+  TBX_MB_UART_1_STOPBITS = 0U,
   /* 2 stop bits mode. */
-  TBX_MB_UART_2_STOPBITS
+  TBX_MB_UART_2_STOPBITS,
+  /* Extra entry to obtain the number of elements. */
+  TBX_MB_UART_NUM_STOPBITS
 } tTbxMbUartStopbits;
 
 /** \brief Enumerated type with all supported parity modes. */
 typedef enum
 {
   /* Odd parity mode. */
-  TBX_MB_ODD_PARITY,
+  TBX_MB_ODD_PARITY = 0U,
   /* Even parity mode. */
   TBX_MB_EVEN_PARITY,
   /* No parity mode. */
-  TBX_MB_NO_PARITY
+  TBX_MB_NO_PARITY,
+  /* Extra entry to obtain the number of elements. */
+  TBX_MB_UART_NUM_PARITY
 } tTbxMbUartParity;
-
-
-/****************************************************************************************
-* Function prototypes
-****************************************************************************************/
-void TbxMbUartInit(uint8_t serial_port, 
-                   tTbxMbUartBaudrate baudrate,
-                   tTbxMbUartDatabits databits, 
-                   tTbxMbUartStopbits stopbits,
-                   tTbxMbUartParity parity);
 
 
 #ifdef __cplusplus

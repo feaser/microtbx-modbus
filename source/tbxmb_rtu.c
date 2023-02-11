@@ -28,16 +28,18 @@
 /****************************************************************************************
 * Include files
 ****************************************************************************************/
+#include "tbxmb_options.h"                       /* MicroTBX-Modbus config options     */
 #include "microtbx.h"                            /* MicroTBX module                    */
+#include "tbxmb_checks.h"                        /* MicroTBX-Modbus config checks      */
 #include "microtbxmodbus.h"                      /* MicroTBX-Modbus module             */
 #include "tbxmb_private.h"                       /* MicroTBX-Modbus private            */
 
 
 /************************************************************************************//**
 ** \brief     Creates a Modbus RTU transport layer object.
-** \param     serial_port The serial port to use in the range 1..8 ports. The actual
-**            meaning of the serial port is hardware dependent. It typically maps to the
-**            UART peripheral number. E.g. 1 = USART1 on an STM32.
+** \param     port The serial port to use. The actual meaning of the serial port is
+**            hardware dependent. It typically maps to the UART peripheral number. E.g. 
+**            TBX_MB_UART_PORT1 = USART1 on an STM32.
 ** \param     baudrate The desired communication speed.
 ** \param     stopbits Number of stop bits at the end of a character.
 ** \param     parity Parity bit type to use.
@@ -45,22 +47,24 @@
 **            otherwise.
 **
 ****************************************************************************************/
-tTbxMbRtuHandle TbxMbRtuCreate(uint8_t serial_port, 
+tTbxMbRtuHandle TbxMbRtuCreate(tTbxMbUartPort port, 
                                tTbxMbUartBaudrate baudrate,
                                tTbxMbUartStopbits stopbits,
                                tTbxMbUartParity parity)
 {
   tTbxMbRtuHandle result = NULL;
 
-  TBX_UNUSED_ARG(baudrate);
-  TBX_UNUSED_ARG(stopbits);
-  TBX_UNUSED_ARG(parity);
-
   /* Verify parameters. */
-  TBX_ASSERT((serial_port >= 1U) && (serial_port <= 8U));
+  TBX_ASSERT((port < TBX_MB_UART_NUM_PORT) && 
+             (baudrate < TBX_MB_UART_NUM_BAUDRATE) &&
+             (stopbits < TBX_MB_UART_NUM_STOPBITS) &&
+             (parity < TBX_MB_UART_NUM_PARITY));
 
   /* Only continue with valid parameters. */
-  if ((serial_port >= 1U) && (serial_port <= 8U))
+  if ((port < TBX_MB_UART_NUM_PORT) && 
+      (baudrate < TBX_MB_UART_NUM_BAUDRATE) &&
+      (stopbits < TBX_MB_UART_NUM_STOPBITS) &&
+      (parity < TBX_MB_UART_NUM_PARITY))
   {
     /* TODO Implement TbxMbRtuCreate(). */
   }

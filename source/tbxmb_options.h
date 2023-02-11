@@ -1,6 +1,6 @@
 /************************************************************************************//**
-* \file         microtbxmodbus.h
-* \brief        MicroTBX-Modbus header file.
+* \file         tbxmb_options.h
+* \brief        MicroTBX-Modbus configuration options header file.
 * \internal
 *----------------------------------------------------------------------------------------
 *                          C O P Y R I G H T
@@ -24,34 +24,29 @@
 *
 * \endinternal
 ****************************************************************************************/
-#ifndef MICROTBXMODBUS_H
-#define MICROTBXMODBUS_H
-
-/****************************************************************************************
-* Include files
-****************************************************************************************/
-#include "tbxmb_rtu.h"                           /* MicroTBX-Modbus RTU                */
-
+#ifndef TBXMB_OPTIONS_H
+#define TBXMB_OPTIONS_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 /****************************************************************************************
-* Version definitions
+* Configuration options
 ****************************************************************************************/
-/** \brief Main version number of MicroTBX-Modbus. */
-#define TBX_MB_VERSION_MAIN                  (0U)
+/* --------------------- Operating system configuration options ---------------------- */
+/** \brief The application runs a traditional super loop. No RTOS used.
+ */
+#define TBX_MB_OPT_OSAL_NONE                   (0U)
 
-/** \brief Minor version number of MicroTBX-Modbus. */
-#define TBX_MB_VERSION_MINOR                 (9U)
-
-/** \brief Patch number of MicroTBX-Modbus. */
-#define TBX_MB_VERSION_PATCH                 (0U)
+/** \brief The application runs the FreeRTOS operation system.
+ */
+#define TBX_MB_OPT_OSAL_FREERTOS               (1U)
 
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* MICROTBXMODBUS_H */
-/*********************************** end of microtbxmodbus.h ***************************/
+#endif /* TBXMB_OPTIONS_H */
+/*********************************** end of tbxmb_options.h ****************************/
