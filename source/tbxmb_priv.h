@@ -1,6 +1,6 @@
 /************************************************************************************//**
-* \file         microtbxmodbus.h
-* \brief        MicroTBX-Modbus header file.
+* \file         tbxmb_priv.h
+* \brief        MicroTBX-Modbus private header file.
 * \internal
 *----------------------------------------------------------------------------------------
 *                          C O P Y R I G H T
@@ -24,34 +24,23 @@
 *
 * \endinternal
 ****************************************************************************************/
-#ifndef MICROTBXMODBUS_H
-#define MICROTBXMODBUS_H
-
-/****************************************************************************************
-* Include files
-****************************************************************************************/
-#include "tbxmb_rtu.h"                           /* MicroTBX-Modbus RTU                */
-
+#ifndef TBXMB_PRIV_H
+#define TBXMB_PRIV_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 /****************************************************************************************
-* Version definitions
+* Include files
 ****************************************************************************************/
-/** \brief Main version number of MicroTBX-Modbus. */
-#define TBX_MODBUS_VERSION_MAIN                  (0U)
-
-/** \brief Minor version number of MicroTBX-Modbus. */
-#define TBX_MODBUS_VERSION_MINOR                 (9U)
-
-/** \brief Patch number of MicroTBX-Modbus. */
-#define TBX_MODBUS_VERSION_PATCH                 (0U)
+#include "tbxmb_uart_priv.h"                     /* MicroTBX-Modbus UART private       */
+#include "tbxmb_rtu_priv.h"                      /* MicroTBX-Modbus RTU private        */
 
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* MICROTBXMODBUS_H */
-/*********************************** end of microtbxmodbus.h ***************************/
+#endif /* TBXMB_PRIV_H */
+/*********************************** end of tbxmb_priv.h *******************************/

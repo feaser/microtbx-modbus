@@ -1,6 +1,6 @@
 /************************************************************************************//**
-* \file         tbxmb_uart.c
-* \brief        Modbus UART interface source file.
+* \file         tbxmb_rtu.c
+* \brief        Modbus RTU transport layer source file.
 * \internal
 *----------------------------------------------------------------------------------------
 *                          C O P Y R I G H T
@@ -34,24 +34,25 @@
 
 
 /************************************************************************************//**
-** \brief     Initializes the UART channel.
+** \brief     Creates a Modbus RTU transport layer object.
 ** \param     serial_port The serial port to use in the range 1..8 ports. The actual
 **            meaning of the serial port is hardware dependent. It typically maps to the
 **            UART peripheral number. E.g. 1 = USART1 on an STM32.
 ** \param     baudrate The desired communication speed.
-** \param     databits Number of databits for a character.
 ** \param     stopbits Number of stop bits at the end of a character.
 ** \param     parity Parity bit type to use.
+** \return    Handle to the newly created RTU transport layer object if successful, NULL
+**            otherwise.
 **
 ****************************************************************************************/
-void TbxMbUartInit(uint8_t serial_port, 
-                   tTbxMbUartBaudrate baudrate,
-                   tTbxMbUartDatabits databits, 
-                   tTbxMbUartStopbits stopbits,
-                   tTbxMbUartParity parity)
+tTbxMbRtuHandle TbxMbRtuCreate(uint8_t serial_port, 
+                               tTbxMbUartBaudrate baudrate,
+                               tTbxMbUartStopbits stopbits,
+                               tTbxMbUartParity parity)
 {
+  tTbxMbRtuHandle result = NULL;
+
   TBX_UNUSED_ARG(baudrate);
-  TBX_UNUSED_ARG(databits);
   TBX_UNUSED_ARG(stopbits);
   TBX_UNUSED_ARG(parity);
 
@@ -61,9 +62,11 @@ void TbxMbUartInit(uint8_t serial_port,
   /* Only continue with valid parameters. */
   if ((serial_port >= 1U) && (serial_port <= 8U))
   {
-    /* TODO Implement TbxMbUartInit(). */
+    /* TODO Implement TbxMbRtuCreate(). */
   }
-} /*** end of TbxMbUartInit ***/  
+  /* Give the result back to the caller. */
+  return result;
+} /*** end of TbxMbRtuCreate ***/  
 
 
 /*********************************** end of tbxmb_uart.c *******************************/

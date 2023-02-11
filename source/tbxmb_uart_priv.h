@@ -1,6 +1,6 @@
 /************************************************************************************//**
-* \file         microtbxmodbus.h
-* \brief        MicroTBX-Modbus header file.
+* \file         tbxmb_uart_priv.h
+* \brief        Modbus UART interface private header file.
 * \internal
 *----------------------------------------------------------------------------------------
 *                          C O P Y R I G H T
@@ -24,34 +24,26 @@
 *
 * \endinternal
 ****************************************************************************************/
-#ifndef MICROTBXMODBUS_H
-#define MICROTBXMODBUS_H
-
-/****************************************************************************************
-* Include files
-****************************************************************************************/
-#include "tbxmb_rtu.h"                           /* MicroTBX-Modbus RTU                */
-
+#ifndef TBXMB_UART_PRIV_H
+#define TBXMB_UART_PRIV_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 /****************************************************************************************
-* Version definitions
+* Function prototypes
 ****************************************************************************************/
-/** \brief Main version number of MicroTBX-Modbus. */
-#define TBX_MODBUS_VERSION_MAIN                  (0U)
-
-/** \brief Minor version number of MicroTBX-Modbus. */
-#define TBX_MODBUS_VERSION_MINOR                 (9U)
-
-/** \brief Patch number of MicroTBX-Modbus. */
-#define TBX_MODBUS_VERSION_PATCH                 (0U)
+void TbxMbUartInit(uint8_t serial_port, 
+                   tTbxMbUartBaudrate baudrate,
+                   tTbxMbUartDatabits databits, 
+                   tTbxMbUartStopbits stopbits,
+                   tTbxMbUartParity parity);
 
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* MICROTBXMODBUS_H */
-/*********************************** end of microtbxmodbus.h ***************************/
+#endif /* TBXMB_UART_PRIV_H */
+/*********************************** end of tbxmb_uart_priv.h **************************/

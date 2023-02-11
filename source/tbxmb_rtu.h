@@ -1,6 +1,6 @@
 /************************************************************************************//**
-* \file         microtbxmodbus.h
-* \brief        MicroTBX-Modbus header file.
+* \file         tbxmb_rtu.h
+* \brief        Modbus RTU transport layer header file.
 * \internal
 *----------------------------------------------------------------------------------------
 *                          C O P Y R I G H T
@@ -24,34 +24,38 @@
 *
 * \endinternal
 ****************************************************************************************/
-#ifndef MICROTBXMODBUS_H
-#define MICROTBXMODBUS_H
-
-/****************************************************************************************
-* Include files
-****************************************************************************************/
-#include "tbxmb_rtu.h"                           /* MicroTBX-Modbus RTU                */
-
+#ifndef TBXMB_RTU_H
+#define TBXMB_RTU_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 /****************************************************************************************
-* Version definitions
+* Include files
 ****************************************************************************************/
-/** \brief Main version number of MicroTBX-Modbus. */
-#define TBX_MODBUS_VERSION_MAIN                  (0U)
+#include "tbxmb_uart.h"                          /* MicroTBX-Modbus UART               */
 
-/** \brief Minor version number of MicroTBX-Modbus. */
-#define TBX_MODBUS_VERSION_MINOR                 (9U)
 
-/** \brief Patch number of MicroTBX-Modbus. */
-#define TBX_MODBUS_VERSION_PATCH                 (0U)
+/****************************************************************************************
+* Type definitions
+****************************************************************************************/
+/** \brief Handle to a Modbus RTU transport layer object. */
+typedef void* tTbxMbRtuHandle;
+
+
+/****************************************************************************************
+* Function prototypes
+****************************************************************************************/
+tTbxMbRtuHandle TbxMbRtuCreate(uint8_t serial_port, 
+                               tTbxMbUartBaudrate baudrate,
+                               tTbxMbUartStopbits stopbits,
+                               tTbxMbUartParity parity);
 
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* MICROTBXMODBUS_H */
-/*********************************** end of microtbxmodbus.h ***************************/
+#endif /* TBXMB_RTU_H */
+/*********************************** end of tbxmb_rtu.h ********************************/
