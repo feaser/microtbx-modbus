@@ -34,6 +34,7 @@ extern "C" {
 /****************************************************************************************
 * Include files
 ****************************************************************************************/
+#include "tbxmb_tp_private.h"                    /* MicroTBX-Modbus TP private         */
 #include "tbxmb_uart_private.h"                  /* MicroTBX-Modbus UART private       */
 #include "tbxmb_rtu_private.h"                   /* MicroTBX-Modbus RTU private        */
 

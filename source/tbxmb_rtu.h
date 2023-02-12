@@ -38,20 +38,13 @@ extern "C" {
 
 
 /****************************************************************************************
-* Type definitions
-****************************************************************************************/
-/** \brief Handle to a Modbus RTU transport layer object. */
-typedef void* tTbxMbRtuHandle;
-
-
-/****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
-tTbxMbRtuHandle TbxMbRtuCreate(uint8_t serial_port, 
+tTbxMbTpChannel TbxMbRtuCreate(uint8_t serial_port, 
                                tTbxMbUartBaudrate baudrate,
                                tTbxMbUartStopbits stopbits,
                                tTbxMbUartParity parity);
-
+void            TbxMbRtuFree(tTbxMbTpChannel channel);
 
 #ifdef __cplusplus
 }

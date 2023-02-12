@@ -31,14 +31,31 @@
 extern "C" {
 #endif
 
+
+/****************************************************************************************
+* Type definitions
+****************************************************************************************/
+/** \brief Transport layer callback function to signal the completion of a data transmit
+ *         transfer.
+ */
+typedef void (* tTbxMbUartTransferComplete)(tTbxMbUartPort port);
+
+/** \breif Transport layer callback function to signal the reception of new data. */
+typedef void (* tTbxMbUartDataReceived)(tTbxMbUartPort port, uint8_t const * data, 
+                                        uint8_t len);
+
+
 /****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
-void TbxMbUartInit(tTbxMbUartPort port, 
-                   tTbxMbUartBaudrate baudrate,
-                   tTbxMbUartDatabits databits, 
-                   tTbxMbUartStopbits stopbits,
-                   tTbxMbUartParity parity);
+void    TbxMbUartInit(tTbxMbUartPort port, 
+                      tTbxMbUartBaudrate baudrate,
+                      tTbxMbUartDatabits databits, 
+                      tTbxMbUartStopbits stopbits,
+                      tTbxMbUartParity parity,
+                      tTbxMbUartTransferComplete transfer_complete_fcn,
+                      tTbxMbUartDataReceived data_received_fcn);
+uint8_t TbxMbUartTransfer(tTbxMbUartPort port, uint8_t const * data, uint8_t len);
 
 
 #ifdef __cplusplus

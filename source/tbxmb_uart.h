@@ -116,6 +116,13 @@ typedef enum
 } tTbxMbUartParity;
 
 
+/****************************************************************************************
+* Function prototypes
+****************************************************************************************/
+void TbxMbUartTransferComplete(tTbxMbUartPort port);
+void TbxMbUartDataReceived(tTbxMbUartPort port, uint8_t const * data, uint8_t len);
+
+
 #ifdef __cplusplus
 }
 #endif

@@ -35,6 +35,24 @@
 #include "tbxmb_private.h"                       /* MicroTBX-Modbus private            */
 
 
+/****************************************************************************************
+* Type definitions
+****************************************************************************************/
+/** \brief Data type for grouping together UART channel specific information. */
+typedef struct
+{
+  tTbxMbUartTransferComplete transfer_complete_fcn;
+  tTbxMbUartDataReceived data_received_fcn;
+} tTbxMbUartInfo;
+
+
+/****************************************************************************************
+* Local data declarations
+****************************************************************************************/
+/** \brief Array with UART port specific information. */
+static tTbxMbUartInfo uartInfo[TBX_MB_UART_NUM_PORT];
+
+
 /************************************************************************************//**
 ** \brief     Initializes the UART channel.
 ** \param     port The serial port to use. The actual meaning of the serial port is
@@ -44,13 +62,19 @@
 ** \param     databits Number of databits for a character.
 ** \param     stopbits Number of stop bits at the end of a character.
 ** \param     parity Parity bit type to use.
+** \param     transfer_complete_fcn Transport layer specific transfer complete callback
+**            function or NULL if not used.
+** \param     data_received_fcn Transport layer specific new data received callback
+**            function or NULL if not used.
 **
 ****************************************************************************************/
 void TbxMbUartInit(tTbxMbUartPort port, 
                    tTbxMbUartBaudrate baudrate,
                    tTbxMbUartDatabits databits, 
                    tTbxMbUartStopbits stopbits,
-                   tTbxMbUartParity parity)
+                   tTbxMbUartParity parity,
+                   tTbxMbUartTransferComplete transfer_complete_fcn,
+                   tTbxMbUartDataReceived data_received_fcn)
 {
   /* Verify parameters. */
   TBX_ASSERT((port < TBX_MB_UART_NUM_PORT) && 
@@ -66,9 +90,99 @@ void TbxMbUartInit(tTbxMbUartPort port,
       (stopbits < TBX_MB_UART_NUM_STOPBITS) &&
       (parity < TBX_MB_UART_NUM_PARITY))
   {
-    /* TODO Implement TbxMbUartInit(). */
+    /* Store the specified callback functions. */
+    uartInfo[port].transfer_complete_fcn = transfer_complete_fcn;
+    uartInfo[port].data_received_fcn = data_received_fcn;
+    /* TODO Implement TbxMbUartInit(). Basically just call the port function. */
   }
 } /*** end of TbxMbUartInit ***/  
+
+
+/************************************************************************************//**
+** \brief     Starts the transfer of len bytes from the data array on the specified 
+**            serial port.
+** \attention If this function succeeds, the data array should remain locked until the
+**            transfer completed, as signalled by a call to TbxMbUartTransferComplete().
+**            Thanks to this approach it is not needed to copy and buffer the data,
+**            resulting in bettern run-time performance.
+** \param     port The serial port to start the data transfer on.
+** \param     data Byte array with data to transmit.
+** \param     len Number of bytes to transmit.
+** \return    TBX_OK if successful, TBX_ERROR otherwise.  
+**
+****************************************************************************************/
+uint8_t TbxMbUartTransfer(tTbxMbUartPort port, uint8_t const * data, uint8_t len)
+{
+  uint8_t result = TBX_ERROR;
+
+  /* Verify parameters. */
+  TBX_ASSERT((port < TBX_MB_UART_NUM_PORT) && 
+             (data != NULL) &&
+             (len > 0U));
+
+  /* Only continue with valid parameters. */
+  if ((port < TBX_MB_UART_NUM_PORT) && 
+      (data != NULL) &&
+      (len > 0U))
+  {
+    /* TODO Implement TbxMbUartTransfer(). Basically just call the port function. */
+  }
+  /* Give the result back to the caller. */
+  return result;
+} /*** end of TbxMbUartTransfer ***/
+
+
+/************************************************************************************//**
+** \brief     Event function to signal to this module that the entire transfer, initiated
+**            by TbxMbUartTransfer, completed.
+** \attention This function should be called by the hardware specific UART port.
+** \param     port The serial port that the transfer completed on.
+**
+****************************************************************************************/
+void TbxMbUartTransferComplete(tTbxMbUartPort port)
+{
+  /* Verify parameters. */
+  TBX_ASSERT(port < TBX_MB_UART_NUM_PORT);
+
+  /* Only continue with valid parameters. */
+  if (port < TBX_MB_UART_NUM_PORT)
+  {
+    /* Pass the event on to the transport layer for further handling. */
+    if (uartInfo[port].transfer_complete_fcn != NULL)
+    {
+      uartInfo[port].transfer_complete_fcn(port);
+    }
+  }
+} /*** end of TbxMbUartTransferComplete ***/
+
+
+/************************************************************************************//**
+** \brief     Event function to signal the reception of new data to this module.
+** \attention This function should be called by the hardware specific UART port.
+** \param     port The serial port that the new data was received on.
+** \param     data Byte array with newly received data.
+** \param     len Number of newly received bytes.
+**
+****************************************************************************************/
+void TbxMbUartDataReceived(tTbxMbUartPort port, uint8_t const * data, uint8_t len)
+{
+  /* Verify parameters. */
+  TBX_ASSERT((port < TBX_MB_UART_NUM_PORT) && 
+             (data != NULL) &&
+             (len > 0U));
+
+  /* Only continue with valid parameters. */
+  if ((port < TBX_MB_UART_NUM_PORT) && 
+      (data != NULL) &&
+      (len > 0U))
+  {
+    /* Pass the event on to the transport layer for further handling. */
+    if (uartInfo[port].data_received_fcn != NULL)
+    {
+      uartInfo[port].data_received_fcn(port, data, len);
+    }
+  }
+} /*** end of TbxMbUartDataReceived ***/
 
 
 /*********************************** end of tbxmb_uart.c *******************************/
