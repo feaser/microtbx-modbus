@@ -34,6 +34,17 @@ extern "C" {
 /****************************************************************************************
 * Type definitions
 ****************************************************************************************/
+/** \brief Enumerated type with all supported transport layer types. */
+typedef enum
+{
+  /* RTU. */
+  TBX_MB_TRANSPORT_RTU = 0U,
+  /* ASCII. */
+  TBX_MB_TRANSPORT_ASCII,
+  /* Extra entry to obtain the number of elements. */
+  TBX_MB_TRANSPORT_NUM_TYPES
+} tTbxMbTransportType;
+
 /** \brief   Modbus transport layer context that groups all transport layer specific
  *           data. It's what the tTbxMbTransport opaque pointer points to.
  *  \details For both simplicity and run-time efficiency, this type packs information for
@@ -50,6 +61,7 @@ extern "C" {
  */
 typedef struct 
 {
+  tTbxMbTransportType type;                      /**< Transport layer type.            */
   tTbxMbUartPort port;                           /**< UART port linked to the channel. */
 } tTbxMbTransportContext;
 
@@ -57,11 +69,7 @@ typedef struct
  * transfer/receive. Their function pointers probably need to be stored in the 
  * tTbxMbTransportContext.
  * 
- * Might also want to add a TP type element to this structure. Can be checked first
- * before casting it from the generic TP opaque pointer to the transport layer specific
- * one, such as RTU.
- * 
- * Probably want to add ADU/PDU data structers inside tTbxMbTransportContext as well.
+ * Probably want to add ADU/PDU data structures inside tTbxMbTransportContext as well.
  * That would make it possible to have copy free storage of the data packets. At least
  * for transmit. Might need to add a busy flag for MUX locking purposes.
  */

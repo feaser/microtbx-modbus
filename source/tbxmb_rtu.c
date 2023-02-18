@@ -96,14 +96,15 @@ tTbxMbTransport TbxMbRtuCreate(tTbxMbUartPort port,
       (void)TbxMemPoolCreate(1U, sizeof(tTbxMbTransportContext));
       new_transport = TbxMemPoolAllocate(sizeof(tTbxMbTransportContext));      
     }
-    /* Verify memory allocation of the channel context. */
+    /* Verify memory allocation of the transport context. */
     TBX_ASSERT(new_transport != NULL)
     /* Only continue if the memory allocation succeeded. */
     if (new_transport != NULL)
     {
-      /* Initialize the channel. */
+      /* Initialize the transport context. */
+      new_transport->type = TBX_MB_TRANSPORT_RTU;
       new_transport->port = port;
-      /* Store the channel in the lookup table. */
+      /* Store the transport context in the lookup table. */
       tbxMbRtuContext[port] = new_transport;
       /* Initialize the port. Note the RTU always uses 8 databits. */
       TbxMbUartInit(port, baudrate, TBX_MB_UART_8_DATABITS, stopbits, parity,
@@ -133,6 +134,8 @@ void TbxMbRtuFree(tTbxMbTransport transport)
   {
     /* Convert the TP channel pointer to the RTU one. */
     tTbxMbTransportContext *rtu_transport = (tTbxMbTransportContext *)transport;
+    /* Sanity check on the transport type. */
+    TBX_ASSERT(rtu_transport->type == TBX_MB_TRANSPORT_RTU);
     /* Remove the channel from the lookup table. */
     tbxMbRtuContext[rtu_transport->port] = NULL;
     /* Give the channel context back to the memory pool. */
