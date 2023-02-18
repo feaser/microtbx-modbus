@@ -165,6 +165,10 @@ static uint8_t TbxMbRtuTransmit(tTbxMbTp transport)
   /* Verify parameters. */
   TBX_ASSERT(transport != NULL);
 
+  /* TODO Still need to properly handle rtu_transport->master. In ECL++ Modbus I did
+   * a wait loop to make sure INIT state is entered for the master.
+   */
+
   /* Only continue with valid parameters. */
   if (transport != NULL)
   {
