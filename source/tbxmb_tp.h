@@ -34,10 +34,10 @@ extern "C" {
 /****************************************************************************************
 * Type definitions
 ****************************************************************************************/
-/** \brief Handle to a Modbus transport layer channel object, in the formwat of an opaque
+/** \brief Handle to a Modbus transport layer object, in the format of an opaque
  *         pointer.
  */
-typedef void* tTbxMbTpChannel;
+typedef void * tTbxMbTransport;
 
 
 #ifdef __cplusplus

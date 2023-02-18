@@ -32,7 +32,7 @@
 #include "microtbx.h"                            /* MicroTBX module                    */
 #include "tbxmb_checks.h"                        /* MicroTBX-Modbus config checks      */
 #include "microtbxmodbus.h"                      /* MicroTBX-Modbus module             */
-#include "tbxmb_private.h"                       /* MicroTBX-Modbus private            */
+#include "tbxmb_uart_private.h"                  /* MicroTBX-Modbus UART private       */
 
 
 /****************************************************************************************

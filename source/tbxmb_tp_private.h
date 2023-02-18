@@ -31,6 +31,41 @@
 extern "C" {
 #endif
 
+/****************************************************************************************
+* Type definitions
+****************************************************************************************/
+/** \brief   Modbus transport layer context that groups all transport layer specific
+ *           data. It's what the tTbxMbTransport opaque pointer points to.
+ *  \details For both simplicity and run-time efficiency, this type packs information for
+ *           all different transport layers, even though some elements are not needed
+ *           for a specific transport layer. For example, a TCP/IP transport layer does
+ *           not really need the serial port field that the RTU/ASCII transport layers
+ *           need.
+ *           These context are allocated using a memory pool. By having one generic 
+ *           transport layer type, only one size memory pool size is needed. If a type
+ *           would be created for each specific transport layer, these types might have
+ *           different sizes and would require multiple memory pools of different sizes.
+ *           So at the end it is actually more RAM efficient to group the elements of
+ *           all transport layers in one generic one.
+ */
+typedef struct 
+{
+  tTbxMbUartPort port;                           /**< UART port linked to the channel. */
+} tTbxMbTransportContext;
+
+/* TODO CONTINUE HERE Probaly need to design a uniform transport layer API for PDU
+ * transfer/receive. Their function pointers probably need to be stored in the 
+ * tTbxMbTransportContext.
+ * 
+ * Might also want to add a TP type element to this structure. Can be checked first
+ * before casting it from the generic TP opaque pointer to the transport layer specific
+ * one, such as RTU.
+ * 
+ * Probably want to add ADU/PDU data structers inside tTbxMbTransportContext as well.
+ * That would make it possible to have copy free storage of the data packets. At least
+ * for transmit. Might need to add a busy flag for MUX locking purposes.
+ */
+
 
 #ifdef __cplusplus
 }

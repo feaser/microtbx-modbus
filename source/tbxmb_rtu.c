@@ -32,45 +32,18 @@
 #include "microtbx.h"                            /* MicroTBX module                    */
 #include "tbxmb_checks.h"                        /* MicroTBX-Modbus config checks      */
 #include "microtbxmodbus.h"                      /* MicroTBX-Modbus module             */
-#include "tbxmb_private.h"                       /* MicroTBX-Modbus private            */
-
-
-/****************************************************************************************
-* Type definitions
-****************************************************************************************/
-/** \brief RTU specific implementation of the opaque tTbxMbTpChannel pointer. */
-typedef struct 
-{
-  tTbxMbUartPort port;                           /**< UART port linked to the channel. */
-} tTbxMbTpRtuChannel;
-
-
-/* TODO CONTINUE HERE Probaly need to design a uniform transport layer API for PDU
- * transfer/receive. Their function pointers probably need to be stored in a generic
- * non-opaque structure that tTbxMbTpChannel then points to. 
- * 
- * Might also want to add a TP type element to this structure. Can be checks first
- * before casting it from the generic TP opaque pointer to the transport layer specific
- * one, such as RTU.
- * 
- * The transport layer specific structure, such as tTbxMbTpRtuChannel then probably needs
- * to be a copy of that structure (rudimentary derive in a way) and then add its own
- * fields, such as port.
- * 
- * Hmm...but that is error prone though. Maybe just add all the TP specific fields to
- * the generic non-opaque one. Worst case is that it wastes a bit of ROM. For example,
- * a TCP/IP TP would have net-port and ip-address elements, but then also a uart-port
- * element, which it won't need. Not a big deal. Another benefit of this approach is that
- * only one size memory pool is needed to allocate a TP channel context. That actually
- * saves a good chunk of RAM, to definitely go with this approach.
- */
+#include "tbxmb_tp_private.h"                    /* MicroTBX-Modbus TP private         */
+#include "tbxmb_uart_private.h"                  /* MicroTBX-Modbus UART private       */
 
 
 /****************************************************************************************
 * Local data declarations
 ****************************************************************************************/
-/** \brief RTU channel handle lookup table by UART port. */
-static tTbxMbTpRtuChannel * tbxMbRtuChannel[TBX_MB_UART_NUM_PORT] = { 0 };
+/** \brief RTU transport layer handle lookup table by UART port. Uses for finding the
+ *         transport layer handle that uses a specific serial port, in a run-time
+ *         efficient way.
+ */
+static tTbxMbTransportContext * tbxMbRtuContext[TBX_MB_UART_NUM_PORT] = { 0 };
 
 
 /****************************************************************************************
@@ -88,16 +61,16 @@ static void TbxMbRtuDataReceived(tTbxMbUartPort port, uint8_t const * data, uint
 ** \param     baudrate The desired communication speed.
 ** \param     stopbits Number of stop bits at the end of a character.
 ** \param     parity Parity bit type to use.
-** \return    Handle to the newly created RTU transport layer channel object if
-**            successful, NULL otherwise.
+** \return    Handle to the newly created RTU transport layer object if successful, NULL
+**            otherwise.
 **
 ****************************************************************************************/
-tTbxMbTpChannel TbxMbRtuCreate(tTbxMbUartPort port, 
+tTbxMbTransport TbxMbRtuCreate(tTbxMbUartPort port, 
                                tTbxMbUartBaudrate baudrate,
                                tTbxMbUartStopbits stopbits,
                                tTbxMbUartParity parity)
 {
-  tTbxMbTpChannel result = NULL;
+  tTbxMbTransport result = NULL;
 
   /* Verify parameters. */
   TBX_ASSERT((port < TBX_MB_UART_NUM_PORT) && 
@@ -112,30 +85,31 @@ tTbxMbTpChannel TbxMbRtuCreate(tTbxMbUartPort port,
       (parity < TBX_MB_UART_NUM_PARITY))
   {
     /* Allocate memory for the new channel context. */
-    tTbxMbTpRtuChannel * new_channel = TbxMemPoolAllocate(sizeof(tTbxMbTpRtuChannel));
+    tTbxMbTransportContext * new_transport;
+    new_transport = TbxMemPoolAllocate(sizeof(tTbxMbTransportContext));
     /* Automatically increase the memory pool, if it was too small. */
-    if (new_channel == NULL)
+    if (new_transport == NULL)
     {
       /* No need to check the return value, because if it failed, the following
        * allocation fails too, which is verified later on.
        */
-      (void)TbxMemPoolCreate(1U, sizeof(tTbxMbTpRtuChannel));
-      new_channel = TbxMemPoolAllocate(sizeof(tTbxMbTpRtuChannel));      
+      (void)TbxMemPoolCreate(1U, sizeof(tTbxMbTransportContext));
+      new_transport = TbxMemPoolAllocate(sizeof(tTbxMbTransportContext));      
     }
     /* Verify memory allocation of the channel context. */
-    TBX_ASSERT(new_channel != NULL)
+    TBX_ASSERT(new_transport != NULL)
     /* Only continue if the memory allocation succeeded. */
-    if (new_channel != NULL)
+    if (new_transport != NULL)
     {
       /* Initialize the channel. */
-      new_channel->port = port;
+      new_transport->port = port;
       /* Store the channel in the lookup table. */
-      tbxMbRtuChannel[port] = new_channel;
+      tbxMbRtuContext[port] = new_transport;
       /* Initialize the port. Note the RTU always uses 8 databits. */
       TbxMbUartInit(port, baudrate, TBX_MB_UART_8_DATABITS, stopbits, parity,
                     TbxMbRtuTransferComplete, TbxMbRtuDataReceived);
       /* Update the result. */
-      result = new_channel;
+      result = new_transport;
     }
   }
   /* Give the result back to the caller. */
@@ -146,23 +120,23 @@ tTbxMbTpChannel TbxMbRtuCreate(tTbxMbUartPort port,
 /************************************************************************************//**
 ** \brief     Releases a Modbus RTU transport layer object, previously created with 
 **            TbxMbRtuCreate().
-** \param     channel Handle to RTU transport layer channel object to release.
+** \param     transport Handle to RTU transport layer object to release.
 **
 ****************************************************************************************/
-void TbxMbRtuFree(tTbxMbTpChannel channel)
+void TbxMbRtuFree(tTbxMbTransport transport)
 {
   /* Verify parameters. */
-  TBX_ASSERT(channel != NULL);
+  TBX_ASSERT(transport != NULL);
 
   /* Only continue with valid parameters. */
-  if (channel != NULL)
+  if (transport != NULL)
   {
     /* Convert the TP channel pointer to the RTU one. */
-    tTbxMbTpRtuChannel *rtu_channel = (tTbxMbTpRtuChannel *)channel;
+    tTbxMbTransportContext *rtu_transport = (tTbxMbTransportContext *)transport;
     /* Remove the channel from the lookup table. */
-    tbxMbRtuChannel[rtu_channel->port] = NULL;
+    tbxMbRtuContext[rtu_transport->port] = NULL;
     /* Give the channel context back to the memory pool. */
-    TbxMemPoolRelease(rtu_channel);
+    TbxMemPoolRelease(rtu_transport);
   }
 } /*** end of TbxMbRtuFree ***/
 
@@ -182,7 +156,7 @@ static void TbxMbRtuTransferComplete(tTbxMbUartPort port)
   if (port < TBX_MB_UART_NUM_PORT)
   {
     /* TODO Implement TbxMbRtuTransferComplete(). Use lookup table with port index to
-     * get the channel handle (rtuChannel[]). Probably need to set an event here to
+     * get the channel handle (tbxMbRtuContext[]). Probably need to set an event here to
      * further handle this event at task level.
      */
   }
@@ -210,7 +184,7 @@ static void TbxMbRtuDataReceived(tTbxMbUartPort port, uint8_t const * data, uint
       (len > 0U))
   {
     /* TODO Implement TbxMbRtuDataReceived(). Use lookup table with port index to get
-     * the channel handle (rtuChannel[]). Probably need to set an event here to
+     * the channel handle (tbxMbRtuContext[]). Probably need to set an event here to
      * further handle this event at task level.
      */
   }
