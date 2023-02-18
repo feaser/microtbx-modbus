@@ -37,7 +37,7 @@ extern "C" {
 /** \brief Handle to a Modbus transport layer object, in the format of an opaque
  *         pointer.
  */
-typedef void * tTbxMbTransport;
+typedef void * tTbxMbTp;
 
 
 #ifdef __cplusplus

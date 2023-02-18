@@ -41,7 +41,7 @@
 /** \brief Data type for grouping together UART channel specific information. */
 typedef struct
 {
-  tTbxMbUartTransferComplete transfer_complete_fcn;
+  tTbxMbUartTransmitComplete transmit_complete_fcn;
   tTbxMbUartDataReceived data_received_fcn;
 } tTbxMbUartInfo;
 
@@ -73,7 +73,7 @@ void TbxMbUartInit(tTbxMbUartPort port,
                    tTbxMbUartDatabits databits, 
                    tTbxMbUartStopbits stopbits,
                    tTbxMbUartParity parity,
-                   tTbxMbUartTransferComplete transfer_complete_fcn,
+                   tTbxMbUartTransmitComplete transmit_complete_fcn,
                    tTbxMbUartDataReceived data_received_fcn)
 {
   /* Verify parameters. */
@@ -91,7 +91,7 @@ void TbxMbUartInit(tTbxMbUartPort port,
       (parity < TBX_MB_UART_NUM_PARITY))
   {
     /* Store the specified callback functions. */
-    uartInfo[port].transfer_complete_fcn = transfer_complete_fcn;
+    uartInfo[port].transmit_complete_fcn = transmit_complete_fcn;
     uartInfo[port].data_received_fcn = data_received_fcn;
     /* TODO Implement TbxMbUartInit(). Basically just call the port function. */
   }
@@ -102,7 +102,7 @@ void TbxMbUartInit(tTbxMbUartPort port,
 ** \brief     Starts the transfer of len bytes from the data array on the specified 
 **            serial port.
 ** \attention If this function succeeds, the data array should remain locked until the
-**            transfer completed, as signalled by a call to TbxMbUartTransferComplete().
+**            transfer completed, as signalled by a call to TbxMbUartTransmitComplete().
 **            Thanks to this approach it is not needed to copy and buffer the data,
 **            resulting in bettern run-time performance.
 ** \param     port The serial port to start the data transfer on.
@@ -111,7 +111,7 @@ void TbxMbUartInit(tTbxMbUartPort port,
 ** \return    TBX_OK if successful, TBX_ERROR otherwise.  
 **
 ****************************************************************************************/
-uint8_t TbxMbUartTransfer(tTbxMbUartPort port, uint8_t const * data, uint8_t len)
+uint8_t TbxMbUartTransmit(tTbxMbUartPort port, uint8_t const * data, uint16_t len)
 {
   uint8_t result = TBX_ERROR;
 
@@ -125,21 +125,21 @@ uint8_t TbxMbUartTransfer(tTbxMbUartPort port, uint8_t const * data, uint8_t len
       (data != NULL) &&
       (len > 0U))
   {
-    /* TODO Implement TbxMbUartTransfer(). Basically just call the port function. */
+    /* TODO Implement TbxMbUartTransmit(). Basically just call the port function. */
   }
   /* Give the result back to the caller. */
   return result;
-} /*** end of TbxMbUartTransfer ***/
+} /*** end of TbxMbUartTransmit ***/
 
 
 /************************************************************************************//**
 ** \brief     Event function to signal to this module that the entire transfer, initiated
-**            by TbxMbUartTransfer, completed.
+**            by TbxMbUartTransmit, completed.
 ** \attention This function should be called by the hardware specific UART port.
 ** \param     port The serial port that the transfer completed on.
 **
 ****************************************************************************************/
-void TbxMbUartTransferComplete(tTbxMbUartPort port)
+void TbxMbUartTransmitComplete(tTbxMbUartPort port)
 {
   /* Verify parameters. */
   TBX_ASSERT(port < TBX_MB_UART_NUM_PORT);
@@ -148,12 +148,12 @@ void TbxMbUartTransferComplete(tTbxMbUartPort port)
   if (port < TBX_MB_UART_NUM_PORT)
   {
     /* Pass the event on to the transport layer for further handling. */
-    if (uartInfo[port].transfer_complete_fcn != NULL)
+    if (uartInfo[port].transmit_complete_fcn != NULL)
     {
-      uartInfo[port].transfer_complete_fcn(port);
+      uartInfo[port].transmit_complete_fcn(port);
     }
   }
-} /*** end of TbxMbUartTransferComplete ***/
+} /*** end of TbxMbUartTransmitComplete ***/
 
 
 /************************************************************************************//**

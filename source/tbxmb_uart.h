@@ -57,6 +57,7 @@ typedef enum
   TBX_MB_UART_NUM_PORT
 } tTbxMbUartPort;
 
+
 /** \brief Enumerated type with all supported UART baudrates. */
 typedef enum
 {
@@ -80,6 +81,7 @@ typedef enum
   TBX_MB_UART_NUM_BAUDRATE
 } tTbxMbUartBaudrate;
 
+
 /** \brief Enumerated type with all supported UART data bits modes. */
 typedef enum
 {
@@ -91,6 +93,7 @@ typedef enum
   TBX_MB_UART_NUM_DATABITS
 } tTbxMbUartDatabits;
 
+
 /** \brief Enumerated type with all supported UART stop bits modes. */
 typedef enum
 {
@@ -101,6 +104,7 @@ typedef enum
   /* Extra entry to obtain the number of elements. */
   TBX_MB_UART_NUM_STOPBITS
 } tTbxMbUartStopbits;
+
 
 /** \brief Enumerated type with all supported parity modes. */
 typedef enum
@@ -119,7 +123,7 @@ typedef enum
 /****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
-void TbxMbUartTransferComplete(tTbxMbUartPort port);
+void TbxMbUartTransmitComplete(tTbxMbUartPort port);
 void TbxMbUartDataReceived(tTbxMbUartPort port, uint8_t const * data, uint8_t len);
 
 

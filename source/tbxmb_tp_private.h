@@ -32,18 +32,85 @@ extern "C" {
 #endif
 
 /****************************************************************************************
+* Macro definitions
+****************************************************************************************/
+/** \brief Maximum size of the "Function code" at the start of a PDU. */
+#define TBX_MB_TP_PDU_CODE_LEN_MAX     (1U)
+
+/** \brief Maximum number of data bytes inside a PDU. This excludes the function code. */
+#define TBX_MB_TP_PDU_DATA_LEN_MAX     (252U)
+
+/** \brief Maximum length of an "Protocol Data Unit". */
+#define TBX_MB_TP_PDU_MAX_LEN          (TBX_MB_TP_PDU_CODE_LEN_MAX + \
+                                        TBX_MB_TP_PDU_DATA_LEN_MAX) 
+
+/** \brief Maximum ADU overhead bytes before the actual PDU, Called "Additional address"
+ *         in the Modbus protocol.
+ */
+#define TBX_MB_TP_ADU_HEAD_LEN_MAX     (7U)
+
+/** \brief Maximum ADU overhead bytes after the actual PDU. Caled "Error check" in the 
+ *         Modbus protocol.
+ */
+#define TBX_MB_TP_ADU_TAIL_LEN_MAX     (2U)
+
+/** \brief Maximum length of an "Application Data Unit" which packs communication layer
+ *         data around a PDU.
+ */
+#define TBX_MB_TP_ADU_MAX_LEN          (TBX_MB_TP_ADU_HEAD_LEN_MAX + \
+                                        TBX_MB_TP_PDU_MAX_LEN + \
+                                        TBX_MB_TP_ADU_TAIL_LEN_MAX)
+
+
+/****************************************************************************************
 * Type definitions
 ****************************************************************************************/
-/** \brief Enumerated type with all supported transport layer types. */
+/** \brief Enumerated type with all supported transport layer types. Can be used after
+ *         casting the opaque tTbxMbTransport pointer to a tTbxMbTransportContext
+ *         pointer, to check if it's a handle for the correct transport layer.
+ */
 typedef enum
 {
   /* RTU. */
-  TBX_MB_TRANSPORT_RTU = 0U,
+  TBX_MB_TP_RTU = 0U,
   /* ASCII. */
-  TBX_MB_TRANSPORT_ASCII,
+  TBX_MB_TP_ASCII,
   /* Extra entry to obtain the number of elements. */
-  TBX_MB_TRANSPORT_NUM_TYPES
-} tTbxMbTransportType;
+  TBX_MB_TP_NUM_TYPES
+} tTbxMbTpType;
+
+
+/** \brief Type for grouping all "Protocol Data Unit" data together. */
+typedef struct
+{
+  uint8_t code;                                        /**< PDU function code.         */
+  uint8_t data[TBX_MB_TP_PDU_DATA_LEN_MAX];            /**< PDU data bytes.            */
+} tTbxMbTpPdu;
+
+
+/** \brief Type for grouping all communication packet related data together. */
+typedef struct 
+{
+  uint8_t     head[TBX_MB_TP_ADU_HEAD_LEN_MAX];        /**< ADU additional address.    */
+  tTbxMbTpPdu pdu;                                     /**< Protocol data unit.        */
+  uint8_t     tail[TBX_MB_TP_ADU_TAIL_LEN_MAX];        /**< ADU error check.           */
+  uint8_t     data_len;                                /**< Number of PDU data bytes.  */
+  uint8_t     node;                                    /**< Node identifier.           */
+} tTbxMbTpPacket;
+
+
+/** \brief Transport layer interface function to start the transmission of the data 
+ *         packet, stored in the transport layer context.
+ */
+typedef uint8_t (* tTbxMbTpTransmit)(tTbxMbTp transport);
+
+
+/** \brief Transport layer interface function to validate a newly received packet, stored
+ *         in the transport layer context. This is transport layer specific. For example
+ *         on RTU this means that the CRC16 in the tail ofthe ADU needs to be verified.
+ */
+typedef uint8_t (* tTbxMbTpValidate)(tTbxMbTp transport);
+
 
 /** \brief   Modbus transport layer context that groups all transport layer specific
  *           data. It's what the tTbxMbTransport opaque pointer points to.
@@ -61,18 +128,16 @@ typedef enum
  */
 typedef struct 
 {
-  tTbxMbTransportType type;                      /**< Transport layer type.            */
-  tTbxMbUartPort port;                           /**< UART port linked to the channel. */
-} tTbxMbTransportContext;
-
-/* TODO CONTINUE HERE Probaly need to design a uniform transport layer API for PDU
- * transfer/receive. Their function pointers probably need to be stored in the 
- * tTbxMbTransportContext.
- * 
- * Probably want to add ADU/PDU data structures inside tTbxMbTransportContext as well.
- * That would make it possible to have copy free storage of the data packets. At least
- * for transmit. Might need to add a busy flag for MUX locking purposes.
- */
+  tTbxMbTpType     type;                         /**< Transport layer type.            */
+  tTbxMbUartPort   port;                         /**< UART port linked to the channel. */
+  tTbxMbTpPacket   tx_packet;                    /**< Transmit packet buffer.          */
+  uint8_t          tx_in_progress;               /**< Transmit packet MUX flag.        */
+  tTbxMbTpPacket   rx_packet;                    /**< Reception packet buffer.         */
+  uint8_t          rx_in_progress;               /**< Reception packet MUX flag.       */
+  tTbxMbTpTransmit transmit_fcn;                 /**< Packet transmit function.        */
+  tTbxMbTpValidate validate_fcn;                 /**< Rx Packet validate function.     */
+  uint8_t          master;                       /**< Master or slave boolean flag.    */
+} tTbxMbTpContext;
 
 
 #ifdef __cplusplus
