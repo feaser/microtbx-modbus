@@ -17,3 +17,7 @@ target_include_directories(microtbx-modbus-template INTERFACE
     "${CMAKE_CURRENT_LIST_DIR}/source/template"
 )
 
+target_sources(microtbx-modbus-template INTERFACE
+    "${CMAKE_CURRENT_LIST_DIR}/source/template/tbxmb_port.c"
+)
+

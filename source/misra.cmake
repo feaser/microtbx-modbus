@@ -20,10 +20,13 @@ if (CMAKE_CXX_CPPCHECK)
 
     # Collect MicroTBX-Modbus sources.
     get_target_property(microtbx_modbus_srcs microtbx-modbus INTERFACE_SOURCES)
+    # Collect MicroTBX-Modbus template sources.
+    get_target_property(microtbx_modbus_template_srcs microtbx-modbus-template INTERFACE_SOURCES)
 
     # Build list with MicroTBX-Modbus sources to check.
     set(check_srcs)
     list(APPEND check_srcs ${microtbx_modbus_srcs})
+    list(APPEND check_srcs ${microtbx_modbus_template_srcs})
 
     # Set variable pointing to the addon for configuring the MISRA checks.
     set(misra_addon "${CMAKE_CURRENT_LIST_DIR}/misra.json")
