@@ -35,7 +35,8 @@ extern "C" {
 * Configuration checks
 ****************************************************************************************/
 #if !defined(TBX_MB_CONF_OSAL)
-#error "Missing configuration setting for TBX_MB_CONF_OSAL"
+/* Default to traditional super loop. */
+#define TBX_MB_CONF_OSAL     (TBX_MB_OPT_OSAL_NONE)
 #endif
 
 #if (TBX_MB_CONF_OSAL < 0U) || (TBX_MB_CONF_OSAL > TBX_MB_OPT_OSAL_FREERTOS)

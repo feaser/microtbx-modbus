@@ -1,6 +1,6 @@
 /************************************************************************************//**
-* \file         microtbxmodbus.h
-* \brief        MicroTBX-Modbus header file.
+* \file         tbxmb_port.h
+* \brief        Modbus hardware specific port header file.
 * \internal
 *----------------------------------------------------------------------------------------
 *                          C O P Y R I G H T
@@ -24,36 +24,28 @@
 *
 * \endinternal
 ****************************************************************************************/
-#ifndef MICROTBXMODBUS_H
-#define MICROTBXMODBUS_H
-
-/****************************************************************************************
-* Include files
-****************************************************************************************/
-#include "tbxmb_tp.h"                            /* MicroTBX-Modbus Transport Layer    */
-#include "tbxmb_rtu.h"                           /* MicroTBX-Modbus RTU                */
-#include "tbxmb_port.h"                          /* MicroTBX-Modbus Hardware port      */
-
+#ifndef TBXMB_PORT_H
+#define TBXMB_PORT_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 /****************************************************************************************
-* Version definitions
+* Function prototypes
 ****************************************************************************************/
-/** \brief Main version number of MicroTBX-Modbus. */
-#define TBX_MB_VERSION_MAIN                  (0U)
+/* UART hardware port functions. */
+void     TbxMbPortUartInit(tTbxMbUartPort port, tTbxMbUartBaudrate baudrate,
+                           tTbxMbUartDatabits databits, tTbxMbUartStopbits stopbits,
+                           tTbxMbUartParity parity);
+uint8_t  TbxMbPortUartTransmit(tTbxMbUartPort port, uint8_t const * data, uint16_t len);
 
-/** \brief Minor version number of MicroTBX-Modbus. */
-#define TBX_MB_VERSION_MINOR                 (9U)
-
-/** \brief Patch number of MicroTBX-Modbus. */
-#define TBX_MB_VERSION_PATCH                 (0U)
-
+/* RTU hardware port functions. */
+uint16_t TbxMbPortRtuTimerCount(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* MICROTBXMODBUS_H */
-/*********************************** end of microtbxmodbus.h ***************************/
+#endif /* TBXMB_PORT_H */
+/*********************************** end of tbxmb_port.h *******************************/

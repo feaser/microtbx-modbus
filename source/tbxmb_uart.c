@@ -93,7 +93,8 @@ void TbxMbUartInit(tTbxMbUartPort port,
     /* Store the specified callback functions. */
     uartInfo[port].transmit_complete_fcn = transmit_complete_fcn;
     uartInfo[port].data_received_fcn = data_received_fcn;
-    /* TODO Implement TbxMbUartInit(). Basically just call the port function. */
+    /* Request the port module to perform the low-level UART initialization. */
+    TbxMbPortUartInit(port, baudrate, databits, stopbits, parity);
   }
 } /*** end of TbxMbUartInit ***/  
 
@@ -104,7 +105,7 @@ void TbxMbUartInit(tTbxMbUartPort port,
 ** \attention If this function succeeds, the data array should remain locked until the
 **            transfer completed, as signalled by a call to TbxMbUartTransmitComplete().
 **            Thanks to this approach it is not needed to copy and buffer the data,
-**            resulting in bettern run-time performance.
+**            resulting in better run-time performance.
 ** \param     port The serial port to start the data transfer on.
 ** \param     data Byte array with data to transmit.
 ** \param     len Number of bytes to transmit.
@@ -125,7 +126,8 @@ uint8_t TbxMbUartTransmit(tTbxMbUartPort port, uint8_t const * data, uint16_t le
       (data != NULL) &&
       (len > 0U))
   {
-    /* TODO Implement TbxMbUartTransmit(). Basically just call the port function. */
+    /* Request the port module to perform the low-level UART data transmission. */
+    result = TbxMbPortUartTransmit(port, data, len);
   }
   /* Give the result back to the caller. */
   return result;
