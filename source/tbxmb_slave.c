@@ -109,7 +109,6 @@ void TbxMbSlaveFree(tTbxMbSlave channel)
     TbxCriticalSectionExit();
     /* Give the channel context back to the memory pool. */
     TbxMemPoolRelease(slave_ctx);
-
   }
 } /*** end of TbxMbSlaveFree ***/
 

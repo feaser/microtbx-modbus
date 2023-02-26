@@ -45,7 +45,9 @@ typedef void * tTbxMbSlave;
 ****************************************************************************************/
 tTbxMbSlave TbxMbSlaveCreate(tTbxMbTp transport);
 void        TbxMbSlaveFree(tTbxMbSlave channel);
-
+/* TODO Add API for registering the Read/Write coil/input/registers callbacks. Store
+ * the function pointers in tTbxMbSlaveCtx.
+ */
 
 #ifdef __cplusplus
 }
