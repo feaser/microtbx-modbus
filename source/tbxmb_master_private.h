@@ -1,6 +1,6 @@
 /************************************************************************************//**
-* \file         tbxmb_slave.h
-* \brief        Modbus slave header file.
+* \file         tbxmb_master_private.h
+* \brief        Modbus master private header file.
 * \internal
 *----------------------------------------------------------------------------------------
 *                          C O P Y R I G H T
@@ -24,32 +24,25 @@
 *
 * \endinternal
 ****************************************************************************************/
-#ifndef TBXMB_SLAVE_H
-#define TBXMB_SLAVE_H
+#ifndef TBXMB_MASTER_PRIVATE_H
+#define TBXMB_MASTER_PRIVATE_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/****************************************************************************************
-* Type definitions
-****************************************************************************************/
-/** \brief Handle to a Modbus slave channel object, in the format of an opaque
- *         pointer.
+/** \brief   Modbus master channel layer context that groups all channel specific data. 
+ *           It's what the tTbxMbMaster opaque pointer points to.
  */
-typedef void * tTbxMbSlave;
-
-
-/****************************************************************************************
-* Function prototypes
-****************************************************************************************/
-tTbxMbSlave TbxMbSlaveCreate(tTbxMbTp transport);
-void        TbxMbSlaveFree(tTbxMbSlave channel);
+typedef struct t_tbx_mb_master_ctx
+{
+  struct t_tbx_mb_tp_ctx * tp_ctx;               /**< Assigned transport layer context.*/
+} tTbxMbMasterCtx;
 
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TBXMB_SLAVE_H */
-/*********************************** end of tbxmb_slave.h ******************************/
+#endif /* TBXMB_MASTER_PRIVATE_H */
+/*********************************** end of tbxmb_master_private.h *********************/

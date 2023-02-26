@@ -63,8 +63,16 @@ extern "C" {
 
 
 /****************************************************************************************
+* Forward declarations
+****************************************************************************************/
+struct t_tbx_mb_master_ctx;
+struct t_tbx_mb_slave_ctx;
+
+
+/****************************************************************************************
 * Type definitions
 ****************************************************************************************/
+
 /** \brief Enumerated type with all supported transport layer types. Can be used after
  *         casting the opaque tTbxMbTransport pointer to a tTbxMbTransportContext
  *         pointer, to check if it's a handle for the correct transport layer.
@@ -126,19 +134,21 @@ typedef uint8_t (* tTbxMbTpValidate)(tTbxMbTp transport);
  *           So at the end it is actually more RAM efficient to group the elements of
  *           all transport layers in one generic one.
  */
-typedef struct 
+typedef struct t_tbx_mb_tp_ctx
 {
-  tTbxMbTpType     type;                         /**< Transport layer type.            */
-  uint8_t          node_addr;                    /**< Node address (RTU/ASCII only).   */
-  tTbxMbUartPort   port;                         /**< UART port (RTU/ASCII only)     . */
-  tTbxMbTpPacket   tx_packet;                    /**< Transmit packet buffer.          */
-  uint8_t          tx_in_progress;               /**< Transmit packet MUX flag.        */
-  tTbxMbTpPacket   rx_packet;                    /**< Reception packet buffer.         */
-  uint8_t          rx_in_progress;               /**< Reception packet MUX flag.       */
-  tTbxMbTpTransmit transmit_fcn;                 /**< Packet transmit function.        */
-  tTbxMbTpValidate validate_fcn;                 /**< Rx Packet validate function.     */
-  uint8_t          master;                       /**< Master or slave boolean flag.    */
-} tTbxMbTpContext;
+  tTbxMbTpType                 type;             /**< Transport layer type.            */
+  uint8_t                      node_addr;        /**< Node address (RTU/ASCII only).   */
+  tTbxMbUartPort               port;             /**< UART port (RTU/ASCII only)     . */
+  tTbxMbTpPacket               tx_packet;        /**< Transmit packet buffer.          */
+  uint8_t                      tx_in_progress;   /**< Transmit packet MUX flag.        */
+  tTbxMbTpPacket               rx_packet;        /**< Reception packet buffer.         */
+  uint8_t                      rx_in_progress;   /**< Reception packet MUX flag.       */
+  tTbxMbTpTransmit             transmit_fcn;     /**< Packet transmit function.        */
+  tTbxMbTpValidate             validate_fcn;     /**< Rx Packet validate function.     */
+  struct t_tbx_mb_master_ctx * master_ctx;       /**< Assigned master channel context. */
+  struct t_tbx_mb_slave_ctx  * slave_ctx;        /**< Assigned slave channel context.  */
+
+} tTbxMbTpCtx;
 
 
 #ifdef __cplusplus

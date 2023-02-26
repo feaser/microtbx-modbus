@@ -1,6 +1,6 @@
 /************************************************************************************//**
 * \file         tbxmb_slave_private.h
-* \brief        Modbus RTU slave private header file.
+* \brief        Modbus slave private header file.
 * \internal
 *----------------------------------------------------------------------------------------
 *                          C O P Y R I G H T
@@ -30,6 +30,14 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/** \brief   Modbus slave channel layer context that groups all channel specific data. 
+ *           It's what the tTbxMbSlave opaque pointer points to.
+ */
+typedef struct t_tbx_mb_slave_ctx
+{
+  struct t_tbx_mb_tp_ctx * tp_ctx;               /**< Assigned transport layer context.*/
+} tTbxMbSlaveCtx;
 
 
 #ifdef __cplusplus

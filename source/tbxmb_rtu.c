@@ -56,7 +56,7 @@ static uint16_t TbxMbRtuCalculatCrc(const uint8_t  * data,
  *         transport layer handle that uses a specific serial port, in a run-time
  *         efficient way.
  */
-static tTbxMbTpContext * tbxMbRtuContext[TBX_MB_UART_NUM_PORT] = { 0 };
+static tTbxMbTpCtx * tbxMbRtuCtx[TBX_MB_UART_NUM_PORT] = { 0 };
 
 
 /************************************************************************************//**
@@ -95,37 +95,37 @@ tTbxMbTp TbxMbRtuCreate(uint8_t            node_addr,
       (stopbits < TBX_MB_UART_NUM_STOPBITS) &&
       (parity < TBX_MB_UART_NUM_PARITY))
   {
-    /* Allocate memory for the new channel context. */
-    tTbxMbTpContext * new_transport = TbxMemPoolAllocate(sizeof(tTbxMbTpContext));
+    /* Allocate memory for the new transport context. */
+    tTbxMbTpCtx * new_tp_ctx = TbxMemPoolAllocate(sizeof(tTbxMbTpCtx));
     /* Automatically increase the memory pool, if it was too small. */
-    if (new_transport == NULL)
+    if (new_tp_ctx == NULL)
     {
       /* No need to check the return value, because if it failed, the following
        * allocation fails too, which is verified later on.
        */
-      (void)TbxMemPoolCreate(1U, sizeof(tTbxMbTpContext));
-      new_transport = TbxMemPoolAllocate(sizeof(tTbxMbTpContext));      
+      (void)TbxMemPoolCreate(1U, sizeof(tTbxMbTpCtx));
+      new_tp_ctx = TbxMemPoolAllocate(sizeof(tTbxMbTpCtx));      
     }
     /* Verify memory allocation of the transport context. */
-    TBX_ASSERT(new_transport != NULL)
+    TBX_ASSERT(new_tp_ctx != NULL)
     /* Only continue if the memory allocation succeeded. */
-    if (new_transport != NULL)
+    if (new_tp_ctx != NULL)
     {
       /* Initialize the transport context. */
-      new_transport->type = TBX_MB_TP_RTU;
-      new_transport->node_addr = node_addr;
-      new_transport->port = port;
-      new_transport->transmit_fcn = TbxMbRtuTransmit;
-      new_transport->validate_fcn = TbxMbRtuValidate;
-      new_transport->tx_in_progress = TBX_FALSE;
-      new_transport->rx_in_progress = TBX_FALSE;
+      new_tp_ctx->type = TBX_MB_TP_RTU;
+      new_tp_ctx->node_addr = node_addr;
+      new_tp_ctx->port = port;
+      new_tp_ctx->transmit_fcn = TbxMbRtuTransmit;
+      new_tp_ctx->validate_fcn = TbxMbRtuValidate;
+      new_tp_ctx->tx_in_progress = TBX_FALSE;
+      new_tp_ctx->rx_in_progress = TBX_FALSE;
       /* Store the transport context in the lookup table. */
-      tbxMbRtuContext[port] = new_transport;
+      tbxMbRtuCtx[port] = new_tp_ctx;
       /* Initialize the port. Note the RTU always uses 8 databits. */
       TbxMbUartInit(port, baudrate, TBX_MB_UART_8_DATABITS, stopbits, parity,
                     TbxMbRtuTransmitComplete, TbxMbRtuDataReceived);
       /* Update the result. */
-      result = new_transport;
+      result = new_tp_ctx;
     }
   }
   /* Give the result back to the caller. */
@@ -148,13 +148,13 @@ void TbxMbRtuFree(tTbxMbTp transport)
   if (transport != NULL)
   {
     /* Convert the TP channel pointer to the context structure. */
-    tTbxMbTpContext * rtu_transport = (tTbxMbTpContext *)transport;
+    tTbxMbTpCtx * tp_ctx = (tTbxMbTpCtx *)transport;
     /* Sanity check on the transport type. */
-    TBX_ASSERT(rtu_transport->type == TBX_MB_TP_RTU);
+    TBX_ASSERT(tp_ctx->type == TBX_MB_TP_RTU);
     /* Remove the channel from the lookup table. */
-    tbxMbRtuContext[rtu_transport->port] = NULL;
-    /* Give the channel context back to the memory pool. */
-    TbxMemPoolRelease(rtu_transport);
+    tbxMbRtuCtx[tp_ctx->port] = NULL;
+    /* Give the transport layer context back to the memory pool. */
+    TbxMemPoolRelease(tp_ctx);
   }
 } /*** end of TbxMbRtuFree ***/
 
@@ -181,20 +181,20 @@ static uint8_t TbxMbRtuTransmit(tTbxMbTp transport)
   if (transport != NULL)
   {
     /* Convert the TP channel pointer to the context structure. */
-    tTbxMbTpContext * rtu_transport = (tTbxMbTpContext *)transport;
+    tTbxMbTpCtx * tp_ctx = (tTbxMbTpCtx *)transport;
     /* Sanity check on the transport type. */
-    TBX_ASSERT(rtu_transport->type == TBX_MB_TP_RTU);
+    TBX_ASSERT(tp_ctx->type == TBX_MB_TP_RTU);
     /* Check that no other packet transmission is already in progress. */
     uint8_t okay_to_transmit = TBX_FALSE;
     TbxCriticalSectionEnter();
-    if (rtu_transport->tx_in_progress == TBX_FALSE)
+    if (tp_ctx->tx_in_progress == TBX_FALSE)
     {
       okay_to_transmit = TBX_TRUE;
       /* Lock access to the tx_packet for the duration of the transmission. Note that
        * the unlock happens in TbxMbRtuTransmitComplete() of it the UART transmission
        * could not be started.
        */
-      rtu_transport->tx_in_progress = TBX_TRUE;
+      tp_ctx->tx_in_progress = TBX_TRUE;
     }
     TbxCriticalSectionExit();
     /* Only continue if no other packet transmission is already in progress. */
@@ -207,25 +207,25 @@ static uint8_t TbxMbRtuTransmit(tTbxMbTp transport)
        * - Packet data (data_len bytes)
        * - CRC16 (2 bytes)
        */
-      uint8_t * adu_ptr = &rtu_transport->tx_packet.head[TBX_MB_TP_ADU_HEAD_LEN_MAX-1U];
-      uint16_t  adu_len = rtu_transport->tx_packet.data_len + 4U;
+      uint8_t * adu_ptr = &tp_ctx->tx_packet.head[TBX_MB_TP_ADU_HEAD_LEN_MAX-1U];
+      uint16_t  adu_len = tp_ctx->tx_packet.data_len + 4U;
       /* Populate the ADU head. For RTU it is the address field right in front of the
        * PDU. For master->slave transfers the address field is the slave's node address
        * (unicast) or 0 (broadcast). For slave-master transfers it always the slave's
        * node address.
        */
-      adu_ptr[0] = rtu_transport->tx_packet.node;
+      adu_ptr[0] = tp_ctx->tx_packet.node;
       /* Populate the ADU tail. For RTU it is the CRC16 right after the PDU's data. */
       uint16_t adu_crc = TbxMbRtuCalculatCrc(adu_ptr, adu_len - 2U);
       adu_ptr[adu_len - 2U] = (uint8_t)adu_crc;                         /* CRC16 low.  */
       adu_ptr[adu_len - 1U] = (uint8_t)(adu_crc >> 8U);                 /* CRC16 high. */
       /* Pass ADU transmit request on to the UART module. */
-      result = TbxMbUartTransmit(rtu_transport->port, adu_ptr, adu_len);
+      result = TbxMbUartTransmit(tp_ctx->port, adu_ptr, adu_len);
       /* Unlock access to the tx_packet if the transmission could not be started. */
       if (result != TBX_OK)
       {
         TbxCriticalSectionEnter();
-        rtu_transport->tx_in_progress = TBX_FALSE;
+        tp_ctx->tx_in_progress = TBX_FALSE;
         TbxCriticalSectionExit();
       }
     }
@@ -253,9 +253,9 @@ static uint8_t TbxMbRtuValidate(tTbxMbTp transport)
   if (transport != NULL)
   {
     /* Convert the TP channel pointer to the context structure. */
-    tTbxMbTpContext * rtu_transport = (tTbxMbTpContext *)transport;
+    tTbxMbTpCtx * tp_ctx = (tTbxMbTpCtx *)transport;
     /* Sanity check on the transport type. */
-    TBX_ASSERT(rtu_transport->type == TBX_MB_TP_RTU);
+    TBX_ASSERT(tp_ctx->type == TBX_MB_TP_RTU);
     
     /* TODO Implement TbxMbRtuValidate(). */
   }
@@ -279,18 +279,18 @@ static void TbxMbRtuTransmitComplete(tTbxMbUartPort port)
   if (port < TBX_MB_UART_NUM_PORT)
   {
     /* Obtain transport layer context linked to UART port of this event. */
-    tTbxMbTpContext * rtu_transport = tbxMbRtuContext[port];
+    tTbxMbTpCtx * tp_ctx = tbxMbRtuCtx[port];
     /* Verify transport layer context. */
-    TBX_ASSERT(rtu_transport != NULL)
+    TBX_ASSERT(tp_ctx != NULL)
     /* Only continue with a valid transport layer context. Note that there is not need
      * to also check the transport layer type, because only RTU types are stored in the
-     * tbxMbRtuContext[] array.
+     * tbxMbRtuCtx[] array.
      */
-    if (rtu_transport != NULL)
+    if (tp_ctx != NULL)
     {
       /* Unlock access to the tx_packet now that the transmission is complete. */
       TbxCriticalSectionEnter();
-      rtu_transport->tx_in_progress = TBX_FALSE;
+      tp_ctx->tx_in_progress = TBX_FALSE;
       TbxCriticalSectionExit();
 
       /* TODO Set an event for further handling at master/slave module task level. 
@@ -329,7 +329,7 @@ static void TbxMbRtuDataReceived(      tTbxMbUartPort  port,
       (len > 0U))
   {
     /* TODO Implement TbxMbRtuDataReceived(). Use lookup table with port index to get
-     * the channel handle (tbxMbRtuContext[]). Probably need to set an event here to
+     * the channel handle (tbxMbRtuCtx[]). Probably need to set an event here to
      * further handle this event at task level. Note that at master/slave task level,
      * the validate() part still needs to be done.
      */

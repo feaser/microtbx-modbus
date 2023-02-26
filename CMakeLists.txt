@@ -5,6 +5,7 @@ target_sources(microtbx-modbus INTERFACE
     "${CMAKE_CURRENT_LIST_DIR}/source/tbxmb_uart.c"
     "${CMAKE_CURRENT_LIST_DIR}/source/tbxmb_rtu.c"
     "${CMAKE_CURRENT_LIST_DIR}/source/tbxmb_slave.c"
+    "${CMAKE_CURRENT_LIST_DIR}/source/tbxmb_master.c"
 )
 
 target_include_directories(microtbx-modbus INTERFACE 

@@ -1,6 +1,6 @@
 /************************************************************************************//**
-* \file         tbxmb_slave.h
-* \brief        Modbus slave header file.
+* \file         tbxmb_master.h
+* \brief        Modbus master header file.
 * \internal
 *----------------------------------------------------------------------------------------
 *                          C O P Y R I G H T
@@ -24,8 +24,8 @@
 *
 * \endinternal
 ****************************************************************************************/
-#ifndef TBXMB_SLAVE_H
-#define TBXMB_SLAVE_H
+#ifndef TBXMB_MASTER_H
+#define TBXMB_MASTER_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,22 +34,22 @@ extern "C" {
 /****************************************************************************************
 * Type definitions
 ****************************************************************************************/
-/** \brief Handle to a Modbus slave channel object, in the format of an opaque
+/** \brief Handle to a Modbus master channel object, in the format of an opaque
  *         pointer.
  */
-typedef void * tTbxMbSlave;
+typedef void * tTbxMbMaster;
 
 
 /****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
-tTbxMbSlave TbxMbSlaveCreate(tTbxMbTp transport);
-void        TbxMbSlaveFree(tTbxMbSlave channel);
+tTbxMbMaster TbxMbMasterCreate(tTbxMbTp transport);
+void         TbxMbMasterFree(tTbxMbMaster channel);
 
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TBXMB_SLAVE_H */
-/*********************************** end of tbxmb_slave.h ******************************/
+#endif /* TBXMB_MASTER_H */
+/*********************************** end of tbxmb_master.h *****************************/
