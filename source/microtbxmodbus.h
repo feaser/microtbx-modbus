@@ -32,6 +32,7 @@
 ****************************************************************************************/
 #include "tbxmb_slave.h"                         /* MicroTBX-Modbus Slave              */
 #include "tbxmb_tp.h"                            /* MicroTBX-Modbus Transport Layer    */
+#include "tbxmb_uart.h"                          /* MicroTBX-Modbus UART               */
 #include "tbxmb_rtu.h"                           /* MicroTBX-Modbus RTU                */
 #include "tbxmb_port.h"                          /* MicroTBX-Modbus Hardware port      */
 
