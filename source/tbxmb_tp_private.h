@@ -147,7 +147,6 @@ typedef struct t_tbx_mb_tp_ctx
   tTbxMbTpValidate             validate_fcn;     /**< Rx Packet validate function.     */
   struct t_tbx_mb_master_ctx * master_ctx;       /**< Assigned master channel context. */
   struct t_tbx_mb_slave_ctx  * slave_ctx;        /**< Assigned slave channel context.  */
-
 } tTbxMbTpCtx;
 
 
