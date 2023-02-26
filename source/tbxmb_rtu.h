@@ -40,10 +40,11 @@ extern "C" {
 /****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
-tTbxMbTp TbxMbRtuCreate(tTbxMbUartPort serial_port, 
-                        tTbxMbUartBaudrate baudrate,
+tTbxMbTp TbxMbRtuCreate(uint8_t            node_addr, 
+                        tTbxMbUartPort     serial_port, 
+                        tTbxMbUartBaudrate baudrate, 
                         tTbxMbUartStopbits stopbits,
-                        tTbxMbUartParity parity);
+                        tTbxMbUartParity   parity);
 void     TbxMbRtuFree(tTbxMbTp transport);
 
 #ifdef __cplusplus

@@ -70,9 +70,11 @@ static volatile struct
 ** \param     parity Parity bit type to use.
 **
 ****************************************************************************************/
-void TbxMbPortUartInit(tTbxMbUartPort port, tTbxMbUartBaudrate baudrate,
-                       tTbxMbUartDatabits databits, tTbxMbUartStopbits stopbits,
-                       tTbxMbUartParity parity)
+void TbxMbPortUartInit(tTbxMbUartPort     port, 
+                       tTbxMbUartBaudrate baudrate,
+                       tTbxMbUartDatabits databits, 
+                       tTbxMbUartStopbits stopbits,
+                       tTbxMbUartParity   parity)
 {
   TBX_UNUSED_ARG(port);
   TBX_UNUSED_ARG(baudrate);
@@ -109,7 +111,9 @@ void TbxMbPortUartInit(tTbxMbUartPort port, tTbxMbUartBaudrate baudrate,
 ** \return    TBX_OK if successful, TBX_ERROR otherwise.  
 **
 ****************************************************************************************/
-uint8_t TbxMbPortUartTransmit(tTbxMbUartPort port, uint8_t const * data, uint16_t len)
+uint8_t TbxMbPortUartTransmit(      tTbxMbUartPort   port, 
+                              const uint8_t        * data, 
+                                    uint16_t         len)
 {
   uint8_t result = TBX_OK;
 

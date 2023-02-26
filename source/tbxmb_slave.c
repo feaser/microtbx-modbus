@@ -1,6 +1,6 @@
 /************************************************************************************//**
-* \file         microtbxmodbus.h
-* \brief        MicroTBX-Modbus header file.
+* \file         tbxmb_slave.c
+* \brief        Modbus slave source file.
 * \internal
 *----------------------------------------------------------------------------------------
 *                          C O P Y R I G H T
@@ -24,37 +24,16 @@
 *
 * \endinternal
 ****************************************************************************************/
-#ifndef MICROTBXMODBUS_H
-#define MICROTBXMODBUS_H
 
 /****************************************************************************************
 * Include files
 ****************************************************************************************/
-#include "tbxmb_slave.h"                         /* MicroTBX-Modbus Slave              */
-#include "tbxmb_tp.h"                            /* MicroTBX-Modbus Transport Layer    */
-#include "tbxmb_rtu.h"                           /* MicroTBX-Modbus RTU                */
-#include "tbxmb_port.h"                          /* MicroTBX-Modbus Hardware port      */
+#include "tbxmb_options.h"                       /* MicroTBX-Modbus config options     */
+#include "microtbx.h"                            /* MicroTBX module                    */
+#include "tbxmb_checks.h"                        /* MicroTBX-Modbus config checks      */
+#include "microtbxmodbus.h"                      /* MicroTBX-Modbus module             */
+#include "tbxmb_tp_private.h"                    /* MicroTBX-Modbus TP private         */
+#include "tbxmb_slave_private.h"                 /* MicroTBX-Modbus slave private      */
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-/****************************************************************************************
-* Version definitions
-****************************************************************************************/
-/** \brief Main version number of MicroTBX-Modbus. */
-#define TBX_MB_VERSION_MAIN                  (0U)
-
-/** \brief Minor version number of MicroTBX-Modbus. */
-#define TBX_MB_VERSION_MINOR                 (9U)
-
-/** \brief Patch number of MicroTBX-Modbus. */
-#define TBX_MB_VERSION_PATCH                 (0U)
-
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* MICROTBXMODBUS_H */
-/*********************************** end of microtbxmodbus.h ***************************/
+/*********************************** end of tbxmb_slave.c ******************************/

@@ -41,21 +41,24 @@ extern "C" {
 typedef void (* tTbxMbUartTransmitComplete)(tTbxMbUartPort port);
 
 /** \breif Transport layer callback function to signal the reception of new data. */
-typedef void (* tTbxMbUartDataReceived)(tTbxMbUartPort port, uint8_t const * data, 
-                                        uint8_t len);
+typedef void (* tTbxMbUartDataReceived)(      tTbxMbUartPort   port, 
+                                        const uint8_t        * data, 
+                                              uint8_t          len);
 
 
 /****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
-void    TbxMbUartInit(tTbxMbUartPort port, 
-                      tTbxMbUartBaudrate baudrate,
-                      tTbxMbUartDatabits databits, 
-                      tTbxMbUartStopbits stopbits,
-                      tTbxMbUartParity parity,
+void    TbxMbUartInit(tTbxMbUartPort             port, 
+                      tTbxMbUartBaudrate         baudrate,
+                      tTbxMbUartDatabits         databits, 
+                      tTbxMbUartStopbits         stopbits,
+                      tTbxMbUartParity           parity,
                       tTbxMbUartTransmitComplete transmit_complete_fcn,
-                      tTbxMbUartDataReceived data_received_fcn);
-uint8_t TbxMbUartTransmit(tTbxMbUartPort port, uint8_t const * data, uint16_t len);
+                      tTbxMbUartDataReceived     data_received_fcn);
+uint8_t TbxMbUartTransmit(      tTbxMbUartPort   port, 
+                          const uint8_t        * data, 
+                                uint16_t         len);
 
 
 #ifdef __cplusplus

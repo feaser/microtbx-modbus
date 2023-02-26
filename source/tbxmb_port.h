@@ -35,10 +35,14 @@ extern "C" {
 * Function prototypes
 ****************************************************************************************/
 /* UART hardware port functions. */
-void     TbxMbPortUartInit(tTbxMbUartPort port, tTbxMbUartBaudrate baudrate,
-                           tTbxMbUartDatabits databits, tTbxMbUartStopbits stopbits,
-                           tTbxMbUartParity parity);
-uint8_t  TbxMbPortUartTransmit(tTbxMbUartPort port, uint8_t const * data, uint16_t len);
+void     TbxMbPortUartInit(tTbxMbUartPort     port, 
+                           tTbxMbUartBaudrate baudrate,
+                           tTbxMbUartDatabits databits, 
+                           tTbxMbUartStopbits stopbits,
+                           tTbxMbUartParity   parity);
+uint8_t  TbxMbPortUartTransmit(      tTbxMbUartPort   port, 
+                               const uint8_t        * data, 
+                                     uint16_t         len);
 
 /* RTU hardware port functions. */
 uint16_t TbxMbPortRtuTimerCount(void);

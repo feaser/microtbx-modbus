@@ -129,7 +129,8 @@ typedef uint8_t (* tTbxMbTpValidate)(tTbxMbTp transport);
 typedef struct 
 {
   tTbxMbTpType     type;                         /**< Transport layer type.            */
-  tTbxMbUartPort   port;                         /**< UART port linked to the channel. */
+  uint8_t          node_addr;                    /**< Node address (RTU/ASCII only).   */
+  tTbxMbUartPort   port;                         /**< UART port (RTU/ASCII only)     . */
   tTbxMbTpPacket   tx_packet;                    /**< Transmit packet buffer.          */
   uint8_t          tx_in_progress;               /**< Transmit packet MUX flag.        */
   tTbxMbTpPacket   rx_packet;                    /**< Reception packet buffer.         */

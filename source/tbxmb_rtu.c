@@ -42,9 +42,11 @@
 static uint8_t  TbxMbRtuTransmit(tTbxMbTp transport);
 static uint8_t  TbxMbRtuValidate(tTbxMbTp transport);
 static void     TbxMbRtuTransmitComplete(tTbxMbUartPort port);
-static void     TbxMbRtuDataReceived(tTbxMbUartPort port, uint8_t const * data, 
-                                     uint8_t len);
-static uint16_t TbxMbRtuCalculatCrc(uint8_t const * data, uint16_t len);
+static void     TbxMbRtuDataReceived(      tTbxMbUartPort   port, 
+                                     const uint8_t        * data, 
+                                           uint8_t          len);
+static uint16_t TbxMbRtuCalculatCrc(const uint8_t  * data, 
+                                          uint16_t   len);
 
 
 /****************************************************************************************
@@ -59,6 +61,8 @@ static tTbxMbTpContext * tbxMbRtuContext[TBX_MB_UART_NUM_PORT] = { 0 };
 
 /************************************************************************************//**
 ** \brief     Creates a Modbus RTU transport layer object.
+** \param     node_addr The address of the node. Can be in the range 1..247 for a slave
+**            node. Set it to 0 for the master.
 ** \param     port The serial port to use. The actual meaning of the serial port is
 **            hardware dependent. It typically maps to the UART peripheral number. E.g. 
 **            TBX_MB_UART_PORT1 = USART1 on an STM32.
@@ -69,21 +73,24 @@ static tTbxMbTpContext * tbxMbRtuContext[TBX_MB_UART_NUM_PORT] = { 0 };
 **            otherwise.
 **
 ****************************************************************************************/
-tTbxMbTp TbxMbRtuCreate(tTbxMbUartPort port, 
+tTbxMbTp TbxMbRtuCreate(uint8_t            node_addr, 
+                        tTbxMbUartPort     port, 
                         tTbxMbUartBaudrate baudrate,
                         tTbxMbUartStopbits stopbits,
-                        tTbxMbUartParity parity)
+                        tTbxMbUartParity   parity)
 {
   tTbxMbTp result = NULL;
 
   /* Verify parameters. */
-  TBX_ASSERT((port < TBX_MB_UART_NUM_PORT) && 
+  TBX_ASSERT((node_addr <= 247U) &&
+             (port < TBX_MB_UART_NUM_PORT) && 
              (baudrate < TBX_MB_UART_NUM_BAUDRATE) &&
              (stopbits < TBX_MB_UART_NUM_STOPBITS) &&
              (parity < TBX_MB_UART_NUM_PARITY));
 
   /* Only continue with valid parameters. */
-  if ((port < TBX_MB_UART_NUM_PORT) && 
+  if ((node_addr <= 247U) &&
+      (port < TBX_MB_UART_NUM_PORT) && 
       (baudrate < TBX_MB_UART_NUM_BAUDRATE) &&
       (stopbits < TBX_MB_UART_NUM_STOPBITS) &&
       (parity < TBX_MB_UART_NUM_PARITY))
@@ -106,6 +113,7 @@ tTbxMbTp TbxMbRtuCreate(tTbxMbUartPort port,
     {
       /* Initialize the transport context. */
       new_transport->type = TBX_MB_TP_RTU;
+      new_transport->node_addr = node_addr;
       new_transport->port = port;
       new_transport->transmit_fcn = TbxMbRtuTransmit;
       new_transport->validate_fcn = TbxMbRtuValidate;
@@ -201,8 +209,10 @@ static uint8_t TbxMbRtuTransmit(tTbxMbTp transport)
        */
       uint8_t * adu_ptr = &rtu_transport->tx_packet.head[TBX_MB_TP_ADU_HEAD_LEN_MAX-1U];
       uint16_t  adu_len = rtu_transport->tx_packet.data_len + 4U;
-      /* Populate the ADU head. For RTU it is the node address right in front of the
-       * PDU.
+      /* Populate the ADU head. For RTU it is the address field right in front of the
+       * PDU. For master->slave transfers the address field is the slave's node address
+       * (unicast) or 0 (broadcast). For slave-master transfers it always the slave's
+       * node address.
        */
       adu_ptr[0] = rtu_transport->tx_packet.node;
       /* Populate the ADU tail. For RTU it is the CRC16 right after the PDU's data. */
@@ -304,7 +314,9 @@ static void TbxMbRtuTransmitComplete(tTbxMbUartPort port)
 ** \param     len Number of newly received bytes.
 **
 ****************************************************************************************/
-static void TbxMbRtuDataReceived(tTbxMbUartPort port, uint8_t const * data, uint8_t len)
+static void TbxMbRtuDataReceived(      tTbxMbUartPort  port, 
+                                 const uint8_t       * data, 
+                                       uint8_t         len)
 {
   /* Verify parameters. */
   TBX_ASSERT((port < TBX_MB_UART_NUM_PORT) && 
@@ -333,7 +345,8 @@ static void TbxMbRtuDataReceived(tTbxMbUartPort port, uint8_t const * data, uint
 ** \return    The calculated CRC16 checksum value.
 **
 ****************************************************************************************/
-static uint16_t TbxMbRtuCalculatCrc(uint8_t const * data, uint16_t len)
+static uint16_t TbxMbRtuCalculatCrc(const uint8_t  * data, 
+                                          uint16_t   len)
 {
   /* Lookup table for fast CRC16 calculation. Made static to lower the stack load. */
   static const uint16_t tbxMbRtuCrcTable[] =
@@ -389,4 +402,4 @@ static uint16_t TbxMbRtuCalculatCrc(uint8_t const * data, uint16_t len)
 } /*** end of TbxMbRtuCalculatCrc ***/
 
 
-/*********************************** end of tbxmb_uart.c *******************************/
+/*********************************** end of tbxmb_rtu.c ********************************/

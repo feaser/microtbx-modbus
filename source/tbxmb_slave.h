@@ -1,6 +1,6 @@
 /************************************************************************************//**
-* \file         microtbxmodbus.h
-* \brief        MicroTBX-Modbus header file.
+* \file         tbxmb_slave.h
+* \brief        Modbus RTU slave header file.
 * \internal
 *----------------------------------------------------------------------------------------
 *                          C O P Y R I G H T
@@ -24,37 +24,21 @@
 *
 * \endinternal
 ****************************************************************************************/
-#ifndef MICROTBXMODBUS_H
-#define MICROTBXMODBUS_H
-
-/****************************************************************************************
-* Include files
-****************************************************************************************/
-#include "tbxmb_slave.h"                         /* MicroTBX-Modbus Slave              */
-#include "tbxmb_tp.h"                            /* MicroTBX-Modbus Transport Layer    */
-#include "tbxmb_rtu.h"                           /* MicroTBX-Modbus RTU                */
-#include "tbxmb_port.h"                          /* MicroTBX-Modbus Hardware port      */
-
+#ifndef TBXMB_SLAVE_H
+#define TBXMB_SLAVE_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 /****************************************************************************************
-* Version definitions
+* Function prototypes
 ****************************************************************************************/
-/** \brief Main version number of MicroTBX-Modbus. */
-#define TBX_MB_VERSION_MAIN                  (0U)
-
-/** \brief Minor version number of MicroTBX-Modbus. */
-#define TBX_MB_VERSION_MINOR                 (9U)
-
-/** \brief Patch number of MicroTBX-Modbus. */
-#define TBX_MB_VERSION_PATCH                 (0U)
 
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* MICROTBXMODBUS_H */
-/*********************************** end of microtbxmodbus.h ***************************/
+#endif /* TBXMB_SLAVE_H */
+/*********************************** end of tbxmb_slave.h ******************************/
