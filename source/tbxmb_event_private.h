@@ -1,6 +1,6 @@
 /************************************************************************************//**
-* \file         tbxmb_slave_private.h
-* \brief        Modbus slave private header file.
+* \file         tbxmb_event_private.h
+* \brief        Modbus event handler private header file.
 * \internal
 *----------------------------------------------------------------------------------------
 *                          C O P Y R I G H T
@@ -24,8 +24,8 @@
 *
 * \endinternal
 ****************************************************************************************/
-#ifndef TBXMB_SLAVE_PRIVATE_H
-#define TBXMB_SLAVE_PRIVATE_H
+#ifndef TBXMB_EVENT_PRIVATE_H
+#define TBXMB_EVENT_PRIVATE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,18 +34,25 @@ extern "C" {
 /****************************************************************************************
 * Type definitions
 ****************************************************************************************/
-/** \brief   Modbus slave channel layer context that groups all channel specific data. 
- *           It's what the tTbxMbSlave opaque pointer points to.
+/** \brief Event task interface function to detect events in a polling manner.
  */
-typedef struct t_tbx_mb_slave_ctx
+typedef void (* tTbxMbEventPoll)(void * context);
+
+
+/** \brief   Minimal context for accessing the event poll function. Think of it as the
+ *           base type for all the other context (master/slave/tp). That's the reason
+ *           why these other context start with a similar entry at exactly the same
+ *           location. 
+ */
+typedef struct
 {
-  struct t_tbx_mb_tp_ctx * tp_ctx;               /**< Assigned transport layer context.*/
-} tTbxMbSlaveCtx;
+  tTbxMbEventPoll poll_fcn;                      /**< Event poll function.             */
+} tTbxMbEventPollCtx;
 
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TBXMB_SLAVE_PRIVATE_H */
-/*********************************** end of tbxmb_slave_private.h **********************/
+#endif /* TBXMB_EVENT_PRIVATE_H */
+/*********************************** end of tbxmb_event_private.h **********************/

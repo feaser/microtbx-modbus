@@ -30,12 +30,13 @@
 /****************************************************************************************
 * Include files
 ****************************************************************************************/
-#include "tbxmb_tp.h"                            /* MicroTBX-Modbus Transport Layer    */
+#include "tbxmb_tp.h"                            /* MicroTBX-Modbus transport layer    */
 #include "tbxmb_uart.h"                          /* MicroTBX-Modbus UART               */
 #include "tbxmb_rtu.h"                           /* MicroTBX-Modbus RTU                */
-#include "tbxmb_slave.h"                         /* MicroTBX-Modbus Slave              */
-#include "tbxmb_master.h"                        /* MicroTBX-Modbus Master             */
-#include "tbxmb_port.h"                          /* MicroTBX-Modbus Hardware port      */
+#include "tbxmb_event.h"                         /* MicroTBX-Modbus event handling     */
+#include "tbxmb_slave.h"                         /* MicroTBX-Modbus slave              */
+#include "tbxmb_master.h"                        /* MicroTBX-Modbus master             */
+#include "tbxmb_port.h"                          /* MicroTBX-Modbus hardware port      */
 
 
 #ifdef __cplusplus

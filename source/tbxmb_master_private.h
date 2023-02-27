@@ -31,6 +31,9 @@
 extern "C" {
 #endif
 
+/****************************************************************************************
+* Type definitions
+****************************************************************************************/
 /** \brief   Modbus master channel layer context that groups all channel specific data. 
  *           It's what the tTbxMbMaster opaque pointer points to.
  */

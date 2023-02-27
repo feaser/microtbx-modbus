@@ -72,7 +72,6 @@ struct t_tbx_mb_slave_ctx;
 /****************************************************************************************
 * Type definitions
 ****************************************************************************************/
-
 /** \brief Enumerated type with all supported transport layer types. Can be used after
  *         casting the opaque tTbxMbTransport pointer to a tTbxMbTransportContext
  *         pointer, to check if it's a handle for the correct transport layer.

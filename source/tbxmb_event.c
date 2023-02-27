@@ -1,6 +1,6 @@
 /************************************************************************************//**
-* \file         tbxmb_slave_private.h
-* \brief        Modbus slave private header file.
+* \file         tbxmb_event.c
+* \brief        Modbus event handler source file.
 * \internal
 *----------------------------------------------------------------------------------------
 *                          C O P Y R I G H T
@@ -24,28 +24,33 @@
 *
 * \endinternal
 ****************************************************************************************/
-#ifndef TBXMB_SLAVE_PRIVATE_H
-#define TBXMB_SLAVE_PRIVATE_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /****************************************************************************************
-* Type definitions
+* Include files
 ****************************************************************************************/
-/** \brief   Modbus slave channel layer context that groups all channel specific data. 
- *           It's what the tTbxMbSlave opaque pointer points to.
- */
-typedef struct t_tbx_mb_slave_ctx
+#include "tbxmb_options.h"                       /* MicroTBX-Modbus config options     */
+#include "microtbx.h"                            /* MicroTBX module                    */
+#include "tbxmb_checks.h"                        /* MicroTBX-Modbus config checks      */
+#include "microtbxmodbus.h"                      /* MicroTBX-Modbus module             */
+#include "tbxmb_event_private.h"                 /* MicroTBX-Modbus event private      */
+
+
+/************************************************************************************//**
+** \brief     Task function that drives the entire Modbus stack. It processes internally
+**            generated events. 
+** \details   How to call this function depends on the selected operating system
+**            abstraction layer (OSAL) as configured with macro TBX_MB_CONF_OSAL.
+**            - In a traditional superloop application (TBX_MB_OPT_OSAL_NONE), call this
+**              function continuously in the infinite program loop.
+**            - When using an RTOS (e.g. TBX_MB_OPT_OSAL_FREERTOS), create a new task
+**              during application initialization and call this function from this task's
+**              infinite loop.
+**
+****************************************************************************************/
+void TbxMbEventTask(void)
 {
-  struct t_tbx_mb_tp_ctx * tp_ctx;               /**< Assigned transport layer context.*/
-} tTbxMbSlaveCtx;
+  /* TODO Implement TbxMbEventTask(). */
+} /*** end of TbxMbEventTask ***/
 
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* TBXMB_SLAVE_PRIVATE_H */
-/*********************************** end of tbxmb_slave_private.h **********************/
+/*********************************** end of tbxmb_event.c ******************************/
