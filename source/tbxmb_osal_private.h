@@ -1,6 +1,6 @@
 /************************************************************************************//**
-* \file         tbxmb_event_private.h
-* \brief        Modbus event handler private header file.
+* \file         tbxmb_osal_private.h
+* \brief        Modbus operating system abstration layer private header file.
 * \internal
 *----------------------------------------------------------------------------------------
 *                          C O P Y R I G H T
@@ -24,58 +24,22 @@
 *
 * \endinternal
 ****************************************************************************************/
-#ifndef TBXMB_EVENT_PRIVATE_H
-#define TBXMB_EVENT_PRIVATE_H
+#ifndef TBXMB_OSAL_PRIVATE_H
+#define TBXMB_OSAL_PRIVATE_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /****************************************************************************************
-* Type definitions
+* Function prototypes
 ****************************************************************************************/
-/** \brief Enumerated type with all supported events. */
-typedef enum
-{
-  /* Start calling the context's polling function each time TbxMbEventTask() runs. */
-  TBX_MB_EVENT_ID_START_POLLING = 0U,
-  /* Stop calling the context's polling function. */
-  TBX_MB_EVENT_ID_STOP_POLLING,
-  /* Transport layer received a new protocol data unit (PDU). */
-  TBX_MB_EVENT_ID_PDU_RECEIVED,
-  /* Extra entry to obtain the number of elements. */
-  TBX_MB_EVENT_NUM_ID
-} tTbxMbEventId;
-
-
-/** \brief Groups all event related information. */
-typedef struct
-{
-  tTbxMbEventId id;                              /**< Event identifier.                */
-  void * context;                                /**< Opaque event context.            */
-  /* data */
-} tTbxMbEventEntry;
-
-
-/** \brief Event task interface function to detect events in a polling manner.
- */
-typedef void (* tTbxMbEventPoll)(void * context);
-
-
-/** \brief   Minimal context for accessing the event poll function. Think of it as the
- *           base type for all the other context (master/slave/tp). That's the reason
- *           why these other context start with a similar entry at exactly the same
- *           location. 
- */
-typedef struct
-{
-  tTbxMbEventPoll poll_fcn;                      /**< Event poll function.             */
-} tTbxMbEventPollCtx;
+void TbxMbOsalInit(void);
 
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TBXMB_EVENT_PRIVATE_H */
-/*********************************** end of tbxmb_event_private.h **********************/
+#endif /* TBXMB_OSAL_PRIVATE_H */
+/*********************************** end of tbxmb_osal_private.h **********************/

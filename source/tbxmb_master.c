@@ -33,6 +33,7 @@
 #include "tbxmb_checks.h"                        /* MicroTBX-Modbus config checks      */
 #include "microtbxmodbus.h"                      /* MicroTBX-Modbus module             */
 #include "tbxmb_tp_private.h"                    /* MicroTBX-Modbus TP private         */
+#include "tbxmb_osal_private.h"                  /* MicroTBX-Modbus OSAL private       */
 #include "tbxmb_master_private.h"                /* MicroTBX-Modbus master private     */
 
 
@@ -48,6 +49,9 @@
 tTbxMbMaster TbxMbMasterCreate(tTbxMbTp transport)
 {
   tTbxMbMaster result = NULL;
+
+  /* Make sure the OSAL module is initialized. */
+  TbxMbOsalInit();
 
   /* Verify parameters. */
   TBX_ASSERT(transport != NULL);
