@@ -33,6 +33,7 @@
 #include "tbxmb_checks.h"                        /* MicroTBX-Modbus config checks      */
 #include "microtbxmodbus.h"                      /* MicroTBX-Modbus module             */
 #include "tbxmb_tp_private.h"                    /* MicroTBX-Modbus TP private         */
+#include "tbxmb_event_private.h"                 /* MicroTBX-Modbus event private      */
 #include "tbxmb_osal_private.h"                  /* MicroTBX-Modbus OSAL private       */
 #include "tbxmb_master_private.h"                /* MicroTBX-Modbus master private     */
 

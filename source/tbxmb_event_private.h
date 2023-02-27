@@ -54,7 +54,7 @@ typedef struct
   tTbxMbEventId id;                              /**< Event identifier.                */
   void * context;                                /**< Opaque event context.            */
   /* data */
-} tTbxMbEventEntry;
+} tTbxMbEvent;
 
 
 /** \brief Event task interface function to detect events in a polling manner.

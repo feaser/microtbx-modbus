@@ -36,12 +36,10 @@
 #include "tbxmb_osal_private.h"                  /* MicroTBX-Modbus OSAL private       */
 
 
+#if (TBX_MB_CONF_OSAL == TBX_MB_OPT_OSAL_NONE)
 /****************************************************************************************
-* Local data declarations
+*                             O S A L   N O N E
 ****************************************************************************************/
-static uint8_t osalInitialized = TBX_FALSE;
-
-
 /************************************************************************************//**
 ** \brief     Initialization function for the OSAL module. 
 ** \attention This function has a built-in protection to make sure it only runs once.
@@ -49,6 +47,8 @@ static uint8_t osalInitialized = TBX_FALSE;
 ****************************************************************************************/
 void TbxMbOsalInit(void)
 {
+  static uint8_t osalInitialized = TBX_FALSE;
+
   /* Only run this function once, */
   if (osalInitialized == TBX_FALSE)
   {
@@ -57,6 +57,137 @@ void TbxMbOsalInit(void)
     /* TODO Implement TbxMbOsalInit(). */
   }
 } /*** end of TbxMbOsalInit ***/
+
+
+/************************************************************************************//**
+** \brief     Signals the occurrence of an event.
+** \param     event Pointer to the event to signal.
+** \param     fromIsr TBX_TRUE when calling this function from an interrupt service
+**            routine, TBX_FALSE otherwise.
+**
+****************************************************************************************/
+void TbxMbOsalPostEvent(tTbxMbEvent * event, 
+                        uint8_t       from_isr)
+{
+  TBX_UNUSED_ARG(from_isr);
+
+  /* Verify parameters. */
+  TBX_ASSERT(event != NULL);
+
+  /* Only continue with valid parameters. */
+  if (event != NULL)
+  {
+    /* TODO Implement TbxMbOsalPostEvent(). */
+    event->context = NULL; /* Dummy for now. */
+  }
+} /*** end of TbxMbOsalPostEvent ***/
+
+
+/************************************************************************************//**
+** \brief     Wait for an event to occur.
+** \param     event Pointer where the occurred event is written to.
+** \param     timeout_ms Maximum time in milliseconds to block while waiting for an
+**            event.
+** \return    TBX_TRUE if an event occurred, TBX_FALSE otherwise (typically a timeout).
+**
+****************************************************************************************/
+uint8_t TbxMbOsalWaitEvent(tTbxMbEvent * event,
+                           uint16_t      timeout_ms)
+{
+  uint8_t result = TBX_FALSE;
+
+  TBX_UNUSED_ARG(timeout_ms);
+
+  /* Verify parameters. */
+  TBX_ASSERT(event != NULL);
+
+  /* Only continue with valid parameters. */
+  if (event != NULL)
+  {
+    /* TODO Implement TbxMbOsalWaitEvent(). */
+    event->context = NULL; /* Dummy for now. */
+  }
+  /* Give the result back to the caller. */
+  return result;
+} /*** end of TbxMbOsalWaitEvent ***/
+#endif /* (TBX_MB_CONF_OSAL == TBX_MB_OPT_OSAL_NONE) */
+
+
+#if (TBX_MB_CONF_OSAL == TBX_MB_OPT_OSAL_FREERTOS)
+/****************************************************************************************
+*                             O S A L   F R E E R T O S
+****************************************************************************************/
+/************************************************************************************//**
+** \brief     Initialization function for the OSAL module. 
+** \attention This function has a built-in protection to make sure it only runs once.
+**
+****************************************************************************************/
+void TbxMbOsalInit(void)
+{
+  static uint8_t osalInitialized = TBX_FALSE;
+
+  /* Only run this function once, */
+  if (osalInitialized == TBX_FALSE)
+  {
+    osalInitialized = TBX_TRUE;
+
+    /* TODO Implement TbxMbOsalInit(). */
+  }
+} /*** end of TbxMbOsalInit ***/
+
+
+/************************************************************************************//**
+** \brief     Signals the occurrence of an event.
+** \param     event Pointer to the event to signal.
+** \param     fromIsr TBX_TRUE when calling this function from an interrupt service
+**            routine, TBX_FALSE otherwise.
+**
+****************************************************************************************/
+void TbxMbOsalPostEvent(tTbxMbEvent * event, 
+                        uint8_t       from_isr)
+{
+  TBX_UNUSED_ARG(from_isr);
+
+  /* Verify parameters. */
+  TBX_ASSERT(event != NULL);
+
+  /* Only continue with valid parameters. */
+  if (event != NULL)
+  {
+    /* TODO Implement TbxMbOsalPostEvent(). */
+    event->context = NULL; /* Dummy for now. */
+  }
+} /*** end of TbxMbOsalPostEvent ***/
+
+
+/************************************************************************************//**
+** \brief     Wait for an event to occur.
+** \param     event Pointer where the occurred event is written to.
+** \param     timeout_ms Maximum time in milliseconds to block while waiting for an
+**            event.
+** \return    TBX_TRUE if an event occurred, TBX_FALSE otherwise (typically a timeout).
+**
+****************************************************************************************/
+uint8_t TbxMbOsalWaitEvent(tTbxMbEvent * event,
+                           uint16_t      timeout_ms)
+{
+  uint8_t result = TBX_FALSE;
+
+  TBX_UNUSED_ARG(timeout_ms);
+
+  /* Verify parameters. */
+  TBX_ASSERT(event != NULL);
+
+  /* Only continue with valid parameters. */
+  if (event != NULL)
+  {
+    /* TODO Implement TbxMbOsalWaitEvent(). */
+    event->context = NULL; /* Dummy for now. */
+  }
+  /* Give the result back to the caller. */
+  return result;
+} /*** end of TbxMbOsalWaitEvent ***/
+#endif /* (TBX_MB_CONF_OSAL == TBX_MB_OPT_OSAL_FREERTOS) */
 
 
 /*********************************** end of tbxmb_osal.c *******************************/
