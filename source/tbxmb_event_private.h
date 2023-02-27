@@ -53,26 +53,8 @@ typedef struct
 {
   tTbxMbEventId id;                              /**< Event identifier.                */
   void * context;                                /**< Opaque event context.            */
-  /* data */
 } tTbxMbEvent;
 
-
-#if 0 /* TODO Temporarily disable for MISRA check because not yet used. */
-/** \brief Event task interface function to detect events in a polling manner.
- */
-typedef void (* tTbxMbEventPoll)(void * context);
-
-
-/** \brief   Minimal context for accessing the event poll function. Think of it as the
- *           base type for all the other context (master/slave/tp). That's the reason
- *           why these other context start with a similar entry at exactly the same
- *           location. 
- */
-typedef struct
-{
-  tTbxMbEventPoll poll_fcn;                      /**< Event poll function.             */
-} tTbxMbEventPollCtx;
-#endif
 
 #ifdef __cplusplus
 }

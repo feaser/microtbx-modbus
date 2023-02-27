@@ -36,6 +36,29 @@
 #include "tbxmb_osal_private.h"                  /* MicroTBX-Modbus OSAL private       */
 
 
+/****************************************************************************************
+* Type definitions
+****************************************************************************************/
+/** \brief Event task interface function to detect events in a polling manner. */
+typedef void (* tTbxMbEventPoll)(void * context);
+
+
+/** \brief Event processor interface function for processing events. */
+typedef void (* tTbxMbEventProcess)(tTbxMbEvent * event);
+
+
+/** \brief   Minimal context for accessing the event poll and process functions. Think of
+ *           it as the base type for all the other context (master/slave/tp). That's the
+ *           reason why these other context start with similar entries at exactly the
+ *           same location. 
+ */
+typedef struct
+{
+  tTbxMbEventPoll    poll_fcn;                   /**< Event poll function.             */
+  tTbxMbEventProcess process_fcn;                /**< Event process function.          */
+} tTbxMbEventCtx;
+
+
 /************************************************************************************//**
 ** \brief     Task function that drives the entire Modbus stack. It processes internally
 **            generated events. 
@@ -50,7 +73,44 @@
 ****************************************************************************************/
 void TbxMbEventTask(void)
 {
-  /* TODO Implement TbxMbEventTask(). */
+  static const uint16_t defaultWaitTimeoutMs = 5000U;
+  static uint16_t       waitTimeout = defaultWaitTimeoutMs;
+  tTbxMbEvent           newEvent = { 0 };
+
+  /* Wait for a new event to be posted to the event queue. */
+  if (TbxMbOsalWaitEvent(&newEvent, waitTimeout) == TBX_TRUE)
+  {
+    switch (newEvent.id)
+    {
+    case TBX_MB_EVENT_ID_START_POLLING:
+      /* TODO Add context to the EventPoller linked list. */
+      break;
+    
+    case TBX_MB_EVENT_ID_STOP_POLLING:
+      /* TODO Remove context from the EventPoller linked list. */
+      break;
+
+    default:
+      /* Check the opaque context pointer. */
+      TBX_ASSERT(newEvent.context != NULL);
+      /* Only continue with a valid opaque context pointer. */
+      if (newEvent.context != NULL)
+      {
+        /* Convert the opaque pointer to the event context structure. */
+        tTbxMbEventCtx * event_ctx = (tTbxMbEventCtx *)newEvent.context;
+        /* Pass the event on to the context's event processor. */
+        if (event_ctx->process_fcn != NULL)
+        {
+          event_ctx->process_fcn(&newEvent);
+        }
+      }
+      break;
+    }
+  }
+
+  /* TODO Iterate over EventPoller linked list and call their poll_fcn if not NULL. If
+   *      the linked list is not empty, make sure to set waitTimeout to 1 via a const.
+   */
 } /*** end of TbxMbEventTask ***/
 
 

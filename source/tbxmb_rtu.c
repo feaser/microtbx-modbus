@@ -32,6 +32,7 @@
 #include "microtbx.h"                            /* MicroTBX module                    */
 #include "tbxmb_checks.h"                        /* MicroTBX-Modbus config checks      */
 #include "microtbxmodbus.h"                      /* MicroTBX-Modbus module             */
+#include "tbxmb_event_private.h"                 /* MicroTBX-Modbus event private      */
 #include "tbxmb_tp_private.h"                    /* MicroTBX-Modbus TP private         */
 #include "tbxmb_uart_private.h"                  /* MicroTBX-Modbus UART private       */
 
@@ -40,6 +41,7 @@
 * Function prototypes
 ****************************************************************************************/
 static void     TbxMbRtuPoll(tTbxMbTp transport);
+static void     TbxMbRtuProcessEvent(tTbxMbEvent * event);
 static uint8_t  TbxMbRtuTransmit(tTbxMbTp transport);
 static uint8_t  TbxMbRtuValidate(tTbxMbTp transport);
 static void     TbxMbRtuTransmitComplete(tTbxMbUartPort port);
@@ -114,6 +116,7 @@ tTbxMbTp TbxMbRtuCreate(uint8_t            node_addr,
     {
       /* Initialize the transport context. */
       new_tp_ctx->poll_fcn = TbxMbRtuPoll;
+      new_tp_ctx->process_fcn = TbxMbRtuProcessEvent;
       new_tp_ctx->type = TBX_MB_TP_RTU;
       new_tp_ctx->node_addr = node_addr;
       new_tp_ctx->port = port;
@@ -187,6 +190,39 @@ static void TbxMbRtuPoll(tTbxMbTp transport)
 
 
 /************************************************************************************//**
+** \brief     Event processing function that is automatically called when an event for
+**            this transport layer object was received in TbxMbEventTask().
+** \param     event Pointer to the event to process. Note that the event->context points
+**            to the handle of the RTU transport layer object.
+**
+****************************************************************************************/
+static void TbxMbRtuProcessEvent(tTbxMbEvent * event)
+{
+  /* Verify parameters. */
+  TBX_ASSERT(event != NULL);
+
+  /* Only continue with valid parameters. */
+  if (event != NULL)
+  {
+    /* Sanity check the context. */
+    TBX_ASSERT(event->context != NULL);
+    /* Convert the event context to the TP context structure. */
+    tTbxMbTpCtx * tp_ctx = (tTbxMbTpCtx *)event->context;
+    /* Make sure the context is valid. */
+    TBX_ASSERT(tp_ctx != NULL);
+    /* Only continue with a valid context. */
+    if (tp_ctx != NULL)
+    {
+      /* Sanity check on the transport type. */
+      TBX_ASSERT(tp_ctx->type == TBX_MB_TP_RTU);
+      /* TODO Implement TbxMbRtuProcessEvent(). */
+      tp_ctx->process_fcn = TbxMbRtuProcessEvent; /* Dummy for now. */
+    }
+  }
+} /*** end of TbxMbRtuProcessEvent ***/
+
+
+/************************************************************************************//**
 ** \brief     Starts the transmission of a communication packet, stored in the transport
 **            layer object.
 ** \param     transport Handle to RTU transport layer object.
@@ -236,7 +272,8 @@ static uint8_t TbxMbRtuTransmit(tTbxMbTp transport)
        */
       uint8_t * adu_ptr = &tp_ctx->tx_packet.head[TBX_MB_TP_ADU_HEAD_LEN_MAX-1U];
       uint16_t  adu_len = tp_ctx->tx_packet.data_len + 4U;
-      /* Populate the ADU head. For RTU it is the address field right in front of the
+      /* Populate the ADU head. For RTU it 
+       * is the address field right in front of the
        * PDU. For master->slave transfers the address field is the slave's node address
        * (unicast) or 0 (broadcast). For slave-master transfers it always the slave's
        * node address.

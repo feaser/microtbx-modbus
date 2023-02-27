@@ -34,10 +34,12 @@ extern "C" {
 /****************************************************************************************
 * Type definitions
 ****************************************************************************************/
-/** \brief Modbus master channel interface function to detect events in a polling
- *         manner.
- */
-typedef void (* tTbxMbMasterPoll)(tTbxMbMaster channel);
+/** \brief Modbus master channel interface function to detect events in a polling manner. */
+typedef void (* tTbxMbMasterPoll)(void * context);
+
+
+/** \brief Modbus master channel  interface function for processing events. */
+typedef void (* tTbxMbMasterProcess)(tTbxMbEvent * event);
 
 
 /** \brief   Modbus master channel layer context that groups all channel specific data. 
@@ -46,6 +48,7 @@ typedef void (* tTbxMbMasterPoll)(tTbxMbMaster channel);
 typedef struct t_tbx_mb_master_ctx
 {
   tTbxMbMasterPoll         poll_fcn;             /**< Event poll function.             */
+  tTbxMbMasterProcess      process_fcn;          /**< Event process function.          */
   struct t_tbx_mb_tp_ctx * tp_ctx;               /**< Assigned transport layer context.*/
 } tTbxMbMasterCtx;
 

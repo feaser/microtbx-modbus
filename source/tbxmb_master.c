@@ -32,10 +32,16 @@
 #include "microtbx.h"                            /* MicroTBX module                    */
 #include "tbxmb_checks.h"                        /* MicroTBX-Modbus config checks      */
 #include "microtbxmodbus.h"                      /* MicroTBX-Modbus module             */
-#include "tbxmb_tp_private.h"                    /* MicroTBX-Modbus TP private         */
 #include "tbxmb_event_private.h"                 /* MicroTBX-Modbus event private      */
+#include "tbxmb_tp_private.h"                    /* MicroTBX-Modbus TP private         */
 #include "tbxmb_osal_private.h"                  /* MicroTBX-Modbus OSAL private       */
 #include "tbxmb_master_private.h"                /* MicroTBX-Modbus master private     */
+
+
+/****************************************************************************************
+* Function prototypes
+****************************************************************************************/
+static void TbxMbMasterProcessEvent(tTbxMbEvent * event);
 
 
 /************************************************************************************//**
@@ -80,6 +86,7 @@ tTbxMbMaster TbxMbMasterCreate(tTbxMbTp transport)
       tTbxMbTpCtx * tp_ctx = (tTbxMbTpCtx *)transport;
       /* Initialize the channel context. Start by crosslinking the transport layer. */
       new_master_ctx->poll_fcn = NULL;
+      new_master_ctx->process_fcn = TbxMbMasterProcessEvent;
       new_master_ctx->tp_ctx = tp_ctx;
       new_master_ctx->tp_ctx->master_ctx = new_master_ctx;
       new_master_ctx->tp_ctx->slave_ctx = NULL;
@@ -117,6 +124,37 @@ void TbxMbMasterFree(tTbxMbMaster channel)
     TbxMemPoolRelease(master_ctx);
   }
 } /*** end of TbxMbMasterFree ***/
+
+
+/************************************************************************************//**
+** \brief     Event processing function that is automatically called when an event for
+**            this master channel object was received in TbxMbEventTask().
+** \param     event Pointer to the event to process. Note that the event->context points
+**            to the handle of the Modbus master channel object.
+**
+****************************************************************************************/
+static void TbxMbMasterProcessEvent(tTbxMbEvent * event)
+{
+  /* Verify parameters. */
+  TBX_ASSERT(event != NULL);
+
+  /* Only continue with valid parameters. */
+  if (event != NULL)
+  {
+    /* Sanity check the context. */
+    TBX_ASSERT(event->context != NULL);
+    /* Convert the event context  to the master channel context structure. */
+    tTbxMbMasterCtx * master_ctx = (tTbxMbMasterCtx *)event->context;
+    /* Make sure the context is valid. */
+    TBX_ASSERT(master_ctx != NULL);
+    /* Only continue with a valid context. */
+    if (master_ctx != NULL)
+    {
+      /* TODO Implement TbxMbMasterProcessEvent(). */
+      master_ctx->process_fcn = TbxMbMasterProcessEvent; /* Dummy for now. */
+    }
+  }
+} /*** end of TbxMbSlaveProcessEvent ***/
 
 
 /*********************************** end of tbxmb_master.c *****************************/

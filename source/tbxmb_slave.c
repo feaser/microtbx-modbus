@@ -32,10 +32,16 @@
 #include "microtbx.h"                            /* MicroTBX module                    */
 #include "tbxmb_checks.h"                        /* MicroTBX-Modbus config checks      */
 #include "microtbxmodbus.h"                      /* MicroTBX-Modbus module             */
-#include "tbxmb_tp_private.h"                    /* MicroTBX-Modbus TP private         */
 #include "tbxmb_event_private.h"                 /* MicroTBX-Modbus event private      */
+#include "tbxmb_tp_private.h"                    /* MicroTBX-Modbus TP private         */
 #include "tbxmb_osal_private.h"                  /* MicroTBX-Modbus OSAL private       */
 #include "tbxmb_slave_private.h"                 /* MicroTBX-Modbus slave private      */
+
+
+/****************************************************************************************
+* Function prototypes
+****************************************************************************************/
+static void TbxMbSlaveProcessEvent(tTbxMbEvent * event);
 
 
 /************************************************************************************//**
@@ -80,6 +86,7 @@ tTbxMbSlave TbxMbSlaveCreate(tTbxMbTp transport)
       tTbxMbTpCtx * tp_ctx = (tTbxMbTpCtx *)transport;
       /* Initialize the channel context. Start by crosslinking the transport layer. */
       new_slave_ctx->poll_fcn = NULL;
+      new_slave_ctx->process_fcn = TbxMbSlaveProcessEvent;
       new_slave_ctx->tp_ctx = tp_ctx;
       new_slave_ctx->tp_ctx->master_ctx = NULL;
       new_slave_ctx->tp_ctx->slave_ctx = new_slave_ctx;
@@ -117,6 +124,37 @@ void TbxMbSlaveFree(tTbxMbSlave channel)
     TbxMemPoolRelease(slave_ctx);
   }
 } /*** end of TbxMbSlaveFree ***/
+
+
+/************************************************************************************//**
+** \brief     Event processing function that is automatically called when an event for
+**            this slave channel object was received in TbxMbEventTask().
+** \param     event Pointer to the event to process. Note that the event->context points
+**            to the handle of the Modbus slave channel object.
+**
+****************************************************************************************/
+static void TbxMbSlaveProcessEvent(tTbxMbEvent * event)
+{
+  /* Verify parameters. */
+  TBX_ASSERT(event != NULL);
+
+  /* Only continue with valid parameters. */
+  if (event != NULL)
+  {
+    /* Sanity check the context. */
+    TBX_ASSERT(event->context != NULL);
+    /* Convert the event context to the slave channel context structure. */
+    tTbxMbSlaveCtx * slave_ctx = (tTbxMbSlaveCtx *)event->context;
+    /* Make sure the context is valid. */
+    TBX_ASSERT(slave_ctx != NULL);
+    /* Only continue with a valid context. */
+    if (slave_ctx != NULL)
+    {
+      /* TODO Implement TbxMbSlaveProcessEvent(). */
+      slave_ctx->process_fcn = TbxMbSlaveProcessEvent; /* Dummy for now. */
+    }
+  }
+} /*** end of TbxMbSlaveProcessEvent ***/
 
 
 /*********************************** end of tbxmb_slave.c ******************************/

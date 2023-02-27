@@ -120,7 +120,11 @@ typedef uint8_t (* tTbxMbTpValidate)(tTbxMbTp transport);
 
 
 /** \brief Transport layer interface function to detect events in a polling manner. */
-typedef void (* tTbxMbTpPoll)(tTbxMbTp transport);
+typedef void (* tTbxMbTpPoll)(void * context);
+
+
+/** \brief Transport layer interface function for processing events. */
+typedef void (* tTbxMbTpProcess)(tTbxMbEvent * event);
 
 
 /** \brief   Modbus transport layer context that groups all transport layer specific
@@ -140,6 +144,7 @@ typedef void (* tTbxMbTpPoll)(tTbxMbTp transport);
 typedef struct t_tbx_mb_tp_ctx
 {
   tTbxMbTpPoll                 poll_fcn;         /**< Event poll function.             */
+  tTbxMbTpProcess              process_fcn;      /**< Event process function.          */
   tTbxMbTpType                 type;             /**< Transport layer type.            */
   uint8_t                      node_addr;        /**< Node address (RTU/ASCII only).   */
   tTbxMbUartPort               port;             /**< UART port (RTU/ASCII only)     . */

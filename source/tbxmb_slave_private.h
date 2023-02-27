@@ -34,10 +34,12 @@ extern "C" {
 /****************************************************************************************
 * Type definitions
 ****************************************************************************************/
-/** \brief Modbus slave channel interface function to detect events in a polling
- *         manner.
- */
-typedef void (* tTbxMbSlavePoll)(tTbxMbSlave channel);
+/** \brief Modbus slave channel interface function to detect events in a polling manner. */
+typedef void (* tTbxMbSlavePoll)(void * context);
+
+
+/** \brief Modbus slave channel  interface function for processing events. */
+typedef void (* tTbxMbSlaveProcess)(tTbxMbEvent * event);
 
 
 /** \brief   Modbus slave channel layer context that groups all channel specific data. 
@@ -46,6 +48,7 @@ typedef void (* tTbxMbSlavePoll)(tTbxMbSlave channel);
 typedef struct t_tbx_mb_slave_ctx
 {
   tTbxMbSlavePoll          poll_fcn;             /**< Event poll function.             */
+  tTbxMbSlaveProcess       process_fcn;          /**< Event process function.          */
   struct t_tbx_mb_tp_ctx * tp_ctx;               /**< Assigned transport layer context.*/
 } tTbxMbSlaveCtx;
 
