@@ -57,6 +57,7 @@ typedef struct
 } tTbxMbEvent;
 
 
+#if 0 /* TODO Temporarily disable for MISRA check because not yet used. */
 /** \brief Event task interface function to detect events in a polling manner.
  */
 typedef void (* tTbxMbEventPoll)(void * context);
@@ -71,7 +72,7 @@ typedef struct
 {
   tTbxMbEventPoll poll_fcn;                      /**< Event poll function.             */
 } tTbxMbEventPollCtx;
-
+#endif
 
 #ifdef __cplusplus
 }

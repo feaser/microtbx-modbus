@@ -34,6 +34,25 @@
 #include "microtbxmodbus.h"                      /* MicroTBX-Modbus module             */
 #include "tbxmb_event_private.h"                 /* MicroTBX-Modbus event private      */
 #include "tbxmb_osal_private.h"                  /* MicroTBX-Modbus OSAL private       */
+#if (TBX_MB_CONF_OSAL == TBX_MB_OPT_OSAL_FREERTOS)
+#include <FreeRTOS.h>
+#include <task.h>
+#include <queue.h>
+#endif
+
+
+/****************************************************************************************
+* Macro definitions
+****************************************************************************************/
+#ifndef TBX_MB_EVENT_QUEUE_SIZE
+/** \brief Configure the size of the event queue. This default configuration should work
+ *         just fine in pretty much all usage scenarios. If for some reason a smaller or
+ *         larger event queue size is desired, you can override this configuration by
+ *         adding a macro with the same name, but a different value, to "tbx_conf.h".
+ */
+#define TBX_MB_EVENT_QUEUE_SIZE   ((uint8_t)TBX_MB_EVENT_NUM_ID * \
+                                   (uint8_t)TBX_MB_UART_NUM_PORT)
+#endif
 
 
 #if (TBX_MB_CONF_OSAL == TBX_MB_OPT_OSAL_NONE)
@@ -117,6 +136,13 @@ uint8_t TbxMbOsalWaitEvent(tTbxMbEvent * event,
 /****************************************************************************************
 *                             O S A L   F R E E R T O S
 ****************************************************************************************/
+/****************************************************************************************
+* Local data declarations
+****************************************************************************************/
+/** \brief Queue handle for storing events. */
+static QueueHandle_t eventQueue;
+
+
 /************************************************************************************//**
 ** \brief     Initialization function for the OSAL module. 
 ** \attention This function has a built-in protection to make sure it only runs once.
@@ -130,8 +156,12 @@ void TbxMbOsalInit(void)
   if (osalInitialized == TBX_FALSE)
   {
     osalInitialized = TBX_TRUE;
-
-    /* TODO Implement TbxMbOsalInit(). */
+    /* Create the event queue. */
+    eventQueue = xQueueCreate(TBX_MB_EVENT_QUEUE_SIZE, sizeof(tTbxMbEvent));
+    /* Check that the queue creation was successful. If this assertion fails, increase
+     * the FreeRTOS heap size.
+     */
+    TBX_ASSERT(eventQueue != NULL);
   }
 } /*** end of TbxMbOsalInit ***/
 
@@ -146,16 +176,50 @@ void TbxMbOsalInit(void)
 void TbxMbOsalPostEvent(tTbxMbEvent * event, 
                         uint8_t       from_isr)
 {
-  TBX_UNUSED_ARG(from_isr);
-
   /* Verify parameters. */
   TBX_ASSERT(event != NULL);
 
   /* Only continue with valid parameters. */
   if (event != NULL)
   {
-    /* TODO Implement TbxMbOsalPostEvent(). */
-    event->context = NULL; /* Dummy for now. */
+    /* Not calling from an ISR? */
+    if (from_isr == TBX_FALSE)
+    {
+      /* Add the event to the queue. There should be space in the queue so no need to
+       * wait for a spot to become available in the queue.
+       */
+      BaseType_t queueResult = xQueueSend(eventQueue, (void *)event, 0U);
+      /* Make sure the event could be added. If not, then the event queue size is set
+       * too small. In this case increase the event queue size using configuration
+       * macro TBX_MB_EVENT_QUEUE_SIZE.
+       */
+      TBX_ASSERT(queueResult == pdTRUE);
+    }
+    /* Calling from an ISR. */
+    else
+    {
+      BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+      /* Add the event to the queue. There should be space in the queue, so this should
+       * always succeed.
+       */
+      BaseType_t queueResult = xQueueSendFromISR(eventQueue, &event, 
+                                                 &xHigherPriorityTaskWoken);
+      /* Make sure the event could be added. If not, then the event queue size is set
+       * too small. In this case increase the event queue size using configuration
+       * macro TBX_MB_EVENT_QUEUE_SIZE.
+       */
+      TBX_ASSERT(queueResult == pdTRUE);
+      /* Request scheduler to switch to the higher priority task, if is was woken. Note
+       * that this part is FreeRTOS port specific. The following works on all Cortex-M
+       * ports. Might need to add conditional compilation switches to support other
+       * ports in the future.
+       */
+      if (xHigherPriorityTaskWoken != pdFALSE)
+      {
+        portYIELD();
+      }
+    }
   }
 } /*** end of TbxMbOsalPostEvent ***/
 
@@ -173,16 +237,17 @@ uint8_t TbxMbOsalWaitEvent(tTbxMbEvent * event,
 {
   uint8_t result = TBX_FALSE;
 
-  TBX_UNUSED_ARG(timeout_ms);
-
   /* Verify parameters. */
   TBX_ASSERT(event != NULL);
 
   /* Only continue with valid parameters. */
   if (event != NULL)
   {
-    /* TODO Implement TbxMbOsalWaitEvent(). */
-    event->context = NULL; /* Dummy for now. */
+    /* Wait for a new event to arrive in the queue. */
+    if (xQueueReceive(eventQueue, event, pdMS_TO_TICKS(timeout_ms)) == pdTRUE)
+    {
+      result = TBX_TRUE;
+    }
   }
   /* Give the result back to the caller. */
   return result;
