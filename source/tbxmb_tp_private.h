@@ -119,6 +119,10 @@ typedef uint8_t (* tTbxMbTpTransmit)(tTbxMbTp transport);
 typedef uint8_t (* tTbxMbTpValidate)(tTbxMbTp transport);
 
 
+/** \brief Transport layer interface function to detect events in a polling manner. */
+typedef void (* tTbxMbTpPoll)(tTbxMbTp transport);
+
+
 /** \brief   Modbus transport layer context that groups all transport layer specific
  *           data. It's what the tTbxMbTransport opaque pointer points to.
  *  \details For both simplicity and run-time efficiency, this type packs information for
@@ -135,6 +139,7 @@ typedef uint8_t (* tTbxMbTpValidate)(tTbxMbTp transport);
  */
 typedef struct t_tbx_mb_tp_ctx
 {
+  tTbxMbTpPoll                 poll_fcn;         /**< Event poll function.             */
   tTbxMbTpType                 type;             /**< Transport layer type.            */
   uint8_t                      node_addr;        /**< Node address (RTU/ASCII only).   */
   tTbxMbUartPort               port;             /**< UART port (RTU/ASCII only)     . */

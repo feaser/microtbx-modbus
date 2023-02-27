@@ -39,6 +39,7 @@
 /****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
+static void     TbxMbRtuPoll(tTbxMbTp transport);
 static uint8_t  TbxMbRtuTransmit(tTbxMbTp transport);
 static uint8_t  TbxMbRtuValidate(tTbxMbTp transport);
 static void     TbxMbRtuTransmitComplete(tTbxMbUartPort port);
@@ -112,6 +113,7 @@ tTbxMbTp TbxMbRtuCreate(uint8_t            node_addr,
     if (new_tp_ctx != NULL)
     {
       /* Initialize the transport context. */
+      new_tp_ctx->poll_fcn = TbxMbRtuPoll;
       new_tp_ctx->type = TBX_MB_TP_RTU;
       new_tp_ctx->node_addr = node_addr;
       new_tp_ctx->port = port;
@@ -157,6 +159,31 @@ void TbxMbRtuFree(tTbxMbTp transport)
     TbxMemPoolRelease(tp_ctx);
   }
 } /*** end of TbxMbRtuFree ***/
+
+
+/************************************************************************************//**
+** \brief     Event polling function that is automatically called during each call of
+**            TbxMbEventTask(), if activate. Use the TBX_MB_EVENT_ID_START_POLLING and
+**            TBX_MB_EVENT_ID_STOP_POLLING events to activate and deactivate.
+** \param     transport Handle to RTU transport layer object.
+**
+****************************************************************************************/
+static void TbxMbRtuPoll(tTbxMbTp transport)
+{
+  /* Verify parameters. */
+  TBX_ASSERT(transport != NULL);
+
+  /* Only continue with valid parameters. */
+  if (transport != NULL)
+  {
+    /* Convert the TP channel pointer to the context structure. */
+    tTbxMbTpCtx * tp_ctx = (tTbxMbTpCtx *)transport;
+    /* Sanity check on the transport type. */
+    TBX_ASSERT(tp_ctx->type == TBX_MB_TP_RTU);
+    /* TODO Implement TbxMbRtuPoll(). */
+    tp_ctx->type = TBX_MB_TP_RTU; /* Dummy for now. */
+  }
+} /*** end of TbxMbRtuPoll ***/
 
 
 /************************************************************************************//**

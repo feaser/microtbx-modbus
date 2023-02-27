@@ -79,6 +79,7 @@ tTbxMbSlave TbxMbSlaveCreate(tTbxMbTp transport)
       /* Convert the TP channel pointer to the context structure. */
       tTbxMbTpCtx * tp_ctx = (tTbxMbTpCtx *)transport;
       /* Initialize the channel context. Start by crosslinking the transport layer. */
+      new_slave_ctx->poll_fcn = NULL;
       new_slave_ctx->tp_ctx = tp_ctx;
       new_slave_ctx->tp_ctx->master_ctx = NULL;
       new_slave_ctx->tp_ctx->slave_ctx = new_slave_ctx;
