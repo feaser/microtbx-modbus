@@ -38,6 +38,13 @@
 
 
 /****************************************************************************************
+* Macro definitions
+****************************************************************************************/
+/** \brief Unique context type to identify a context as being an RTU transport layer. */
+#define TBX_MB_RTU_CONTEXT_TYPE        (84U)
+
+
+/****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
 static void     TbxMbRtuPoll(tTbxMbTp transport);
@@ -115,9 +122,9 @@ tTbxMbTp TbxMbRtuCreate(uint8_t            node_addr,
     if (new_tp_ctx != NULL)
     {
       /* Initialize the transport context. */
+      new_tp_ctx->type = TBX_MB_RTU_CONTEXT_TYPE;
       new_tp_ctx->poll_fcn = TbxMbRtuPoll;
       new_tp_ctx->process_fcn = TbxMbRtuProcessEvent;
-      new_tp_ctx->type = TBX_MB_TP_RTU;
       new_tp_ctx->node_addr = node_addr;
       new_tp_ctx->port = port;
       new_tp_ctx->transmit_fcn = TbxMbRtuTransmit;
@@ -154,10 +161,14 @@ void TbxMbRtuFree(tTbxMbTp transport)
   {
     /* Convert the TP channel pointer to the context structure. */
     tTbxMbTpCtx * tp_ctx = (tTbxMbTpCtx *)transport;
-    /* Sanity check on the transport type. */
-    TBX_ASSERT(tp_ctx->type == TBX_MB_TP_RTU);
+    /* Sanity check on the context type. */
+    TBX_ASSERT(tp_ctx->type == TBX_MB_RTU_CONTEXT_TYPE);
     /* Remove the channel from the lookup table. */
     tbxMbRtuCtx[tp_ctx->port] = NULL;
+    /* Invalidate the context to protect it from accidentally being used afterwards. */
+    tp_ctx->type = 0U;
+    tp_ctx->poll_fcn = NULL;
+    tp_ctx->process_fcn = NULL;
     /* Give the transport layer context back to the memory pool. */
     TbxMemPoolRelease(tp_ctx);
   }
@@ -181,10 +192,10 @@ static void TbxMbRtuPoll(tTbxMbTp transport)
   {
     /* Convert the TP channel pointer to the context structure. */
     tTbxMbTpCtx * tp_ctx = (tTbxMbTpCtx *)transport;
-    /* Sanity check on the transport type. */
-    TBX_ASSERT(tp_ctx->type == TBX_MB_TP_RTU);
+    /* Sanity check on the context type. */
+    TBX_ASSERT(tp_ctx->type == TBX_MB_RTU_CONTEXT_TYPE);
     /* TODO Implement TbxMbRtuPoll(). */
-    tp_ctx->type = TBX_MB_TP_RTU; /* Dummy for now. */
+    tp_ctx->poll_fcn = TbxMbRtuPoll; /* Dummy for now. */
   }
 } /*** end of TbxMbRtuPoll ***/
 
@@ -213,8 +224,8 @@ static void TbxMbRtuProcessEvent(tTbxMbEvent * event)
     /* Only continue with a valid context. */
     if (tp_ctx != NULL)
     {
-      /* Sanity check on the transport type. */
-      TBX_ASSERT(tp_ctx->type == TBX_MB_TP_RTU);
+      /* Sanity check on the context type. */
+      TBX_ASSERT(tp_ctx->type == TBX_MB_RTU_CONTEXT_TYPE);
       /* TODO Implement TbxMbRtuProcessEvent(). */
       tp_ctx->process_fcn = TbxMbRtuProcessEvent; /* Dummy for now. */
     }
@@ -245,8 +256,8 @@ static uint8_t TbxMbRtuTransmit(tTbxMbTp transport)
   {
     /* Convert the TP channel pointer to the context structure. */
     tTbxMbTpCtx * tp_ctx = (tTbxMbTpCtx *)transport;
-    /* Sanity check on the transport type. */
-    TBX_ASSERT(tp_ctx->type == TBX_MB_TP_RTU);
+    /* Sanity check on the context type. */
+    TBX_ASSERT(tp_ctx->type == TBX_MB_RTU_CONTEXT_TYPE);
     /* Check that no other packet transmission is already in progress. */
     uint8_t okay_to_transmit = TBX_FALSE;
     TbxCriticalSectionEnter();
@@ -318,8 +329,8 @@ static uint8_t TbxMbRtuValidate(tTbxMbTp transport)
   {
     /* Convert the TP channel pointer to the context structure. */
     tTbxMbTpCtx * tp_ctx = (tTbxMbTpCtx *)transport;
-    /* Sanity check on the transport type. */
-    TBX_ASSERT(tp_ctx->type == TBX_MB_TP_RTU);
+    /* Sanity check on the context type. */
+    TBX_ASSERT(tp_ctx->type == TBX_MB_RTU_CONTEXT_TYPE);
     
     /* TODO Implement TbxMbRtuValidate(). */
   }

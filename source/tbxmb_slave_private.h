@@ -47,6 +47,7 @@ typedef void (* tTbxMbSlaveProcess)(tTbxMbEvent * event);
  */
 typedef struct t_tbx_mb_slave_ctx
 {
+  uint8_t                  type;                 /**< Context type.                    */
   tTbxMbSlavePoll          poll_fcn;             /**< Event poll function.             */
   tTbxMbSlaveProcess       process_fcn;          /**< Event process function.          */
   struct t_tbx_mb_tp_ctx * tp_ctx;               /**< Assigned transport layer context.*/

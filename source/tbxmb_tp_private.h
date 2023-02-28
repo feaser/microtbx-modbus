@@ -72,21 +72,6 @@ struct t_tbx_mb_slave_ctx;
 /****************************************************************************************
 * Type definitions
 ****************************************************************************************/
-/** \brief Enumerated type with all supported transport layer types. Can be used after
- *         casting the opaque tTbxMbTransport pointer to a tTbxMbTransportContext
- *         pointer, to check if it's a handle for the correct transport layer.
- */
-typedef enum
-{
-  /* RTU. */
-  TBX_MB_TP_RTU = 0U,
-  /* ASCII. */
-  TBX_MB_TP_ASCII,
-  /* Extra entry to obtain the number of elements. */
-  TBX_MB_TP_NUM_TYPES
-} tTbxMbTpType;
-
-
 /** \brief Type for grouping all "Protocol Data Unit" data together. */
 typedef struct
 {
@@ -143,9 +128,9 @@ typedef void (* tTbxMbTpProcess)(tTbxMbEvent * event);
  */
 typedef struct t_tbx_mb_tp_ctx
 {
+  uint8_t                      type;             /**< Context type.                    */
   tTbxMbTpPoll                 poll_fcn;         /**< Event poll function.             */
   tTbxMbTpProcess              process_fcn;      /**< Event process function.          */
-  tTbxMbTpType                 type;             /**< Transport layer type.            */
   uint8_t                      node_addr;        /**< Node address (RTU/ASCII only).   */
   tTbxMbUartPort               port;             /**< UART port (RTU/ASCII only)     . */
   tTbxMbTpPacket               tx_packet;        /**< Transmit packet buffer.          */

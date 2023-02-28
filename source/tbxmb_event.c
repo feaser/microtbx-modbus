@@ -54,6 +54,7 @@ typedef void (* tTbxMbEventProcess)(tTbxMbEvent * event);
  */
 typedef struct
 {
+  uint8_t            type;                       /**< Context type.                    */
   tTbxMbEventPoll    poll_fcn;                   /**< Event poll function.             */
   tTbxMbEventProcess process_fcn;                /**< Event process function.          */
 } tTbxMbEventCtx;

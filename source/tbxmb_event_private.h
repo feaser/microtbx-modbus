@@ -51,8 +51,8 @@ typedef enum
 /** \brief Groups all event related information. */
 typedef struct
 {
-  tTbxMbEventId id;                              /**< Event identifier.                */
-  void * context;                                /**< Opaque event context.            */
+  tTbxMbEventId   id;                            /**< Event identifier.                */
+  void          * context;                       /**< Opaque event context.            */
 } tTbxMbEvent;
 
 

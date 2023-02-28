@@ -39,6 +39,13 @@
 
 
 /****************************************************************************************
+* Macro definitions
+****************************************************************************************/
+/** \brief Unique context type to identify a context as being a slave channel. */
+#define TBX_MB_SLAVE_CONTEXT_TYPE      (37U)
+
+
+/****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
 static void TbxMbSlaveProcessEvent(tTbxMbEvent * event);
@@ -85,6 +92,7 @@ tTbxMbSlave TbxMbSlaveCreate(tTbxMbTp transport)
       /* Convert the TP channel pointer to the context structure. */
       tTbxMbTpCtx * tp_ctx = (tTbxMbTpCtx *)transport;
       /* Initialize the channel context. Start by crosslinking the transport layer. */
+      new_slave_ctx->type = TBX_MB_SLAVE_CONTEXT_TYPE;
       new_slave_ctx->poll_fcn = NULL;
       new_slave_ctx->process_fcn = TbxMbSlaveProcessEvent;
       new_slave_ctx->tp_ctx = tp_ctx;
@@ -115,10 +123,16 @@ void TbxMbSlaveFree(tTbxMbSlave channel)
   {
     /* Convert the slave channel pointer to the context structure. */
     tTbxMbSlaveCtx * slave_ctx = (tTbxMbSlaveCtx *)channel;
+    /* Sanity check on the context type. */
+    TBX_ASSERT(slave_ctx->type == TBX_MB_SLAVE_CONTEXT_TYPE);
     /* Remove crosslink between the channel and the transport layer. */
     TbxCriticalSectionEnter();
     slave_ctx->tp_ctx->slave_ctx = NULL;
     slave_ctx->tp_ctx = NULL;
+    /* Invalidate the context to protect it from accidentally being used afterwards. */
+    slave_ctx->type = 0U;
+    slave_ctx->poll_fcn = NULL;
+    slave_ctx->process_fcn = NULL;
     TbxCriticalSectionExit();
     /* Give the channel context back to the memory pool. */
     TbxMemPoolRelease(slave_ctx);
@@ -150,6 +164,8 @@ static void TbxMbSlaveProcessEvent(tTbxMbEvent * event)
     /* Only continue with a valid context. */
     if (slave_ctx != NULL)
     {
+      /* Sanity check on the context type. */
+      TBX_ASSERT(slave_ctx->type == TBX_MB_SLAVE_CONTEXT_TYPE);
       /* TODO Implement TbxMbSlaveProcessEvent(). */
       slave_ctx->process_fcn = TbxMbSlaveProcessEvent; /* Dummy for now. */
     }
