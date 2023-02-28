@@ -35,6 +35,7 @@
 #include "tbxmb_event_private.h"                 /* MicroTBX-Modbus event private      */
 #include "tbxmb_tp_private.h"                    /* MicroTBX-Modbus TP private         */
 #include "tbxmb_uart_private.h"                  /* MicroTBX-Modbus UART private       */
+#include "tbxmb_osal_private.h"                  /* MicroTBX-Modbus OSAL private       */
 
 
 /****************************************************************************************
@@ -128,9 +129,8 @@ tTbxMbTp TbxMbRtuCreate(uint8_t            node_addr,
       new_tp_ctx->node_addr = node_addr;
       new_tp_ctx->port = port;
       new_tp_ctx->transmit_fcn = TbxMbRtuTransmit;
-      new_tp_ctx->validate_fcn = TbxMbRtuValidate;
-      new_tp_ctx->tx_in_progress = TBX_FALSE;
-      new_tp_ctx->rx_in_progress = TBX_FALSE;
+      new_tp_ctx->tx_locked = TBX_FALSE;
+      new_tp_ctx->rx_locked = TBX_FALSE;
       /* Store the transport context in the lookup table. */
       tbxMbRtuCtx[port] = new_tp_ctx;
       /* Initialize the port. Note the RTU always uses 8 databits. */
@@ -226,8 +226,29 @@ static void TbxMbRtuProcessEvent(tTbxMbEvent * event)
     {
       /* Sanity check on the context type. */
       TBX_ASSERT(tp_ctx->type == TBX_MB_RTU_CONTEXT_TYPE);
-      /* TODO Implement TbxMbRtuProcessEvent(). */
-      tp_ctx->process_fcn = TbxMbRtuProcessEvent; /* Dummy for now. */
+      /* Filter on the event identifier. */
+      switch (event->id)
+      {
+      case TBX_MB_EVENT_ID_PDU_RECEIVED:
+        /* Validate the newly received PDU at task level. */
+        if (TbxMbRtuValidate(tp_ctx) == TBX_OK)
+        {
+          /* The PDU is valid. Pass it on to the linked channel object for further 
+           * processing.
+           */
+          tTbxMbEvent new_event;
+          new_event.context = tp_ctx->channel_ctx;
+          new_event.id = TBX_MB_EVENT_ID_PDU_RECEIVED;
+          TbxMbOsalPostEvent(&new_event, TBX_FALSE);
+        }
+        break;
+      
+      default:
+        /* An unsupported event was dispatched to us. Should not happen. */
+        TBX_ASSERT(TBX_FALSE);
+        break;
+      }
+
     }
   }
 } /*** end of TbxMbRtuProcessEvent ***/
@@ -247,8 +268,8 @@ static uint8_t TbxMbRtuTransmit(tTbxMbTp transport)
   /* Verify parameters. */
   TBX_ASSERT(transport != NULL);
 
-  /* TODO Still need to properly handle tp_crx->master_ctx != NULL. In ECL++ Modbus I
-   * did a wait loop to make sure INIT state is entered for the master.
+  /* TODO Still need to properly handle tp_crx->is_master. In ECL++ Modbus I did a wait
+   * loop to make sure INIT state is entered for the master.
    */
 
   /* Only continue with valid parameters. */
@@ -261,14 +282,14 @@ static uint8_t TbxMbRtuTransmit(tTbxMbTp transport)
     /* Check that no other packet transmission is already in progress. */
     uint8_t okay_to_transmit = TBX_FALSE;
     TbxCriticalSectionEnter();
-    if (tp_ctx->tx_in_progress == TBX_FALSE)
+    if (tp_ctx->tx_locked == TBX_FALSE)
     {
       okay_to_transmit = TBX_TRUE;
       /* Lock access to the tx_packet for the duration of the transmission. Note that
        * the unlock happens in TbxMbRtuTransmitComplete() of it the UART transmission
        * could not be started.
        */
-      tp_ctx->tx_in_progress = TBX_TRUE;
+      tp_ctx->tx_locked = TBX_TRUE;
     }
     TbxCriticalSectionExit();
     /* Only continue if no other packet transmission is already in progress. */
@@ -300,7 +321,7 @@ static uint8_t TbxMbRtuTransmit(tTbxMbTp transport)
       if (result != TBX_OK)
       {
         TbxCriticalSectionEnter();
-        tp_ctx->tx_in_progress = TBX_FALSE;
+        tp_ctx->tx_locked = TBX_FALSE;
         TbxCriticalSectionExit();
       }
     }
@@ -365,7 +386,7 @@ static void TbxMbRtuTransmitComplete(tTbxMbUartPort port)
     {
       /* Unlock access to the tx_packet now that the transmission is complete. */
       TbxCriticalSectionEnter();
-      tp_ctx->tx_in_progress = TBX_FALSE;
+      tp_ctx->tx_locked = TBX_FALSE;
       TbxCriticalSectionExit();
 
       /* TODO Set an event for further handling at master/slave module task level. 

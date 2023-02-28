@@ -96,8 +96,8 @@ tTbxMbSlave TbxMbSlaveCreate(tTbxMbTp transport)
       new_slave_ctx->poll_fcn = NULL;
       new_slave_ctx->process_fcn = TbxMbSlaveProcessEvent;
       new_slave_ctx->tp_ctx = tp_ctx;
-      new_slave_ctx->tp_ctx->master_ctx = NULL;
-      new_slave_ctx->tp_ctx->slave_ctx = new_slave_ctx;
+      new_slave_ctx->tp_ctx->channel_ctx = new_slave_ctx;
+      new_slave_ctx->tp_ctx->is_master = TBX_FALSE;
       /* Update the result. */
       result = new_slave_ctx;
     }
@@ -127,7 +127,7 @@ void TbxMbSlaveFree(tTbxMbSlave channel)
     TBX_ASSERT(slave_ctx->type == TBX_MB_SLAVE_CONTEXT_TYPE);
     /* Remove crosslink between the channel and the transport layer. */
     TbxCriticalSectionEnter();
-    slave_ctx->tp_ctx->slave_ctx = NULL;
+    slave_ctx->tp_ctx->channel_ctx = NULL;
     slave_ctx->tp_ctx = NULL;
     /* Invalidate the context to protect it from accidentally being used afterwards. */
     slave_ctx->type = 0U;

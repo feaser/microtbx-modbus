@@ -81,6 +81,7 @@ void TbxMbEventTask(void)
   /* Wait for a new event to be posted to the event queue. */
   if (TbxMbOsalWaitEvent(&newEvent, waitTimeout) == TBX_TRUE)
   {
+    /* Filter on the event identifier. */
     switch (newEvent.id)
     {
     case TBX_MB_EVENT_ID_START_POLLING:

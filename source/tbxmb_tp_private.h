@@ -63,13 +63,6 @@ extern "C" {
 
 
 /****************************************************************************************
-* Forward declarations
-****************************************************************************************/
-struct t_tbx_mb_master_ctx;
-struct t_tbx_mb_slave_ctx;
-
-
-/****************************************************************************************
 * Type definitions
 ****************************************************************************************/
 /** \brief Type for grouping all "Protocol Data Unit" data together. */
@@ -91,25 +84,18 @@ typedef struct
 } tTbxMbTpPacket;
 
 
-/** \brief Transport layer interface function to start the transmission of the data 
- *         packet, stored in the transport layer context.
- */
-typedef uint8_t (* tTbxMbTpTransmit)(tTbxMbTp transport);
-
-
-/** \brief Transport layer interface function to validate a newly received packet, stored
- *         in the transport layer context. This is transport layer specific. For example
- *         on RTU this means that the CRC16 in the tail ofthe ADU needs to be verified.
- */
-typedef uint8_t (* tTbxMbTpValidate)(tTbxMbTp transport);
-
-
 /** \brief Transport layer interface function to detect events in a polling manner. */
 typedef void (* tTbxMbTpPoll)(void * context);
 
 
 /** \brief Transport layer interface function for processing events. */
 typedef void (* tTbxMbTpProcess)(tTbxMbEvent * event);
+
+
+/** \brief Transport layer interface function to start the transmission of the data 
+ *         packet, stored in the transport layer context.
+ */
+typedef uint8_t (* tTbxMbTpTransmit)(tTbxMbTp transport);
 
 
 /** \brief   Modbus transport layer context that groups all transport layer specific
@@ -128,19 +114,18 @@ typedef void (* tTbxMbTpProcess)(tTbxMbEvent * event);
  */
 typedef struct t_tbx_mb_tp_ctx
 {
-  uint8_t                      type;             /**< Context type.                    */
-  tTbxMbTpPoll                 poll_fcn;         /**< Event poll function.             */
-  tTbxMbTpProcess              process_fcn;      /**< Event process function.          */
-  uint8_t                      node_addr;        /**< Node address (RTU/ASCII only).   */
-  tTbxMbUartPort               port;             /**< UART port (RTU/ASCII only)     . */
-  tTbxMbTpPacket               tx_packet;        /**< Transmit packet buffer.          */
-  uint8_t                      tx_in_progress;   /**< Transmit packet MUX flag.        */
-  tTbxMbTpPacket               rx_packet;        /**< Reception packet buffer.         */
-  uint8_t                      rx_in_progress;   /**< Reception packet MUX flag.       */
-  tTbxMbTpTransmit             transmit_fcn;     /**< Packet transmit function.        */
-  tTbxMbTpValidate             validate_fcn;     /**< Rx Packet validate function.     */
-  struct t_tbx_mb_master_ctx * master_ctx;       /**< Assigned master channel context. */
-  struct t_tbx_mb_slave_ctx  * slave_ctx;        /**< Assigned slave channel context.  */
+  uint8_t            type;                       /**< Context type.                    */
+  tTbxMbTpPoll       poll_fcn;                   /**< Event poll function.             */
+  tTbxMbTpProcess    process_fcn;                /**< Event process function.          */
+  uint8_t            node_addr;                  /**< Node address (RTU/ASCII only).   */
+  tTbxMbUartPort     port;                       /**< UART port (RTU/ASCII only)     . */
+  tTbxMbTpPacket     tx_packet;                  /**< Transmit packet buffer.          */
+  uint8_t            tx_locked;                  /**< Transmit packet MUX flag.        */
+  tTbxMbTpPacket     rx_packet;                  /**< Reception packet buffer.         */
+  uint8_t            rx_locked;                  /**< Reception packet MUX flag.       */
+  tTbxMbTpTransmit   transmit_fcn;               /**< Packet transmit function.        */
+  void             * channel_ctx;                /**< Assigned channel context.        */
+  uint8_t            is_master;                  /**< Info about the channel context.  */
 } tTbxMbTpCtx;
 
 

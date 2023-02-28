@@ -96,8 +96,8 @@ tTbxMbMaster TbxMbMasterCreate(tTbxMbTp transport)
       new_master_ctx->poll_fcn = NULL;
       new_master_ctx->process_fcn = TbxMbMasterProcessEvent;
       new_master_ctx->tp_ctx = tp_ctx;
-      new_master_ctx->tp_ctx->master_ctx = new_master_ctx;
-      new_master_ctx->tp_ctx->slave_ctx = NULL;
+      new_master_ctx->tp_ctx->channel_ctx = new_master_ctx;
+      new_master_ctx->tp_ctx->is_master = TBX_TRUE;
       /* Update the result. */
       result = new_master_ctx;
     }
@@ -127,7 +127,7 @@ void TbxMbMasterFree(tTbxMbMaster channel)
     TBX_ASSERT(master_ctx->type == TBX_MB_MASTER_CONTEXT_TYPE);
     /* Remove crosslink between the channel and the transport layer. */
     TbxCriticalSectionEnter();
-    master_ctx->tp_ctx->master_ctx = NULL;
+    master_ctx->tp_ctx->channel_ctx = NULL;
     master_ctx->tp_ctx = NULL;
     /* Invalidate the context to protect it from accidentally being used afterwards. */
     master_ctx->type = 0U;
