@@ -75,14 +75,14 @@ typedef struct
 void TbxMbEventTask(void)
 {
   static const uint16_t defaultWaitTimeoutMs = 5000U;
-  static uint16_t       waitTimeout = defaultWaitTimeoutMs;
-  tTbxMbEvent           newEvent = { 0 };
+  static uint16_t       wait_timeout = defaultWaitTimeoutMs;
+  tTbxMbEvent           new_event = { 0 };
 
   /* Wait for a new event to be posted to the event queue. */
-  if (TbxMbOsalWaitEvent(&newEvent, waitTimeout) == TBX_TRUE)
+  if (TbxMbOsalWaitEvent(&new_event, wait_timeout) == TBX_TRUE)
   {
     /* Filter on the event identifier. */
-    switch (newEvent.id)
+    switch (new_event.id)
     {
     case TBX_MB_EVENT_ID_START_POLLING:
       /* TODO Add context to the EventPoller linked list. */
@@ -94,16 +94,16 @@ void TbxMbEventTask(void)
 
     default:
       /* Check the opaque context pointer. */
-      TBX_ASSERT(newEvent.context != NULL);
+      TBX_ASSERT(new_event.context != NULL);
       /* Only continue with a valid opaque context pointer. */
-      if (newEvent.context != NULL)
+      if (new_event.context != NULL)
       {
         /* Convert the opaque pointer to the event context structure. */
-        tTbxMbEventCtx * event_ctx = (tTbxMbEventCtx *)newEvent.context;
+        tTbxMbEventCtx * event_ctx = (tTbxMbEventCtx *)new_event.context;
         /* Pass the event on to the context's event processor. */
         if (event_ctx->process_fcn != NULL)
         {
-          event_ctx->process_fcn(&newEvent);
+          event_ctx->process_fcn(&new_event);
         }
       }
       break;

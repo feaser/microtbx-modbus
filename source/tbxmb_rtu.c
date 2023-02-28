@@ -118,7 +118,7 @@ tTbxMbTp TbxMbRtuCreate(uint8_t            node_addr,
       new_tp_ctx = TbxMemPoolAllocate(sizeof(tTbxMbTpCtx));      
     }
     /* Verify memory allocation of the transport context. */
-    TBX_ASSERT(new_tp_ctx != NULL)
+    TBX_ASSERT(new_tp_ctx != NULL);
     /* Only continue if the memory allocation succeeded. */
     if (new_tp_ctx != NULL)
     {
@@ -352,8 +352,7 @@ static uint8_t TbxMbRtuValidate(tTbxMbTp transport)
     tTbxMbTpCtx * tp_ctx = (tTbxMbTpCtx *)transport;
     /* Sanity check on the context type. */
     TBX_ASSERT(tp_ctx->type == TBX_MB_RTU_CONTEXT_TYPE);
-    
-    /* TODO Implement TbxMbRtuValidate(). */
+    /* TODO Implement TbxMbRtuValidate(). It needs to check the CRC of rx_packet. */
   }
   /* Give the result back to the caller. */
   return result;

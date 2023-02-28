@@ -85,7 +85,7 @@ tTbxMbMaster TbxMbMasterCreate(tTbxMbTp transport)
       new_master_ctx = TbxMemPoolAllocate(sizeof(tTbxMbMasterCtx));      
     }
     /* Verify memory allocation of the channel context. */
-    TBX_ASSERT(new_master_ctx != NULL)
+    TBX_ASSERT(new_master_ctx != NULL);
     /* Only continue if the memory allocation succeeded. */
     if (new_master_ctx != NULL)
     {

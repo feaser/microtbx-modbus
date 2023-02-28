@@ -59,6 +59,13 @@
 /****************************************************************************************
 *                             O S A L   N O N E
 ****************************************************************************************/
+/****************************************************************************************
+* Local data declarations
+****************************************************************************************/
+/** \brief Queue handle for storing events. */
+static tTbxList * eventQueue;
+
+
 /************************************************************************************//**
 ** \brief     Initialization function for the OSAL module. 
 ** \attention This function has a built-in protection to make sure it only runs once.
@@ -72,8 +79,12 @@ void TbxMbOsalInit(void)
   if (osalInitialized == TBX_FALSE)
   {
     osalInitialized = TBX_TRUE;
-
-    /* TODO Implement TbxMbOsalInit(). */
+    /* Ceate the queue for storing the events as a linked list. */
+    eventQueue = TbxListCreate();
+    /* Verify that the queue creation succeeded. If this assertion fails, increase the
+     * heap size using configuration macro TBX_CONF_HEAP_SIZE.
+     */
+    TBX_ASSERT(eventQueue != NULL);
   }
 } /*** end of TbxMbOsalInit ***/
 
@@ -85,8 +96,8 @@ void TbxMbOsalInit(void)
 **            routine, TBX_FALSE otherwise.
 **
 ****************************************************************************************/
-void TbxMbOsalPostEvent(tTbxMbEvent * event, 
-                        uint8_t       from_isr)
+void TbxMbOsalPostEvent(const tTbxMbEvent * event, 
+                              uint8_t       from_isr)
 {
   TBX_UNUSED_ARG(from_isr);
 
@@ -96,8 +107,51 @@ void TbxMbOsalPostEvent(tTbxMbEvent * event,
   /* Only continue with valid parameters. */
   if (event != NULL)
   {
-    /* TODO Implement TbxMbOsalPostEvent(). */
-    event->context = NULL; /* Dummy for now. */
+    uint8_t stillRoom = TBX_FALSE;
+    /* Check if the queue is not already filled to the max. */
+    if (TbxListGetSize(eventQueue) < TBX_MB_EVENT_QUEUE_SIZE)
+    {
+      stillRoom = TBX_TRUE;
+    }
+    /* Make sure there is still space in the queue. If not, then the event queue size is
+     * set too small. In this case increase the event queue size using configuration
+     * macro TBX_MB_EVENT_QUEUE_SIZE.
+     */
+    TBX_ASSERT(stillRoom == TBX_TRUE);
+    /* Only continue with enough space. */
+    if (stillRoom == TBX_TRUE)
+    {
+      /* Obtain memory to store the new element from the memory pool. */
+      void * new_queue_entry = TbxMemPoolAllocate(sizeof(tTbxMbEvent));
+      /* Automatically increase the memory pool, if it was too small. */
+      if (new_queue_entry == NULL)
+      {
+        /* No need to check the return value, because if it failed, the following
+         * allocation fails too, which is verified later on.
+         */
+        (void)TbxMemPoolCreate(1U, sizeof(tTbxMbEvent));
+        new_queue_entry = TbxMemPoolAllocate(sizeof(tTbxMbEvent));      
+      }
+      /* Verify memory allocation. If it fails, then the heaps size is configured too
+       * small. In this case increase the heap size using configuration macro
+       * TBX_CONF_HEAP_SIZE.
+       */
+      TBX_ASSERT(new_queue_entry != NULL);
+      /* Only continue if the memory allocation succeeded. */
+      if (new_queue_entry != NULL)
+      {
+        /* Copy the event to the new queue entry. */
+        tTbxMbEvent * new_queue_event = new_queue_entry;
+        *new_queue_event = *event;
+        /* Add the event at the end of the queue. */
+        uint8_t insert_result = TbxListInsertItemBack(eventQueue, new_queue_entry);
+        /* Check that the item could be added to the queue. If not, then the heaps size
+         * is configured too small. In this case increase the heap size using
+         * configuration macro TBX_CONF_HEAP_SIZE. 
+         */
+        TBX_ASSERT(insert_result == TBX_OK);
+      }
+    }
   }
 } /*** end of TbxMbOsalPostEvent ***/
 
@@ -123,8 +177,25 @@ uint8_t TbxMbOsalWaitEvent(tTbxMbEvent * event,
   /* Only continue with valid parameters. */
   if (event != NULL)
   {
-    /* TODO Implement TbxMbOsalWaitEvent(). */
-    event->context = NULL; /* Dummy for now. */
+    /* Is there an event available in the queue? */
+    if (TbxListGetSize(eventQueue) > 0U)
+    {
+      /* Obtain the oldest entry from the queue. */
+      void * queue_entry = TbxListGetFirstItem(eventQueue);
+      /* Only continue if the element is valid. */
+      if (queue_entry != NULL)
+      {
+        /* Delete it from the queue, now that we read it. */
+        TbxListRemoveItem(eventQueue, queue_entry);
+        /* Store the event in the provided event pointer. */
+        tTbxMbEvent * queue_event = queue_entry;
+        *event = *queue_event;
+        /* Give the allocate memory back to the pool. */
+        TbxMemPoolRelease(queue_entry);
+        /* Update the result. */
+        result = TBX_TRUE;
+      }
+    }
   }
   /* Give the result back to the caller. */
   return result;
@@ -173,8 +244,8 @@ void TbxMbOsalInit(void)
 **            routine, TBX_FALSE otherwise.
 **
 ****************************************************************************************/
-void TbxMbOsalPostEvent(tTbxMbEvent * event, 
-                        uint8_t       from_isr)
+void TbxMbOsalPostEvent(const tTbxMbEvent * event, 
+                              uint8_t       from_isr)
 {
   /* Verify parameters. */
   TBX_ASSERT(event != NULL);
@@ -188,7 +259,7 @@ void TbxMbOsalPostEvent(tTbxMbEvent * event,
       /* Add the event to the queue. There should be space in the queue so no need to
        * wait for a spot to become available in the queue.
        */
-      BaseType_t queueResult = xQueueSend(eventQueue, (void *)event, 0U);
+      BaseType_t queueResult = xQueueSend(eventQueue, (const void *)event, 0U);
       /* Make sure the event could be added. If not, then the event queue size is set
        * too small. In this case increase the event queue size using configuration
        * macro TBX_MB_EVENT_QUEUE_SIZE.

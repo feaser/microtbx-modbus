@@ -85,7 +85,7 @@ tTbxMbSlave TbxMbSlaveCreate(tTbxMbTp transport)
       new_slave_ctx = TbxMemPoolAllocate(sizeof(tTbxMbSlaveCtx));      
     }
     /* Verify memory allocation of the channel context. */
-    TBX_ASSERT(new_slave_ctx != NULL)
+    TBX_ASSERT(new_slave_ctx != NULL);
     /* Only continue if the memory allocation succeeded. */
     if (new_slave_ctx != NULL)
     {
