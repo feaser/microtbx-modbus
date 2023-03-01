@@ -44,6 +44,21 @@
 /** \brief Unique context type to identify a context as being an RTU transport layer. */
 #define TBX_MB_RTU_CONTEXT_TYPE        (84U)
 
+/** \brief Initial state. */
+#define TBX_MB_RTU_STATE_INIT          (0U)
+
+/** \brief Idle state. Ready to receive or transmit. */
+#define TBX_MB_RTU_STATE_IDLE          (1U)
+
+/** \brief Transmitting a PDU state. */
+#define TBX_MB_RTU_STATE_TRANSMISSION  (2U)
+
+/** \brief Receiving a PDU state. */
+#define TBX_MB_RTU_STATE_RECEPTION     (3U)
+
+/** \brief Validating a newly received PDU state. */
+#define TBX_MB_RTU_STATE_VALIDATION    (4U)
+
 
 /****************************************************************************************
 * Function prototypes
@@ -92,6 +107,9 @@ tTbxMbTp TbxMbRtuCreate(uint8_t            nodeAddr,
 {
   tTbxMbTp result = NULL;
 
+  /* Make sure the OSAL module is initialized. */
+  TbxMbOsalInit();
+
   /* Verify parameters. */
   TBX_ASSERT((nodeAddr <= 247U) &&
              (port < TBX_MB_UART_NUM_PORT) && 
@@ -131,11 +149,66 @@ tTbxMbTp TbxMbRtuCreate(uint8_t            nodeAddr,
       newTpCtx->transmitFcn = TbxMbRtuTransmit;
       newTpCtx->txLocked = TBX_FALSE;
       newTpCtx->rxLocked = TBX_FALSE;
+      newTpCtx->state = TBX_MB_RTU_STATE_INIT;
+      newTpCtx->rxTime = TbxMbPortRtuTimerCount();
+      newTpCtx->txTime = newTpCtx->rxTime;
       /* Store the transport context in the lookup table. */
       tbxMbRtuCtx[port] = newTpCtx;
       /* Initialize the port. Note the RTU always uses 8 databits. */
       TbxMbUartInit(port, baudrate, TBX_MB_UART_8_DATABITS, stopbits, parity,
                     TbxMbRtuTransmitComplete, TbxMbRtuDataReceived);
+      /* Determine the 1.5 and 3.5 character times in units of 50us ticks. If the
+       * baudrate is greater than 19200, then these are fixed to 750us and 1750us,
+       * respectively. Make sure to add one extra to adjust for timer resolution
+       * inaccuracy.
+       */
+      if (baudrate > TBX_MB_UART_19200BPS)
+      {
+        newTpCtx->t1_5Ticks = 15U + 1U;                    /* 750us / 50us ticks.      */
+        newTpCtx->t3_5Ticks = 35U + 1U;                    /* 1750us / 50us ticks      */
+      }
+      /* Need to calculate the 1.5 and 3.5 character times. */
+      else
+      {
+        /* On RTU, one character equals 11 bits: start-bit, 8 data-bits, parity-bit and
+         * stop-bit. In case no parity used, 2 stop-bits are required by the protocol.
+         * This means that the number of characters per seconds equals the baudrate
+         * divided by 11. The character time in seconds is the reciprocal of that.
+         * Multiply by 10^6 to get the charater time in microseconds:
+         *
+         * tCharMicros = 11 * 1000000 / baudrate.
+         *
+         * The 1.5 and 3.5 character times in microseconds:
+         *
+         * t1_5CharMicros = 11 * 1000000 * 1.5 / baudrate = 16500000 / baudrate
+         * t3_5CharMicros = 11 * 1000000 * 3.5 / baudrate = 38500000 / baudrate
+         * 
+         * This module uses ticks of a 20 kHz timer as a time unit. Each tick is 50us:
+         * 
+         * t1_5CharTicks = (16500000 / 50) / baudrate = 330000 / baudrate
+         * t3_5CharTicks = (38500000 / 50) / baudrate = 770000 / baudrate
+         * 
+         */
+        const uint16_t baudrateLookup[] =
+        {
+          1200,                                            /* TBX_MB_UART_1200BPS      */
+          2400,                                            /* TBX_MB_UART_2400BPS      */
+          4800,                                            /* TBX_MB_UART_4800BPS      */
+          9600,                                            /* TBX_MB_UART_9600BPS      */
+          19200                                            /* TBX_MB_UART_19200BPS     */
+        };
+        /* The following calculation does integer roundup (A + (B-1)) / B and adds one
+         * extra to adjust for timer resolution inaccuracy.
+         */
+        uint16_t baudBps = baudrateLookup[baudrate];
+        newTpCtx->t1_5Ticks = (uint16_t)(((330000UL + (baudBps - 1UL)) / baudBps) + 1U);
+        newTpCtx->t3_5Ticks = (uint16_t)(((770000UL + (baudBps - 1UL)) / baudBps) + 1U);
+      }
+      /* Instruct the event task to call our polling function to be able to determine
+       * when it's time to transmission from INIT to IDLE.
+       */
+      tTbxMbEvent newEvent = {.context = newTpCtx, .id = TBX_MB_EVENT_ID_START_POLLING};
+      TbxMbOsalPostEvent(&newEvent, TBX_FALSE);
       /* Update the result. */
       result = newTpCtx;
     }
@@ -163,12 +236,14 @@ void TbxMbRtuFree(tTbxMbTp transport)
     tTbxMbTpCtx * tpCtx = (tTbxMbTpCtx *)transport;
     /* Sanity check on the context type. */
     TBX_ASSERT(tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE);
+    TbxCriticalSectionEnter();
     /* Remove the channel from the lookup table. */
     tbxMbRtuCtx[tpCtx->port] = NULL;
     /* Invalidate the context to protect it from accidentally being used afterwards. */
     tpCtx->type = 0U;
     tpCtx->pollFcn = NULL;
     tpCtx->processFcn = NULL;
+    TbxCriticalSectionExit();
     /* Give the transport layer context back to the memory pool. */
     TbxMemPoolRelease(tpCtx);
   }
@@ -194,8 +269,46 @@ static void TbxMbRtuPoll(tTbxMbTp transport)
     tTbxMbTpCtx * tpCtx = (tTbxMbTpCtx *)transport;
     /* Sanity check on the context type. */
     TBX_ASSERT(tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE);
-    /* TODO Implement TbxMbRtuPoll(). */
-    tpCtx->pollFcn = TbxMbRtuPoll; /* Dummy for now. */
+    /* Filter on the current state. */
+    TbxCriticalSectionEnter();
+    uint8_t currentState = tpCtx->state;
+    TbxCriticalSectionExit();
+    switch (currentState)
+    {
+      case TBX_MB_RTU_STATE_INIT:
+      {
+        uint8_t transitionToIdle = TBX_FALSE;
+        TbxCriticalSectionEnter();
+        /* Calculate the number of time ticks that elapsed since entering the INIT state
+         * or the reception of the last byte, whichever one comes last. Note that this
+         * calculation works, even if the RTU timer counter overflowed.
+         */
+        uint16_t deltaTicks = TbxMbPortRtuTimerCount() - tpCtx->rxTime;
+        /* After t3_5 it's time to transition to the IDLE state. */
+        if (deltaTicks >= tpCtx->t3_5Ticks)
+        {
+          /* Set flag to transition to IDLE outside of the critical section. */
+          transitionToIdle = TBX_TRUE;
+        }
+        TbxCriticalSectionExit();
+        /* Transition to IDLE requested? */
+        if (transitionToIdle == TBX_TRUE)
+        {
+          tpCtx->state = TBX_MB_RTU_STATE_IDLE;
+          /* Instruct the event task to stop calling our polling function. */
+          tTbxMbEvent newEvent = {.context = tpCtx, .id = TBX_MB_EVENT_ID_STOP_POLLING};
+          TbxMbOsalPostEvent(&newEvent, TBX_FALSE);
+        }
+      }
+      break;
+
+      default:
+      {
+        /* An unsupported state. Should not happen. */
+        TBX_ASSERT(TBX_FALSE);
+      }
+      break;
+    }
   }
 } /*** end of TbxMbRtuPoll ***/
 
@@ -381,7 +494,7 @@ static void TbxMbRtuTransmitComplete(tTbxMbUartPort port)
     tTbxMbTpCtx * tpCtx = tbxMbRtuCtx[port];
     /* Verify transport layer context. */
     TBX_ASSERT(tpCtx != NULL)
-    /* Only continue with a valid transport layer context. Note that there is not need
+    /* Only continue with a valid transport layer context. Note that there is no need
      * to also check the transport layer type, because only RTU types are stored in the
      * tbxMbRtuCtx[] array.
      */
@@ -407,7 +520,8 @@ static void TbxMbRtuTransmitComplete(tTbxMbUartPort port)
 
 /************************************************************************************//**
 ** \brief     Event function to signal the reception of new data to this module.
-** \attention This function should be called by the UART module.
+** \attention This function should be called by the UART module. It is most likely called
+**            at interrupt level, but that is not a given.
 ** \param     port The serial port that the transfer completed on.
 ** \param     data Byte array with newly received data.
 ** \param     len Number of newly received bytes.
@@ -427,11 +541,29 @@ static void TbxMbRtuDataReceived(      tTbxMbUartPort  port,
       (data != NULL) &&
       (len > 0U))
   {
-    /* TODO Implement TbxMbRtuDataReceived(). Use lookup table with port index to get
-     * the channel handle (tbxMbRtuCtx[]). Probably need to set an event here to
-     * further handle this event at task level. Note that at master/slave task level,
-     * the validate() part still needs to be done.
+    /* Obtain transport layer context linked to UART port of this event. */
+    tTbxMbTpCtx * tpCtx = tbxMbRtuCtx[port];
+    /* Verify transport layer context. */
+    TBX_ASSERT(tpCtx != NULL)
+    /* Only continue with a valid transport layer context. Note that there is no need
+     * to also check the transport layer type, because only RTU types are stored in the
+     * tbxMbRtuCtx[] array.
      */
+    if (tpCtx != NULL)
+    {
+      /* Store the reception timestamp. */
+      TbxCriticalSectionEnter();
+      tpCtx->rxTime = TbxMbPortRtuTimerCount();
+      /* Only need to store the newly received byte in IDLE and RECEPTION state. */
+      if ( (tpCtx->state == TBX_MB_RTU_STATE_IDLE) ||
+           (tpCtx->state == TBX_MB_RTU_STATE_RECEPTION) )
+      {
+        /* TODO Store the byte in the rx packet. Handle locked thing as well. Probaly
+         * need a rxWrIdx (16-bit to be safe) for writing into the rxPacket.
+        */
+      }
+      TbxCriticalSectionExit();
+    }
   }
 } /*** end of TbxMbRtuDataReceived ***/
 
