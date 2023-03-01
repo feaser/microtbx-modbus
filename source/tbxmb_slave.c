@@ -74,32 +74,32 @@ tTbxMbSlave TbxMbSlaveCreate(tTbxMbTp transport)
   if (transport != NULL)
   {
     /* Allocate memory for the new channel context. */
-    tTbxMbSlaveCtx * new_slave_ctx = TbxMemPoolAllocate(sizeof(tTbxMbSlaveCtx));
+    tTbxMbSlaveCtx * newSlaveCtx = TbxMemPoolAllocate(sizeof(tTbxMbSlaveCtx));
     /* Automatically increase the memory pool, if it was too small. */
-    if (new_slave_ctx == NULL)
+    if (newSlaveCtx == NULL)
     {
       /* No need to check the return value, because if it failed, the following
        * allocation fails too, which is verified later on.
        */
       (void)TbxMemPoolCreate(1U, sizeof(tTbxMbSlaveCtx));
-      new_slave_ctx = TbxMemPoolAllocate(sizeof(tTbxMbSlaveCtx));      
+      newSlaveCtx = TbxMemPoolAllocate(sizeof(tTbxMbSlaveCtx));      
     }
     /* Verify memory allocation of the channel context. */
-    TBX_ASSERT(new_slave_ctx != NULL);
+    TBX_ASSERT(newSlaveCtx != NULL);
     /* Only continue if the memory allocation succeeded. */
-    if (new_slave_ctx != NULL)
+    if (newSlaveCtx != NULL)
     {
       /* Convert the TP channel pointer to the context structure. */
-      tTbxMbTpCtx * tp_ctx = (tTbxMbTpCtx *)transport;
+      tTbxMbTpCtx * tpCtx = (tTbxMbTpCtx *)transport;
       /* Initialize the channel context. Start by crosslinking the transport layer. */
-      new_slave_ctx->type = TBX_MB_SLAVE_CONTEXT_TYPE;
-      new_slave_ctx->poll_fcn = NULL;
-      new_slave_ctx->process_fcn = TbxMbSlaveProcessEvent;
-      new_slave_ctx->tp_ctx = tp_ctx;
-      new_slave_ctx->tp_ctx->channel_ctx = new_slave_ctx;
-      new_slave_ctx->tp_ctx->is_master = TBX_FALSE;
+      newSlaveCtx->type = TBX_MB_SLAVE_CONTEXT_TYPE;
+      newSlaveCtx->pollFcn = NULL;
+      newSlaveCtx->processFcn = TbxMbSlaveProcessEvent;
+      newSlaveCtx->tpCtx = tpCtx;
+      newSlaveCtx->tpCtx->channelCtx = newSlaveCtx;
+      newSlaveCtx->tpCtx->isMaster = TBX_FALSE;
       /* Update the result. */
-      result = new_slave_ctx;
+      result = newSlaveCtx;
     }
   }
   /* Give the result back to the caller. */
@@ -122,20 +122,20 @@ void TbxMbSlaveFree(tTbxMbSlave channel)
   if (channel != NULL)
   {
     /* Convert the slave channel pointer to the context structure. */
-    tTbxMbSlaveCtx * slave_ctx = (tTbxMbSlaveCtx *)channel;
+    tTbxMbSlaveCtx * slaveCtx = (tTbxMbSlaveCtx *)channel;
     /* Sanity check on the context type. */
-    TBX_ASSERT(slave_ctx->type == TBX_MB_SLAVE_CONTEXT_TYPE);
+    TBX_ASSERT(slaveCtx->type == TBX_MB_SLAVE_CONTEXT_TYPE);
     /* Remove crosslink between the channel and the transport layer. */
     TbxCriticalSectionEnter();
-    slave_ctx->tp_ctx->channel_ctx = NULL;
-    slave_ctx->tp_ctx = NULL;
+    slaveCtx->tpCtx->channelCtx = NULL;
+    slaveCtx->tpCtx = NULL;
     /* Invalidate the context to protect it from accidentally being used afterwards. */
-    slave_ctx->type = 0U;
-    slave_ctx->poll_fcn = NULL;
-    slave_ctx->process_fcn = NULL;
+    slaveCtx->type = 0U;
+    slaveCtx->pollFcn = NULL;
+    slaveCtx->processFcn = NULL;
     TbxCriticalSectionExit();
     /* Give the channel context back to the memory pool. */
-    TbxMemPoolRelease(slave_ctx);
+    TbxMemPoolRelease(slaveCtx);
   }
 } /*** end of TbxMbSlaveFree ***/
 
@@ -158,16 +158,16 @@ static void TbxMbSlaveProcessEvent(tTbxMbEvent * event)
     /* Sanity check the context. */
     TBX_ASSERT(event->context != NULL);
     /* Convert the event context to the slave channel context structure. */
-    tTbxMbSlaveCtx * slave_ctx = (tTbxMbSlaveCtx *)event->context;
+    tTbxMbSlaveCtx * slaveCtx = (tTbxMbSlaveCtx *)event->context;
     /* Make sure the context is valid. */
-    TBX_ASSERT(slave_ctx != NULL);
+    TBX_ASSERT(slaveCtx != NULL);
     /* Only continue with a valid context. */
-    if (slave_ctx != NULL)
+    if (slaveCtx != NULL)
     {
       /* Sanity check on the context type. */
-      TBX_ASSERT(slave_ctx->type == TBX_MB_SLAVE_CONTEXT_TYPE);
+      TBX_ASSERT(slaveCtx->type == TBX_MB_SLAVE_CONTEXT_TYPE);
       /* TODO Implement TbxMbSlaveProcessEvent(). */
-      slave_ctx->process_fcn = TbxMbSlaveProcessEvent; /* Dummy for now. */
+      slaveCtx->processFcn = TbxMbSlaveProcessEvent; /* Dummy for now. */
     }
   }
 } /*** end of TbxMbSlaveProcessEvent ***/

@@ -48,9 +48,9 @@ typedef void (* tTbxMbMasterProcess)(tTbxMbEvent * event);
 typedef struct t_tbx_mb_master_ctx
 {
   uint8_t                  type;                 /**< Context type.                    */
-  tTbxMbMasterPoll         poll_fcn;             /**< Event poll function.             */
-  tTbxMbMasterProcess      process_fcn;          /**< Event process function.          */
-  struct t_tbx_mb_tp_ctx * tp_ctx;               /**< Assigned transport layer context.*/
+  tTbxMbMasterPoll         pollFcn;              /**< Event poll function.             */
+  tTbxMbMasterProcess      processFcn;           /**< Event process function.          */
+  struct t_tbx_mb_tp_ctx * tpCtx;                /**< Assigned transport layer context.*/
 } tTbxMbMasterCtx;
 
 

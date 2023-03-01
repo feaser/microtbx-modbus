@@ -54,8 +54,8 @@ void TbxMbPortUartRxInterrupt(tTbxMbUartPort port);
 static volatile struct
 {
   uint8_t const * data;                  /**< Pointer of the transmit data byte array. */
-  uint16_t        next_idx;              /**< Index of the next byte to transmit.      */
-  uint16_t        total_len;             /**< Total number of bytes to transmit.       */
+  uint16_t        nextIdx;               /**< Index of the next byte to transmit.      */
+  uint16_t        totalLen;              /**< Total number of bytes to transmit.       */
 } transmitInfo[TBX_MB_UART_NUM_PORT];
 
 
@@ -121,8 +121,8 @@ uint8_t TbxMbPortUartTransmit(      tTbxMbUartPort   port,
    * start the transmission of the first byte.
    */
   transmitInfo[port].data = data;
-  transmitInfo[port].total_len = len;
-  transmitInfo[port].next_idx = 1U;
+  transmitInfo[port].totalLen = len;
+  transmitInfo[port].nextIdx = 1U;
 
   /* TODO ##Port 
    * 
@@ -198,16 +198,16 @@ uint16_t TbxMbPortRtuTimerCount(void)
 void TbxMbPortUartTxInterrupt(tTbxMbUartPort port)
 {
   /* Still data left to send? */
-  if (transmitInfo[port].next_idx < transmitInfo[port].total_len)
+  if (transmitInfo[port].nextIdx < transmitInfo[port].totalLen)
   {
     /* TODO ##Port 
      * 
-     * - Write the next byte (transmitInfo.data[transmitInfo.next_idx]) to the UART
+     * - Write the next byte (transmitInfo.data[transmitInfo.nextIdx]) to the UART
      *   transmit data register.
      */
 
     /* Currently transmitting the last byte of the entire transfer? */
-    if (transmitInfo[port].next_idx == (transmitInfo[port].total_len - 1U))
+    if (transmitInfo[port].nextIdx == (transmitInfo[port].totalLen - 1U))
     {
       /* TODO ##Port 
        * 
@@ -217,7 +217,7 @@ void TbxMbPortUartTxInterrupt(tTbxMbUartPort port)
 
     }
     /* Update the indexer to point to the next byte to transmit. */
-    transmitInfo[port].next_idx++;
+    transmitInfo[port].nextIdx++;
   }
   /* No more data left to send. */
   else

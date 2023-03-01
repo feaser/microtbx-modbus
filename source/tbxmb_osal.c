@@ -97,9 +97,9 @@ void TbxMbOsalInit(void)
 **
 ****************************************************************************************/
 void TbxMbOsalPostEvent(const tTbxMbEvent * event, 
-                              uint8_t       from_isr)
+                              uint8_t       fromIsr)
 {
-  TBX_UNUSED_ARG(from_isr);
+  TBX_UNUSED_ARG(fromIsr);
 
   /* Verify parameters. */
   TBX_ASSERT(event != NULL);
@@ -122,34 +122,34 @@ void TbxMbOsalPostEvent(const tTbxMbEvent * event,
     if (stillRoom == TBX_TRUE)
     {
       /* Obtain memory to store the new element from the memory pool. */
-      void * new_queue_entry = TbxMemPoolAllocate(sizeof(tTbxMbEvent));
+      void * newQueueEntry = TbxMemPoolAllocate(sizeof(tTbxMbEvent));
       /* Automatically increase the memory pool, if it was too small. */
-      if (new_queue_entry == NULL)
+      if (newQueueEntry == NULL)
       {
         /* No need to check the return value, because if it failed, the following
          * allocation fails too, which is verified later on.
          */
         (void)TbxMemPoolCreate(1U, sizeof(tTbxMbEvent));
-        new_queue_entry = TbxMemPoolAllocate(sizeof(tTbxMbEvent));      
+        newQueueEntry = TbxMemPoolAllocate(sizeof(tTbxMbEvent));      
       }
       /* Verify memory allocation. If it fails, then the heaps size is configured too
        * small. In this case increase the heap size using configuration macro
        * TBX_CONF_HEAP_SIZE.
        */
-      TBX_ASSERT(new_queue_entry != NULL);
+      TBX_ASSERT(newQueueEntry != NULL);
       /* Only continue if the memory allocation succeeded. */
-      if (new_queue_entry != NULL)
+      if (newQueueEntry != NULL)
       {
         /* Copy the event to the new queue entry. */
-        tTbxMbEvent * new_queue_event = new_queue_entry;
-        *new_queue_event = *event;
+        tTbxMbEvent * newQueueEvent = newQueueEntry;
+        *newQueueEvent = *event;
         /* Add the event at the end of the queue. */
-        uint8_t insert_result = TbxListInsertItemBack(eventQueue, new_queue_entry);
+        uint8_t insertResult = TbxListInsertItemBack(eventQueue, newQueueEntry);
         /* Check that the item could be added to the queue. If not, then the heaps size
          * is configured too small. In this case increase the heap size using
          * configuration macro TBX_CONF_HEAP_SIZE. 
          */
-        TBX_ASSERT(insert_result == TBX_OK);
+        TBX_ASSERT(insertResult == TBX_OK);
       }
     }
   }
@@ -159,17 +159,17 @@ void TbxMbOsalPostEvent(const tTbxMbEvent * event,
 /************************************************************************************//**
 ** \brief     Wait for an event to occur.
 ** \param     event Pointer where the occurred event is written to.
-** \param     timeout_ms Maximum time in milliseconds to block while waiting for an
+** \param     timeoutMs Maximum time in milliseconds to block while waiting for an
 **            event.
 ** \return    TBX_TRUE if an event occurred, TBX_FALSE otherwise (typically a timeout).
 **
 ****************************************************************************************/
 uint8_t TbxMbOsalWaitEvent(tTbxMbEvent * event,
-                           uint16_t      timeout_ms)
+                           uint16_t      timeoutMs)
 {
   uint8_t result = TBX_FALSE;
 
-  TBX_UNUSED_ARG(timeout_ms);
+  TBX_UNUSED_ARG(timeoutMs);
 
   /* Verify parameters. */
   TBX_ASSERT(event != NULL);
@@ -181,17 +181,17 @@ uint8_t TbxMbOsalWaitEvent(tTbxMbEvent * event,
     if (TbxListGetSize(eventQueue) > 0U)
     {
       /* Obtain the oldest entry from the queue. */
-      void * queue_entry = TbxListGetFirstItem(eventQueue);
+      void * queueEntry = TbxListGetFirstItem(eventQueue);
       /* Only continue if the element is valid. */
-      if (queue_entry != NULL)
+      if (queueEntry != NULL)
       {
         /* Delete it from the queue, now that we read it. */
-        TbxListRemoveItem(eventQueue, queue_entry);
+        TbxListRemoveItem(eventQueue, queueEntry);
         /* Store the event in the provided event pointer. */
-        tTbxMbEvent * queue_event = queue_entry;
-        *event = *queue_event;
+        tTbxMbEvent * queueEvent = queueEntry;
+        *event = *queueEvent;
         /* Give the allocate memory back to the pool. */
-        TbxMemPoolRelease(queue_entry);
+        TbxMemPoolRelease(queueEntry);
         /* Update the result. */
         result = TBX_TRUE;
       }
@@ -245,7 +245,7 @@ void TbxMbOsalInit(void)
 **
 ****************************************************************************************/
 void TbxMbOsalPostEvent(const tTbxMbEvent * event, 
-                              uint8_t       from_isr)
+                              uint8_t       fromIsr)
 {
   /* Verify parameters. */
   TBX_ASSERT(event != NULL);
@@ -254,7 +254,7 @@ void TbxMbOsalPostEvent(const tTbxMbEvent * event,
   if (event != NULL)
   {
     /* Not calling from an ISR? */
-    if (from_isr == TBX_FALSE)
+    if (fromIsr == TBX_FALSE)
     {
       /* Add the event to the queue. There should be space in the queue so no need to
        * wait for a spot to become available in the queue.
@@ -298,13 +298,13 @@ void TbxMbOsalPostEvent(const tTbxMbEvent * event,
 /************************************************************************************//**
 ** \brief     Wait for an event to occur.
 ** \param     event Pointer where the occurred event is written to.
-** \param     timeout_ms Maximum time in milliseconds to block while waiting for an
+** \param     timeoutMs Maximum time in milliseconds to block while waiting for an
 **            event.
 ** \return    TBX_TRUE if an event occurred, TBX_FALSE otherwise (typically a timeout).
 **
 ****************************************************************************************/
 uint8_t TbxMbOsalWaitEvent(tTbxMbEvent * event,
-                           uint16_t      timeout_ms)
+                           uint16_t      timeoutMs)
 {
   uint8_t result = TBX_FALSE;
 
@@ -315,7 +315,7 @@ uint8_t TbxMbOsalWaitEvent(tTbxMbEvent * event,
   if (event != NULL)
   {
     /* Wait for a new event to arrive in the queue. */
-    if (xQueueReceive(eventQueue, event, pdMS_TO_TICKS(timeout_ms)) == pdTRUE)
+    if (xQueueReceive(eventQueue, event, pdMS_TO_TICKS(timeoutMs)) == pdTRUE)
     {
       result = TBX_TRUE;
     }

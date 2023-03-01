@@ -41,8 +41,8 @@
 /** \brief Data type for grouping together UART channel specific information. */
 typedef struct
 {
-  tTbxMbUartTransmitComplete transmit_complete_fcn;
-  tTbxMbUartDataReceived     data_received_fcn;
+  tTbxMbUartTransmitComplete transmitCompleteFcn;
+  tTbxMbUartDataReceived     dataReceivedFcn;
 } tTbxMbUartInfo;
 
 
@@ -64,7 +64,7 @@ static tTbxMbUartInfo uartInfo[TBX_MB_UART_NUM_PORT];
 ** \param     parity Parity bit type to use.
 ** \param     transfer_complete_fcn Transport layer specific transfer complete callback
 **            function or NULL if not used.
-** \param     data_received_fcn Transport layer specific new data received callback
+** \param     dataReceivedFcn Transport layer specific new data received callback
 **            function or NULL if not used.
 **
 ****************************************************************************************/
@@ -73,8 +73,8 @@ void TbxMbUartInit(tTbxMbUartPort             port,
                    tTbxMbUartDatabits         databits, 
                    tTbxMbUartStopbits         stopbits,
                    tTbxMbUartParity           parity,
-                   tTbxMbUartTransmitComplete transmit_complete_fcn,
-                   tTbxMbUartDataReceived     data_received_fcn)
+                   tTbxMbUartTransmitComplete transmitCompleteFcn,
+                   tTbxMbUartDataReceived     dataReceivedFcn)
 {
   /* Verify parameters. */
   TBX_ASSERT((port < TBX_MB_UART_NUM_PORT) && 
@@ -91,8 +91,8 @@ void TbxMbUartInit(tTbxMbUartPort             port,
       (parity < TBX_MB_UART_NUM_PARITY))
   {
     /* Store the specified callback functions. */
-    uartInfo[port].transmit_complete_fcn = transmit_complete_fcn;
-    uartInfo[port].data_received_fcn = data_received_fcn;
+    uartInfo[port].transmitCompleteFcn = transmitCompleteFcn;
+    uartInfo[port].dataReceivedFcn = dataReceivedFcn;
     /* Request the port module to perform the low-level UART initialization. */
     TbxMbPortUartInit(port, baudrate, databits, stopbits, parity);
   }
@@ -152,9 +152,9 @@ void TbxMbUartTransmitComplete(tTbxMbUartPort port)
   if (port < TBX_MB_UART_NUM_PORT)
   {
     /* Pass the event on to the transport layer for further handling. */
-    if (uartInfo[port].transmit_complete_fcn != NULL)
+    if (uartInfo[port].transmitCompleteFcn != NULL)
     {
-      uartInfo[port].transmit_complete_fcn(port);
+      uartInfo[port].transmitCompleteFcn(port);
     }
   }
 } /*** end of TbxMbUartTransmitComplete ***/
@@ -183,9 +183,9 @@ void TbxMbUartDataReceived(      tTbxMbUartPort   port,
       (len > 0U))
   {
     /* Pass the event on to the transport layer for further handling. */
-    if (uartInfo[port].data_received_fcn != NULL)
+    if (uartInfo[port].dataReceivedFcn != NULL)
     {
-      uartInfo[port].data_received_fcn(port, data, len);
+      uartInfo[port].dataReceivedFcn(port, data, len);
     }
   }
 } /*** end of TbxMbUartDataReceived ***/

@@ -55,8 +55,8 @@ typedef void (* tTbxMbEventProcess)(tTbxMbEvent * event);
 typedef struct
 {
   uint8_t            type;                       /**< Context type.                    */
-  tTbxMbEventPoll    poll_fcn;                   /**< Event poll function.             */
-  tTbxMbEventProcess process_fcn;                /**< Event process function.          */
+  tTbxMbEventPoll    pollFcn;                    /**< Event poll function.             */
+  tTbxMbEventProcess processFcn;                 /**< Event process function.          */
 } tTbxMbEventCtx;
 
 
@@ -75,14 +75,14 @@ typedef struct
 void TbxMbEventTask(void)
 {
   static const uint16_t defaultWaitTimeoutMs = 5000U;
-  static uint16_t       wait_timeout = defaultWaitTimeoutMs;
-  tTbxMbEvent           new_event = { 0 };
+  static uint16_t       waitTimeout = defaultWaitTimeoutMs;
+  tTbxMbEvent           newEvent = { 0 };
 
   /* Wait for a new event to be posted to the event queue. */
-  if (TbxMbOsalWaitEvent(&new_event, wait_timeout) == TBX_TRUE)
+  if (TbxMbOsalWaitEvent(&newEvent, waitTimeout) == TBX_TRUE)
   {
     /* Filter on the event identifier. */
-    switch (new_event.id)
+    switch (newEvent.id)
     {
     case TBX_MB_EVENT_ID_START_POLLING:
       /* TODO Add context to the EventPoller linked list. */
@@ -94,23 +94,23 @@ void TbxMbEventTask(void)
 
     default:
       /* Check the opaque context pointer. */
-      TBX_ASSERT(new_event.context != NULL);
+      TBX_ASSERT(newEvent.context != NULL);
       /* Only continue with a valid opaque context pointer. */
-      if (new_event.context != NULL)
+      if (newEvent.context != NULL)
       {
         /* Convert the opaque pointer to the event context structure. */
-        tTbxMbEventCtx * event_ctx = (tTbxMbEventCtx *)new_event.context;
+        tTbxMbEventCtx * event_ctx = (tTbxMbEventCtx *)newEvent.context;
         /* Pass the event on to the context's event processor. */
-        if (event_ctx->process_fcn != NULL)
+        if (event_ctx->processFcn != NULL)
         {
-          event_ctx->process_fcn(&new_event);
+          event_ctx->processFcn(&newEvent);
         }
       }
       break;
     }
   }
 
-  /* TODO Iterate over EventPoller linked list and call their poll_fcn if not NULL. If
+  /* TODO Iterate over EventPoller linked list and call their pollFcn if not NULL. If
    *      the linked list is not empty, make sure to set waitTimeout to 1 via a const.
    */
 } /*** end of TbxMbEventTask ***/

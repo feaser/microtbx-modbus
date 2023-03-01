@@ -36,9 +36,9 @@ extern "C" {
 ****************************************************************************************/
 void    TbxMbOsalInit(void);
 void    TbxMbOsalPostEvent(const tTbxMbEvent * event, 
-                                 uint8_t       from_isr);
+                                 uint8_t       fromIsr);
 uint8_t TbxMbOsalWaitEvent(tTbxMbEvent * event,
-                           uint16_t      timeout_ms);
+                           uint16_t      timeoutMs);
 
 #ifdef __cplusplus
 }

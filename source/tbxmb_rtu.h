@@ -34,8 +34,8 @@ extern "C" {
 /****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
-tTbxMbTp TbxMbRtuCreate(uint8_t            node_addr, 
-                        tTbxMbUartPort     serial_port, 
+tTbxMbTp TbxMbRtuCreate(uint8_t            nodeAddr, 
+                        tTbxMbUartPort     serialPort, 
                         tTbxMbUartBaudrate baudrate, 
                         tTbxMbUartStopbits stopbits,
                         tTbxMbUartParity   parity);

@@ -54,8 +54,8 @@ void    TbxMbUartInit(tTbxMbUartPort             port,
                       tTbxMbUartDatabits         databits, 
                       tTbxMbUartStopbits         stopbits,
                       tTbxMbUartParity           parity,
-                      tTbxMbUartTransmitComplete transmit_complete_fcn,
-                      tTbxMbUartDataReceived     data_received_fcn);
+                      tTbxMbUartTransmitComplete transmitCompleteFcn,
+                      tTbxMbUartDataReceived     dataReceivedFcn);
 uint8_t TbxMbUartTransmit(      tTbxMbUartPort   port, 
                           const uint8_t        * data, 
                                 uint16_t         len);

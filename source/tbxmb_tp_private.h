@@ -79,7 +79,7 @@ typedef struct
   uint8_t     head[TBX_MB_TP_ADU_HEAD_LEN_MAX];        /**< ADU additional address.    */
   tTbxMbTpPdu pdu;                                     /**< Protocol data unit.        */
   uint8_t     tail[TBX_MB_TP_ADU_TAIL_LEN_MAX];        /**< ADU error check.           */
-  uint8_t     data_len;                                /**< Number of PDU data bytes.  */
+  uint8_t     dataLen;                                /**< Number of PDU data bytes.  */
   uint8_t     node;                                    /**< Node identifier.           */
 } tTbxMbTpPacket;
 
@@ -115,17 +115,17 @@ typedef uint8_t (* tTbxMbTpTransmit)(tTbxMbTp transport);
 typedef struct t_tbx_mb_tp_ctx
 {
   uint8_t            type;                       /**< Context type.                    */
-  tTbxMbTpPoll       poll_fcn;                   /**< Event poll function.             */
-  tTbxMbTpProcess    process_fcn;                /**< Event process function.          */
-  uint8_t            node_addr;                  /**< Node address (RTU/ASCII only).   */
+  tTbxMbTpPoll       pollFcn;                    /**< Event poll function.             */
+  tTbxMbTpProcess    processFcn;                 /**< Event process function.          */
+  uint8_t            nodeAddr;                   /**< Node address (RTU/ASCII only).   */
   tTbxMbUartPort     port;                       /**< UART port (RTU/ASCII only)     . */
-  tTbxMbTpPacket     tx_packet;                  /**< Transmit packet buffer.          */
-  uint8_t            tx_locked;                  /**< Transmit packet MUX flag.        */
-  tTbxMbTpPacket     rx_packet;                  /**< Reception packet buffer.         */
-  uint8_t            rx_locked;                  /**< Reception packet MUX flag.       */
-  tTbxMbTpTransmit   transmit_fcn;               /**< Packet transmit function.        */
-  void             * channel_ctx;                /**< Assigned channel context.        */
-  uint8_t            is_master;                  /**< Info about the channel context.  */
+  tTbxMbTpPacket     txPacket;                   /**< Transmit packet buffer.          */
+  uint8_t            txLocked;                   /**< Transmit packet MUX flag.        */
+  tTbxMbTpPacket     rxPacket;                   /**< Reception packet buffer.         */
+  uint8_t            rxLocked;                   /**< Reception packet MUX flag.       */
+  tTbxMbTpTransmit   transmitFcn;                /**< Packet transmit function.        */
+  void             * channelCtx;                 /**< Assigned channel context.        */
+  uint8_t            isMaster;                   /**< Info about the channel context.  */
 } tTbxMbTpCtx;
 
 

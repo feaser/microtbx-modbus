@@ -74,32 +74,32 @@ tTbxMbMaster TbxMbMasterCreate(tTbxMbTp transport)
   if (transport != NULL)
   {
     /* Allocate memory for the new channel context. */
-    tTbxMbMasterCtx * new_master_ctx = TbxMemPoolAllocate(sizeof(tTbxMbMasterCtx));
+    tTbxMbMasterCtx * newMasterCtx = TbxMemPoolAllocate(sizeof(tTbxMbMasterCtx));
     /* Automatically increase the memory pool, if it was too small. */
-    if (new_master_ctx == NULL)
+    if (newMasterCtx == NULL)
     {
       /* No need to check the return value, because if it failed, the following
        * allocation fails too, which is verified later on.
        */
       (void)TbxMemPoolCreate(1U, sizeof(tTbxMbMasterCtx));
-      new_master_ctx = TbxMemPoolAllocate(sizeof(tTbxMbMasterCtx));      
+      newMasterCtx = TbxMemPoolAllocate(sizeof(tTbxMbMasterCtx));      
     }
     /* Verify memory allocation of the channel context. */
-    TBX_ASSERT(new_master_ctx != NULL);
+    TBX_ASSERT(newMasterCtx != NULL);
     /* Only continue if the memory allocation succeeded. */
-    if (new_master_ctx != NULL)
+    if (newMasterCtx != NULL)
     {
       /* Convert the TP channel pointer to the context structure. */
-      tTbxMbTpCtx * tp_ctx = (tTbxMbTpCtx *)transport;
+      tTbxMbTpCtx * tpCtx = (tTbxMbTpCtx *)transport;
       /* Initialize the channel context. Start by crosslinking the transport layer. */
-      new_master_ctx->type = TBX_MB_MASTER_CONTEXT_TYPE;
-      new_master_ctx->poll_fcn = NULL;
-      new_master_ctx->process_fcn = TbxMbMasterProcessEvent;
-      new_master_ctx->tp_ctx = tp_ctx;
-      new_master_ctx->tp_ctx->channel_ctx = new_master_ctx;
-      new_master_ctx->tp_ctx->is_master = TBX_TRUE;
+      newMasterCtx->type = TBX_MB_MASTER_CONTEXT_TYPE;
+      newMasterCtx->pollFcn = NULL;
+      newMasterCtx->processFcn = TbxMbMasterProcessEvent;
+      newMasterCtx->tpCtx = tpCtx;
+      newMasterCtx->tpCtx->channelCtx = newMasterCtx;
+      newMasterCtx->tpCtx->isMaster = TBX_TRUE;
       /* Update the result. */
-      result = new_master_ctx;
+      result = newMasterCtx;
     }
   }
   /* Give the result back to the caller. */
@@ -122,20 +122,20 @@ void TbxMbMasterFree(tTbxMbMaster channel)
   if (channel != NULL)
   {
     /* Convert the master channel pointer to the context structure. */
-    tTbxMbMasterCtx * master_ctx = (tTbxMbMasterCtx *)channel;
+    tTbxMbMasterCtx * masterCtx = (tTbxMbMasterCtx *)channel;
     /* Sanity check on the context type. */
-    TBX_ASSERT(master_ctx->type == TBX_MB_MASTER_CONTEXT_TYPE);
+    TBX_ASSERT(masterCtx->type == TBX_MB_MASTER_CONTEXT_TYPE);
     /* Remove crosslink between the channel and the transport layer. */
     TbxCriticalSectionEnter();
-    master_ctx->tp_ctx->channel_ctx = NULL;
-    master_ctx->tp_ctx = NULL;
+    masterCtx->tpCtx->channelCtx = NULL;
+    masterCtx->tpCtx = NULL;
     /* Invalidate the context to protect it from accidentally being used afterwards. */
-    master_ctx->type = 0U;
-    master_ctx->poll_fcn = NULL;
-    master_ctx->process_fcn = NULL;
+    masterCtx->type = 0U;
+    masterCtx->pollFcn = NULL;
+    masterCtx->processFcn = NULL;
     TbxCriticalSectionExit();
     /* Give the channel context back to the memory pool. */
-    TbxMemPoolRelease(master_ctx);
+    TbxMemPoolRelease(masterCtx);
   }
 } /*** end of TbxMbMasterFree ***/
 
@@ -158,16 +158,16 @@ static void TbxMbMasterProcessEvent(tTbxMbEvent * event)
     /* Sanity check the context. */
     TBX_ASSERT(event->context != NULL);
     /* Convert the event context  to the master channel context structure. */
-    tTbxMbMasterCtx * master_ctx = (tTbxMbMasterCtx *)event->context;
+    tTbxMbMasterCtx * masterCtx = (tTbxMbMasterCtx *)event->context;
     /* Make sure the context is valid. */
-    TBX_ASSERT(master_ctx != NULL);
+    TBX_ASSERT(masterCtx != NULL);
     /* Only continue with a valid context. */
-    if (master_ctx != NULL)
+    if (masterCtx != NULL)
     {
       /* Sanity check on the context type. */
-      TBX_ASSERT(master_ctx->type == TBX_MB_MASTER_CONTEXT_TYPE);
+      TBX_ASSERT(masterCtx->type == TBX_MB_MASTER_CONTEXT_TYPE);
       /* TODO Implement TbxMbMasterProcessEvent(). */
-      master_ctx->process_fcn = TbxMbMasterProcessEvent; /* Dummy for now. */
+      masterCtx->processFcn = TbxMbMasterProcessEvent; /* Dummy for now. */
     }
   }
 } /*** end of TbxMbSlaveProcessEvent ***/
