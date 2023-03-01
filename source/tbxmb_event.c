@@ -150,9 +150,9 @@ void TbxMbEventTask(void)
     if (eventPollCtx->pollFcn != NULL)
     {
       eventPollCtx->pollFcn(listItem);
-      /* Move on to the next item in the list. */
-      listItem = TbxListGetNextItem(pollerList, listItem);
     }
+    /* Move on to the next item in the list. */
+    listItem = TbxListGetNextItem(pollerList, listItem);
   }
 
   /* Set the event wait timeout for the next call to this task function. If the event
