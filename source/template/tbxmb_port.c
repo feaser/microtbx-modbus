@@ -177,7 +177,7 @@ uint16_t TbxMbPortRtuTimerCount(void)
    * Theoretically you could also use a timer to generate an interrupt every 50 us. The 
    * interrupt service routine then increments a 16-bit unsigned integer counter. This
    * function would then return this counter value. However, this interrupt driven timer
-   * approach  would cause a high interrupt load. It is therefore better from a run-time
+   * approach would cause a high interrupt load. It is therefore better from a run-time
    * performance perspective to simply  configure your timer to increment its free
    * running counter every 50 microseconds.
    */
