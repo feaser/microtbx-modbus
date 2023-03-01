@@ -229,23 +229,27 @@ static void TbxMbRtuProcessEvent(tTbxMbEvent * event)
       /* Filter on the event identifier. */
       switch (event->id)
       {
-      case TBX_MB_EVENT_ID_PDU_RECEIVED:
-        /* Validate the newly received PDU at task level. */
-        if (TbxMbRtuValidate(tpCtx) == TBX_OK)
+        case TBX_MB_EVENT_ID_PDU_RECEIVED:
         {
-          /* The PDU is valid. Pass it on to the linked channel object for further 
-           * processing.
-           */
-          tTbxMbEvent newEvent;
-          newEvent.context = tpCtx->channelCtx;
-          newEvent.id = TBX_MB_EVENT_ID_PDU_RECEIVED;
-          TbxMbOsalPostEvent(&newEvent, TBX_FALSE);
+          /* Validate the newly received PDU at task level. */
+          if (TbxMbRtuValidate(tpCtx) == TBX_OK)
+          {
+            /* The PDU is valid. Pass it on to the linked channel object for further 
+             * processing.
+            */
+            tTbxMbEvent newEvent;
+            newEvent.context = tpCtx->channelCtx;
+            newEvent.id = TBX_MB_EVENT_ID_PDU_RECEIVED;
+            TbxMbOsalPostEvent(&newEvent, TBX_FALSE);
+          }
         }
         break;
       
-      default:
-        /* An unsupported event was dispatched to us. Should not happen. */
-        TBX_ASSERT(TBX_FALSE);
+        default:
+        {
+          /* An unsupported event was dispatched to us. Should not happen. */
+          TBX_ASSERT(TBX_FALSE);
+        }
         break;
       }
 
