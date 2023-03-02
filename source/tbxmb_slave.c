@@ -87,6 +87,11 @@ tTbxMbSlave TbxMbSlaveCreate(tTbxMbTp transport)
     {
       /* Convert the TP channel pointer to the context structure. */
       tTbxMbTpCtx * tpCtx = (tTbxMbTpCtx *)transport;
+      /* Sanity check on the transport layer's interface function. That way there is 
+       * no need to do it later on, making it more run-time efficient. 
+       */
+      TBX_ASSERT((tpCtx->transmitFcn != NULL) && (tpCtx->receptionDoneFcn != NULL) &&
+                 (tpCtx->getRxPacketFcn != NULL) && (tpCtx->getTxPacketFcn != NULL));
       /* Initialize the channel context. Start by crosslinking the transport layer. */
       newSlaveCtx->type = TBX_MB_SLAVE_CONTEXT_TYPE;
       newSlaveCtx->pollFcn = NULL;
@@ -172,16 +177,52 @@ static void TbxMbSlaveProcessEvent(tTbxMbEvent * event)
            * - Use getTxPacketFcn() to access the tx packet and prepare the reponse.
            * - Use receptionDoneFcn() to release rx packet (and go to RTU IDLE).
            * - Use transmitFcn() to transmit the tx response packet (from RTU IDLE).
+           * 
+           * Current test code hardcodes the reading of the first input register.
            */
-
-          /* Inform the transport layer that we are done processing the PDU. */
-          if (slaveCtx->tpCtx->receptionDoneFcn != NULL)
+          tTbxMbTpPacket *rxPacket = slaveCtx->tpCtx->getRxPacketFcn(slaveCtx->tpCtx);
+          tTbxMbTpPacket *txPacket = slaveCtx->tpCtx->getTxPacketFcn(slaveCtx->tpCtx);
+          uint8_t sendReponse = TBX_FALSE;
+          TBX_ASSERT(rxPacket != NULL);
+          TBX_ASSERT(txPacket != NULL);
+          /* Read discrete input register? */
+          if (rxPacket->pdu.code == 4U)
           {
-            slaveCtx->tpCtx->receptionDoneFcn(slaveCtx->tpCtx);
+            uint16_t startAddr;
+            uint16_t numRegs;
+            startAddr = (uint16_t)(rxPacket->pdu.data[0] << 8U) | rxPacket->pdu.data[1];
+            numRegs   = (uint16_t)(rxPacket->pdu.data[2] << 8U) | rxPacket->pdu.data[3];
+            /* Reading just input register address 0 (element 1)? */
+            if ( (startAddr == 0U) && (numRegs == 1U) )
+            {
+              txPacket->pdu.code = 4U;   
+              txPacket->pdu.data[0] = 2U; /* Byte count. */
+              txPacket->pdu.data[1] = 0x55U;
+              txPacket->pdu.data[2] = 0xAAU;
+              txPacket->dataLen = 3U;
+              sendReponse = TBX_TRUE;
+            }
+          }
+          /* Release rx packet (and go to RTU IDLE). */
+          slaveCtx->tpCtx->receptionDoneFcn(slaveCtx->tpCtx);
+          /* Transmit response? Should be done after receptionDoneFcn() otherwise
+           * RTU is not in IDLE.
+           */
+          if (sendReponse == TBX_TRUE)
+          {
+            (void)slaveCtx->tpCtx->transmitFcn(slaveCtx->tpCtx);
           }
         }
         break;
       
+        case TBX_MB_EVENT_ID_PDU_TRANSMITTED:
+        {
+          /* At this point no additional event handling is needed on this channel upon
+           * PDU transmission completion.
+           */
+        }
+        break;
+
         default:
         {
           /* An unsupported event was dispatched to us. Should not happen. */

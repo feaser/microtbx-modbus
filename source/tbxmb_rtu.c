@@ -172,12 +172,12 @@ tTbxMbTp TbxMbRtuCreate(uint8_t            nodeAddr,
       newTpCtx->type = TBX_MB_RTU_CONTEXT_TYPE;
       newTpCtx->pollFcn = TbxMbRtuPoll;
       newTpCtx->processFcn = NULL;
+      newTpCtx->transmitFcn = TbxMbRtuTransmit;
+      newTpCtx->receptionDoneFcn = TbxMbRtuReceptionDone;
       newTpCtx->getRxPacketFcn = TbxMbRtuGetRxPacket;
       newTpCtx->getTxPacketFcn = TbxMbRtuGetTxPacket;
       newTpCtx->nodeAddr = nodeAddr;
       newTpCtx->port = port;
-      newTpCtx->transmitFcn = TbxMbRtuTransmit;
-      newTpCtx->receptionDoneFcn = TbxMbRtuReceptionDone;
       newTpCtx->state = TBX_MB_RTU_STATE_INIT;
       newTpCtx->rxTime = TbxMbPortRtuTimerCount();
       /* Store the transport context in the lookup table. */
@@ -199,7 +199,7 @@ tTbxMbTp TbxMbRtuCreate(uint8_t            nodeAddr,
       else
       {
         /* On RTU, one character equals 11 bits: start-bit, 8 data-bits, parity-bit and
-         * stop-bit. In case no parity used, 2 stop-bits are required by the protocol.
+         * stop-bit. In case no parity is used, 2 stop-bits are required by the protocol.
          * This means that the number of characters per seconds equals the baudrate
          * divided by 11. The character time in seconds is the reciprocal of that.
          * Multiply by 10^6 to get the charater time in microseconds:
@@ -233,7 +233,7 @@ tTbxMbTp TbxMbRtuCreate(uint8_t            nodeAddr,
         newTpCtx->t3_5Ticks = (uint16_t)(((770000UL + (baudBps - 1UL)) / baudBps) + 1U);
       }
       /* Instruct the event task to call our polling function to be able to determine
-       * when it's time to transmission from INIT to IDLE.
+       * when it's time to transition from INIT to IDLE.
        */
       tTbxMbEvent newEvent = {.context = newTpCtx, .id = TBX_MB_EVENT_ID_START_POLLING};
       TbxMbOsalPostEvent(&newEvent, TBX_FALSE);
@@ -771,7 +771,7 @@ static void TbxMbRtuTransmitComplete(tTbxMbUartPort port)
        */
       TBX_ASSERT(tpCtx->state == TBX_MB_RTU_STATE_TRANSMISSION);
       /* Only continue in the TRANSMISSION state. */
-      if (tpCtx->state == TBX_MB_RTU_STATE_VALIDATION)
+      if (tpCtx->state == TBX_MB_RTU_STATE_TRANSMISSION)
       {
         /* Store the time that the transmission completed. */
         tpCtx->txDoneTime = TbxMbPortRtuTimerCount();

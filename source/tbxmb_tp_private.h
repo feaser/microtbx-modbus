@@ -137,7 +137,7 @@ typedef tTbxMbTpPacket * (* tTbxMbTpGetTxPacket)(tTbxMbTp transport);
  *           So at the end it is actually more RAM efficient to group the elements of
  *           all transport layers in one generic one.
  */
-typedef struct t_tbx_mb_tp_ctx
+typedef struct
 {
   /* Event interface methods. The following two entries must always be at the start
    * and exactly match those in tTbxMbEventCtx. Think of it as the base that this struct

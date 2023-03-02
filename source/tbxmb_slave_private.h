@@ -44,20 +44,20 @@ typedef void (* tTbxMbSlavePoll)(void * context);
 typedef void (* tTbxMbSlaveProcess)(tTbxMbEvent * event);
 
 
-/** \brief   Modbus slave channel layer context that groups all channel specific data. 
- *           It's what the tTbxMbSlave opaque pointer points to.
+/** \brief Modbus slave channel layer context that groups all channel specific data. 
+ *         It's what the tTbxMbSlave opaque pointer points to.
  */
-typedef struct t_tbx_mb_slave_ctx
+typedef struct
 {
   /* Event interface methods. The following two entries must always be at the start
    * and exactly match those in tTbxMbEventCtx. Think of it as the base that this struct
    * derives from. 
    */
-  tTbxMbSlavePoll          pollFcn;              /**< Event poll function.             */
-  tTbxMbSlaveProcess       processFcn;           /**< Event process function.          */
+  tTbxMbSlavePoll      pollFcn;                  /**< Event poll function.             */
+  tTbxMbSlaveProcess   processFcn;               /**< Event process function.          */
   /* Private members. */
-  uint8_t                  type;                 /**< Context type.                    */
-  struct t_tbx_mb_tp_ctx * tpCtx;                /**< Assigned transport layer context.*/
+  uint8_t              type;                     /**< Context type.                    */
+  tTbxMbTpCtx        * tpCtx;                    /**< Assigned transport layer context.*/
 } tTbxMbSlaveCtx;
 
 
