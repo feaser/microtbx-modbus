@@ -307,13 +307,26 @@ static void TbxMbRtuPoll(tTbxMbTp transport)
             /* Transition to the validation state. This prevents newly received bytes
              * from being added to the packet. No bytes should be received anyways at
              * this point, but you never know. Better safe than sorry.
-            */
+             */
             TbxCriticalSectionEnter();
             tpCtx->state = TBX_MB_RTU_STATE_VALIDATION;
             TbxCriticalSectionExit();
+            /* Packet reception complete. Set the PDU data length field. At this point 
+             * rxAduWrIdx holds to total received bytes in the ADU. The PDU data length
+             * is that one, minus:
+             * - Node address (1 byte)
+             * - Function code (1 byte)
+             * - CRC16 (2 bytes)
+             *
+             * Note that in the validation state, the data reception path is locked until
+             * a transition back to IDLE state is made. Consequenty, there is no need for
+             * critical sections when accessing the .rxXyz elements of the TP context. 
+             */
+            tpCtx->rxPacket.dataLen = tpCtx->rxAduWrIdx - 4U;
+
 
             /* TODO Run-time check to see if an end of packet can be detected. Could use
-             * QModbus.
+             * QModbus. It does...
              * ==== CONTINUE HERE ====
              */
 
@@ -372,8 +385,7 @@ static void TbxMbRtuPoll(tTbxMbTp transport)
 
       default:
       {
-        /* An unsupported state. Should not happen. */
-        TBX_ASSERT(TBX_FALSE);
+        /* In the current state, nothing needs to be done. */
       }
       break;
     }
@@ -698,6 +710,8 @@ static void TbxMbRtuDataReceived(      tTbxMbUartPort  port,
       /* Are we in the IDLE state? */
       else if (tpCtx->state == TBX_MB_RTU_STATE_IDLE)
       {
+        /* Transition to the RECEIVING state. */
+        tpCtx->state = TBX_MB_RTU_STATE_RECEPTION;
         /* Copy the received data at the start of the ADU. Note that there is no need
          * to do a check to see if it fits in the ADU buffer. The ADU can have up to
          * 256 bytes and the len parameter is an unsigned 8-bit so that always fits.

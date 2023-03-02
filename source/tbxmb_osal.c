@@ -273,7 +273,7 @@ void TbxMbOsalPostEvent(const tTbxMbEvent * event,
       /* Add the event to the queue. There should be space in the queue, so this should
        * always succeed.
        */
-      BaseType_t queueResult = xQueueSendFromISR(eventQueue, &event, 
+      BaseType_t queueResult = xQueueSendFromISR(eventQueue, event, 
                                                  &xHigherPriorityTaskWoken);
       /* Make sure the event could be added. If not, then the event queue size is set
        * too small. In this case increase the event queue size using configuration
