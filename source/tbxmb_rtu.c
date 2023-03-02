@@ -333,6 +333,11 @@ static void TbxMbRtuPoll(tTbxMbTp transport)
              * critical sections when accessing the .rxXyz elements of the TP context. 
              */
             tpCtx->rxPacket.dataLen = tpCtx->rxAduWrIdx - 4U;
+            /* Also store the node address in the packet's node element. That's were 
+             * channels expect it. It's in the first byte of the ADU and the ADU starts
+             * at one byte before the PDU, which is the last byte of head[].
+             */
+             tpCtx->rxPacket.node = tpCtx->rxPacket.head[TBX_MB_TP_ADU_HEAD_LEN_MAX-1U];
             /* Validate the newly received packet. */
             if (TbxMbRtuValidate(tpCtx) != TBX_OK)
             {
@@ -576,16 +581,13 @@ static uint8_t TbxMbRtuValidate(tTbxMbTp transport)
       if (packetCrc == calcCrc)
       {
         /* Checksum verification passed. Continue checking if the ADU is addresses to us.
-         * This check is different for a slave and a master. Start by reading out the
-         * node address from the ADU. It's in the first byte.
+         * This check is different for a slave and a master. Start with the slave case.
          */
-        uint8_t aduNodeAddr = aduPtr[0];
-        /* Linked to a slave channel? */
         if (tpCtx->isMaster == TBX_FALSE)
         {
           /* Only process frames that are addressed to us (unicast or broadcast). */
-          if ( (aduNodeAddr == tpCtx->nodeAddr) ||
-               (aduNodeAddr == TBX_MB_RTU_NODE_ADDR_BROADCAST) )
+          if ( (tpCtx->rxPacket.node == tpCtx->nodeAddr) ||
+               (tpCtx->rxPacket.node == TBX_MB_RTU_NODE_ADDR_BROADCAST) )
           {
             /* Packet is valid. Update the result accordingly. */
             result = TBX_OK;
@@ -595,8 +597,8 @@ static uint8_t TbxMbRtuValidate(tTbxMbTp transport)
         else
         {
           /* Only process frames that are send from a valid slave. */
-          if ( (aduNodeAddr >= TBX_MB_RTU_NODE_ADDR_MIN) ||
-               (aduNodeAddr <= TBX_MB_RTU_NODE_ADDR_MAX) )
+          if ( (tpCtx->rxPacket.node >= TBX_MB_RTU_NODE_ADDR_MIN) ||
+               (tpCtx->rxPacket.node <= TBX_MB_RTU_NODE_ADDR_MAX) )
           {
             /* Packet is valid. Update the result accordingly. */
             result = TBX_OK;
