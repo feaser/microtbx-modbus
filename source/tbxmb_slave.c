@@ -162,8 +162,30 @@ static void TbxMbSlaveProcessEvent(tTbxMbEvent * event)
     {
       /* Sanity check on the context type. */
       TBX_ASSERT(slaveCtx->type == TBX_MB_SLAVE_CONTEXT_TYPE);
-      /* TODO Implement TbxMbSlaveProcessEvent(). */
-      slaveCtx->processFcn = TbxMbSlaveProcessEvent; /* Dummy for now. */
+      /* Filter on the event identifier. */
+      switch (event->id)
+      {
+        case TBX_MB_EVENT_ID_PDU_RECEIVED:
+        {
+          /* TODO Process the newly received PDU. */
+
+          /* Inform the transport layer that we are done processing the PDU. */
+          if (slaveCtx->tpCtx->receptionDoneFcn != NULL)
+          {
+            slaveCtx->tpCtx->receptionDoneFcn(slaveCtx->tpCtx);
+          }
+        }
+        break;
+      
+        default:
+        {
+          /* An unsupported event was dispatched to us. Should not happen. */
+          TBX_ASSERT(TBX_FALSE);
+        }
+        break;
+      }
+
+
     }
   }
 } /*** end of TbxMbSlaveProcessEvent ***/

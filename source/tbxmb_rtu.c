@@ -41,30 +41,39 @@
 * Macro definitions
 ****************************************************************************************/
 /** \brief Unique context type to identify a context as being an RTU transport layer. */
-#define TBX_MB_RTU_CONTEXT_TYPE        (84U)
+#define TBX_MB_RTU_CONTEXT_TYPE             (84U)
 
 /** \brief Initial state. */
-#define TBX_MB_RTU_STATE_INIT          (0U)
+#define TBX_MB_RTU_STATE_INIT               (0U)
 
 /** \brief Idle state. Ready to receive or transmit. */
-#define TBX_MB_RTU_STATE_IDLE          (1U)
+#define TBX_MB_RTU_STATE_IDLE               (1U)
 
 /** \brief Transmitting a PDU state. */
-#define TBX_MB_RTU_STATE_TRANSMISSION  (2U)
+#define TBX_MB_RTU_STATE_TRANSMISSION       (2U)
 
 /** \brief Receiving a PDU state. */
-#define TBX_MB_RTU_STATE_RECEPTION     (3U)
+#define TBX_MB_RTU_STATE_RECEPTION          (3U)
 
 /** \brief Validating a newly received PDU state. */
-#define TBX_MB_RTU_STATE_VALIDATION    (4U)
+#define TBX_MB_RTU_STATE_VALIDATION         (4U)
+
+/** \brief Node address value for broadcast purposes. */
+#define TBX_MB_RTU_NODE_ADDR_BROADCAST      (0U)
+
+/** \brief Minimum value of a valid node address. */
+#define TBX_MB_RTU_NODE_ADDR_MIN            (1U)
+
+/** \brief Maximum value of a valid node address. */
+#define TBX_MB_RTU_NODE_ADDR_MAX            (247U)
 
 
 /****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
 static void     TbxMbRtuPoll(tTbxMbTp transport);
-static void     TbxMbRtuProcessEvent(tTbxMbEvent * event);
 static uint8_t  TbxMbRtuTransmit(tTbxMbTp transport);
+static void     TbxMbRtuReceptionDone(tTbxMbTp transport);
 static uint8_t  TbxMbRtuValidate(tTbxMbTp transport);
 static void     TbxMbRtuTransmitComplete(tTbxMbUartPort port);
 static void     TbxMbRtuDataReceived(      tTbxMbUartPort   port, 
@@ -113,14 +122,14 @@ tTbxMbTp TbxMbRtuCreate(uint8_t            nodeAddr,
   TbxMbOsalInit();
 
   /* Verify parameters. */
-  TBX_ASSERT((nodeAddr <= 247U) &&
+  TBX_ASSERT((nodeAddr <= TBX_MB_RTU_NODE_ADDR_MAX) &&
              (port < TBX_MB_UART_NUM_PORT) && 
              (baudrate < TBX_MB_UART_NUM_BAUDRATE) &&
              (stopbits < TBX_MB_UART_NUM_STOPBITS) &&
              (parity < TBX_MB_UART_NUM_PARITY));
 
   /* Only continue with valid parameters. */
-  if ((nodeAddr <= 247U) &&
+  if ((nodeAddr <= TBX_MB_RTU_NODE_ADDR_MAX) &&
       (port < TBX_MB_UART_NUM_PORT) && 
       (baudrate < TBX_MB_UART_NUM_BAUDRATE) &&
       (stopbits < TBX_MB_UART_NUM_STOPBITS) &&
@@ -145,10 +154,11 @@ tTbxMbTp TbxMbRtuCreate(uint8_t            nodeAddr,
       /* Initialize the transport context. */
       newTpCtx->type = TBX_MB_RTU_CONTEXT_TYPE;
       newTpCtx->pollFcn = TbxMbRtuPoll;
-      newTpCtx->processFcn = TbxMbRtuProcessEvent;
+      newTpCtx->processFcn = NULL;
       newTpCtx->nodeAddr = nodeAddr;
       newTpCtx->port = port;
       newTpCtx->transmitFcn = TbxMbRtuTransmit;
+      newTpCtx->receptionDoneFcn = TbxMbRtuReceptionDone;
       newTpCtx->txLocked = TBX_FALSE;
       newTpCtx->state = TBX_MB_RTU_STATE_INIT;
       newTpCtx->rxTime = TbxMbPortRtuTimerCount();
@@ -323,24 +333,23 @@ static void TbxMbRtuPoll(tTbxMbTp transport)
              * critical sections when accessing the .rxXyz elements of the TP context. 
              */
             tpCtx->rxPacket.dataLen = tpCtx->rxAduWrIdx - 4U;
-
-
-            /* TODO Run-time check to see if an end of packet can be detected. Could use
-             * QModbus. It does...
-             * ==== CONTINUE HERE ====
-             */
-
-            /* TODO Call the validation function right here. Since we are already at
-             * task level. If OK, then generate the TBX_MB_EVENT_ID_PDU_RECEIVED
-             * received event.
-             * Note that this also means that this TP module doesn't need a 
-             * TbxMbRtuProcessEvent() at all.
-             */
-            /* TODO Need to think of a way for the channels to flag to the transport
-             * layer that they processed the rxPacket. Because this TP layer needs to
-             * then set the state back to IDLE. Probably need a receptionDoneFcn in
-             * the TP context for this.
-             */
+            /* Validate the newly received packet. */
+            if (TbxMbRtuValidate(tpCtx) != TBX_OK)
+            {
+              /* Discard the newly received frame by transitioning back to IDLE. */
+              TbxCriticalSectionEnter();
+              tpCtx->state = TBX_MB_RTU_STATE_IDLE;
+              TbxCriticalSectionExit();
+            }
+            /* Newly received packet is valid. */
+            else
+            {
+              /* Post an event to the linked channel for further processing of the PDU.*/
+              tTbxMbEvent pduRxEvent;
+              pduRxEvent.context = tpCtx->channelCtx;
+              pduRxEvent.id = TBX_MB_EVENT_ID_PDU_RECEIVED;
+              TbxMbOsalPostEvent(&pduRxEvent, TBX_FALSE);
+            }
           }
           /* Frame was marked as not okay (NOK) during its reception. Most likely a
            * 1.5 character timeout. 
@@ -391,63 +400,6 @@ static void TbxMbRtuPoll(tTbxMbTp transport)
     }
   }
 } /*** end of TbxMbRtuPoll ***/
-
-
-/************************************************************************************//**
-** \brief     Event processing function that is automatically called when an event for
-**            this transport layer object was received in TbxMbEventTask().
-** \param     event Pointer to the event to process. Note that the event->context points
-**            to the handle of the RTU transport layer object.
-**
-****************************************************************************************/
-static void TbxMbRtuProcessEvent(tTbxMbEvent * event)
-{
-  /* Verify parameters. */
-  TBX_ASSERT(event != NULL);
-
-  /* Only continue with valid parameters. */
-  if (event != NULL)
-  {
-    /* Sanity check the context. */
-    TBX_ASSERT(event->context != NULL);
-    /* Convert the event context to the TP context structure. */
-    tTbxMbTpCtx * tpCtx = (tTbxMbTpCtx *)event->context;
-    /* Make sure the context is valid. */
-    TBX_ASSERT(tpCtx != NULL);
-    /* Only continue with a valid context. */
-    if (tpCtx != NULL)
-    {
-      /* Sanity check on the context type. */
-      TBX_ASSERT(tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE);
-      /* Filter on the event identifier. */
-      switch (event->id)
-      {
-        case TBX_MB_EVENT_ID_PDU_RECEIVED:
-        {
-          /* Validate the newly received PDU at task level. */
-          if (TbxMbRtuValidate(tpCtx) == TBX_OK)
-          {
-            /* The PDU is valid. Pass it on to the linked channel object for further 
-             * processing.
-            */
-            tTbxMbEvent newEvent;
-            newEvent.context = tpCtx->channelCtx;
-            newEvent.id = TBX_MB_EVENT_ID_PDU_RECEIVED;
-            TbxMbOsalPostEvent(&newEvent, TBX_FALSE);
-          }
-        }
-        break;
-      
-        default:
-        {
-          /* An unsupported event was dispatched to us. Should not happen. */
-          TBX_ASSERT(TBX_FALSE);
-        }
-        break;
-      }
-    }
-  }
-} /*** end of TbxMbRtuProcessEvent ***/
 
 
 /************************************************************************************//**
@@ -528,6 +480,49 @@ static uint8_t TbxMbRtuTransmit(tTbxMbTp transport)
 
 
 /************************************************************************************//**
+** \brief     Signals that the caller is done with processing a reception PDU. Should be
+**            called by a channel after receiving the TBX_MB_EVENT_ID_PDU_RECEIVED event
+**            and no longer needing access to the PDU stored in the transport layer
+**             context.
+** \param     transport Handle to RTU transport layer object.
+**
+****************************************************************************************/
+static void TbxMbRtuReceptionDone(tTbxMbTp transport)
+{
+  /* Verify parameters. */
+  TBX_ASSERT(transport != NULL);
+
+  /* Only continue with valid parameters. */
+  if (transport != NULL)
+  {
+    /* Convert the TP channel pointer to the context structure. */
+    tTbxMbTpCtx * tpCtx = (tTbxMbTpCtx *)transport;
+    /* Sanity check on the context type. */
+    TBX_ASSERT(tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE);
+    /* This function should only be called in the validation state. Verify this. */
+    TbxCriticalSectionEnter();
+    uint8_t currentState = tpCtx->state;
+    TbxCriticalSectionExit();
+    TBX_ASSERT(currentState == TBX_MB_RTU_STATE_VALIDATION);
+    /* Only continue in the validation state. Note that in the validation state, the data
+     * reception path is locked until a transition back to IDLE state is made.
+     * Consequenty, there is no need for critical sections when accessing the .rxXyz
+     * elements of the TP context. 
+     */
+    if (currentState == TBX_MB_RTU_STATE_VALIDATION)
+    {
+      /* Transistion back to the IDLE state. Note that this also unlocks the data
+       * reception path, the .rxXyz elements of the TP context.
+       */
+      TbxCriticalSectionEnter();
+      tpCtx->state = TBX_MB_RTU_STATE_IDLE;
+      TbxCriticalSectionExit();
+    }
+  }
+} /*** end of TbxMbRtuReceptionDone ****/
+
+
+/************************************************************************************//**
 ** \brief     Validates a newly received communication packet, stored in the transport
 **            layer object.
 ** \param     transport Handle to RTU transport layer object.
@@ -553,15 +548,61 @@ static uint8_t TbxMbRtuValidate(tTbxMbTp transport)
     uint8_t currentState = tpCtx->state;
     TbxCriticalSectionExit();
     TBX_ASSERT(currentState == TBX_MB_RTU_STATE_VALIDATION);
-    /* Only continue in the validation state. */
+    /* Only continue in the validation state. Note that in the validation state, the data
+     * reception path is locked until a transition back to IDLE state is made.
+     * Consequenty, there is no need for critical sections when accessing the .rxXyz
+     * elements of the TP context. 
+     */
     if (currentState == TBX_MB_RTU_STATE_VALIDATION)
     {
-      /* Note that in the validation state, the data reception path is locked until a
-       * transition back to IDLE state is made. Consequenty, there is no need for
-       * critical sections when accessing the .rxXyz elements of the TP context. 
+      /* The ADU for an RTU packet starts at one byte before the PDU, which is the last
+       * byte of head[]. Get the pointer of where the ADU starts in the rxPacket.
        */
-      /* TODO Implement TbxMbRtuValidate(). It needs to check the CRC of rxPacket.
+      uint8_t * aduPtr = &tpCtx->rxPacket.head[TBX_MB_TP_ADU_HEAD_LEN_MAX-1U];
+      /* The CRC16 is stored in the 2 bytes after the PDU data bytes:
+       * - Node address (1 byte)
+       * - Function code (1 byte)
+       * - Packet data (dataLen bytes)
+       * - CRC16 (2 bytes)
        */
+      uint8_t * crcPtr = &aduPtr[2U + tpCtx->rxPacket.dataLen];
+      /* Read out the CRC16 stored in the ADU packet. */
+      uint16_t packetCrc = crcPtr[0] | (uint16_t)(crcPtr[1] << 8U);
+      /* Calculate the CRC16 based on the packet contents. It's calculated over the
+       * entire ADU data, just excluding the last two byte with the CRC16.
+       */
+      uint16_t calcCrc = TbxMbRtuCalculatCrc(aduPtr, tpCtx->rxPacket.dataLen + 2U);
+      /* Are the two CRC16s a match? */
+      if (packetCrc == calcCrc)
+      {
+        /* Checksum verification passed. Continue checking if the ADU is addresses to us.
+         * This check is different for a slave and a master. Start by reading out the
+         * node address from the ADU. It's in the first byte.
+         */
+        uint8_t aduNodeAddr = aduPtr[0];
+        /* Linked to a slave channel? */
+        if (tpCtx->isMaster == TBX_FALSE)
+        {
+          /* Only process frames that are addressed to us (unicast or broadcast). */
+          if ( (aduNodeAddr == tpCtx->nodeAddr) ||
+               (aduNodeAddr == TBX_MB_RTU_NODE_ADDR_BROADCAST) )
+          {
+            /* Packet is valid. Update the result accordingly. */
+            result = TBX_OK;
+          }
+        }
+        /* Linked to a master channel. */
+        else
+        {
+          /* Only process frames that are send from a valid slave. */
+          if ( (aduNodeAddr >= TBX_MB_RTU_NODE_ADDR_MIN) ||
+               (aduNodeAddr <= TBX_MB_RTU_NODE_ADDR_MAX) )
+          {
+            /* Packet is valid. Update the result accordingly. */
+            result = TBX_OK;
+          }
+        }
+      }
     }
   }
   /* Give the result back to the caller. */
