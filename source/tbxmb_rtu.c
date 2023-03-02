@@ -337,7 +337,7 @@ static void TbxMbRtuPoll(tTbxMbTp transport)
              * channels expect it. It's in the first byte of the ADU and the ADU starts
              * at one byte before the PDU, which is the last byte of head[].
              */
-             tpCtx->rxPacket.node = tpCtx->rxPacket.head[TBX_MB_TP_ADU_HEAD_LEN_MAX-1U];
+            tpCtx->rxPacket.node = tpCtx->rxPacket.head[TBX_MB_TP_ADU_HEAD_LEN_MAX-1U];
             /* Validate the newly received packet. */
             if (TbxMbRtuValidate(tpCtx) != TBX_OK)
             {
