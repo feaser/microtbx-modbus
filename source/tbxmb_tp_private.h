@@ -122,8 +122,9 @@ typedef struct t_tbx_mb_tp_ctx
   tTbxMbTpPacket     txPacket;                   /**< Transmit packet buffer.          */
   uint8_t            txLocked;                   /**< Transmit packet MUX flag.        */
   tTbxMbTpPacket     rxPacket;                   /**< Reception packet buffer.         */
-  uint8_t            rxLocked;                   /**< Reception packet MUX flag.       */
   uint16_t           rxTime;                     /**< Last Rx byte timestamp.          */
+  uint16_t           rxAduWrIdx;                 /**< ADU Rx packet write index.       */
+  uint16_t           rxAduOkay;                  /**< ADU Rx packet OK/NOK flag.       */
   uint16_t           txTime;                     /**< Last Tx byte timestamp.          */
   uint16_t           t1_5Ticks;                  /**< 1.5 character time in 50us ticks.*/
   uint16_t           t3_5Ticks;                  /**< 3.5 character time in 50us ticks.*/

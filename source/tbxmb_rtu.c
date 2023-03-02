@@ -150,7 +150,6 @@ tTbxMbTp TbxMbRtuCreate(uint8_t            nodeAddr,
       newTpCtx->port = port;
       newTpCtx->transmitFcn = TbxMbRtuTransmit;
       newTpCtx->txLocked = TBX_FALSE;
-      newTpCtx->rxLocked = TBX_FALSE;
       newTpCtx->state = TBX_MB_RTU_STATE_INIT;
       newTpCtx->rxTime = TbxMbPortRtuTimerCount();
       newTpCtx->txTime = newTpCtx->rxTime;
@@ -277,6 +276,73 @@ static void TbxMbRtuPoll(tTbxMbTp transport)
     TbxCriticalSectionExit();
     switch (currentState)
     {
+      case TBX_MB_RTU_STATE_RECEPTION:
+      {
+        uint8_t endOfPacket = TBX_FALSE;
+        TbxCriticalSectionEnter();
+        /* Calculate the number of time ticks that elapsed since the reception of the
+         * last byte, whichever one comes last. Note that this calculation works, even if
+         * the RTU timer counter overflowed.
+         */
+        uint16_t deltaTicks = TbxMbPortRtuTimerCount() - tpCtx->rxTime;
+        /* This 3.5 character times elapse since the last byte reception? */
+        if (deltaTicks >= tpCtx->t3_5Ticks)
+        {
+          /* Set flag that an end of packet was detected. */
+          endOfPacket = TBX_TRUE;
+        }
+        TbxCriticalSectionExit();
+        /* End of packet detected? */
+        if (endOfPacket == TBX_TRUE)
+        {
+          /* Instruct the event task to stop calling our polling function. */
+          tTbxMbEvent newEvent = {.context = tpCtx, .id = TBX_MB_EVENT_ID_STOP_POLLING};
+          TbxMbOsalPostEvent(&newEvent, TBX_FALSE);
+          /* Is the newly received frame still in the OK state? */
+          TbxCriticalSectionEnter();
+          uint8_t rxAduOkayCpy = tpCtx->rxAduOkay;
+          TbxCriticalSectionExit();
+          if (rxAduOkayCpy == TBX_TRUE)
+          {
+            /* Transition to the validation state. This prevents newly received bytes
+             * from being added to the packet. No bytes should be received anyways at
+             * this point, but you never know. Better safe than sorry.
+            */
+            TbxCriticalSectionEnter();
+            tpCtx->state = TBX_MB_RTU_STATE_VALIDATION;
+            TbxCriticalSectionExit();
+
+            /* TODO Run-time check to see if an end of packet can be detected. Could use
+             * QModbus.
+             * ==== CONTINUE HERE ====
+             */
+
+            /* TODO Call the validation function right here. Since we are already at
+             * task level. If OK, then generate the TBX_MB_EVENT_ID_PDU_RECEIVED
+             * received event.
+             * Note that this also means that this TP module doesn't need a 
+             * TbxMbRtuProcessEvent() at all.
+             */
+            /* TODO Need to think of a way for the channels to flag to the transport
+             * layer that they processed the rxPacket. Because this TP layer needs to
+             * then set the state back to IDLE. Probably need a receptionDoneFcn in
+             * the TP context for this.
+             */
+          }
+          /* Frame was marked as not okay (NOK) during its reception. Most likely a
+           * 1.5 character timeout. 
+           */
+          else
+          {
+            /* Discard the newly received frame by transitioning back to IDLE. */
+            TbxCriticalSectionEnter();
+            tpCtx->state = TBX_MB_RTU_STATE_IDLE;
+            TbxCriticalSectionExit();
+          }
+        }
+      }
+      break;
+
       case TBX_MB_RTU_STATE_INIT:
       {
         uint8_t transitionToIdle = TBX_FALSE;
@@ -367,7 +433,6 @@ static void TbxMbRtuProcessEvent(tTbxMbEvent * event)
         }
         break;
       }
-
     }
   }
 } /*** end of TbxMbRtuProcessEvent ***/
@@ -471,7 +536,21 @@ static uint8_t TbxMbRtuValidate(tTbxMbTp transport)
     tTbxMbTpCtx * tpCtx = (tTbxMbTpCtx *)transport;
     /* Sanity check on the context type. */
     TBX_ASSERT(tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE);
-    /* TODO Implement TbxMbRtuValidate(). It needs to check the CRC of rxPacket. */
+    /* This function should only be called in the validation state. Verify this. */
+    TbxCriticalSectionEnter();
+    uint8_t currentState = tpCtx->state;
+    TbxCriticalSectionExit();
+    TBX_ASSERT(currentState == TBX_MB_RTU_STATE_VALIDATION);
+    /* Only continue in the validation state. */
+    if (currentState == TBX_MB_RTU_STATE_VALIDATION)
+    {
+      /* Note that in the validation state, the data reception path is locked until a
+       * transition back to IDLE state is made. Consequenty, there is no need for
+       * critical sections when accessing the .rxXyz elements of the TP context. 
+       */
+      /* TODO Implement TbxMbRtuValidate(). It needs to check the CRC of rxPacket.
+       */
+    }
   }
   /* Give the result back to the caller. */
   return result;
@@ -565,19 +644,83 @@ static void TbxMbRtuDataReceived(      tTbxMbUartPort  port,
      */
     if (tpCtx != NULL)
     {
-      /* Store the reception timestamp. */
-      tpCtx->rxTime = TbxMbPortRtuTimerCount();
-      /* TODO Use switch or if/else in a smart order to first handle the state that
-       * will happen the most to keep the ISR latency low.
+      /* Store the reception timestamp but first make a backup of the old timestamp, 
+       * which is needed later on to do the 1.5 character timeout detection.
        */
-
-      /* Only need to store the newly received byte in IDLE and RECEPTION state. */
-      if ( (tpCtx->state == TBX_MB_RTU_STATE_IDLE) ||
-           (tpCtx->state == TBX_MB_RTU_STATE_RECEPTION) )
+      uint16_t oldRxTime = tpCtx->rxTime;
+      tpCtx->rxTime = TbxMbPortRtuTimerCount();
+      /* The ADU for an RTU packet starts at one byte before the PDU, which is the last
+       * byte of head[]. Get the pointer of where the ADU starts in the rxPacket.
+       */
+      uint8_t * aduPtr = &tpCtx->rxPacket.head[TBX_MB_TP_ADU_HEAD_LEN_MAX-1U];
+      /* Are we in the RECEPTION state? Make sure to check this one first, as it will 
+       * happen the most.
+       */
+      if (tpCtx->state == TBX_MB_RTU_STATE_RECEPTION)
       {
-        /* TODO Store the byte in the rx packet. Handle locked thing as well. Probaly
-         * need a rxWrIdx (16-bit to be safe) for writing into the rxPacket.
-        */
+        /* Check if a 1.5 character timeout occurred since the last reception. Note that
+         * this calculation works, even if the RTU timer counter overflowed.
+         */
+        uint16_t deltaTicks = tpCtx->rxTime - oldRxTime;
+        if (deltaTicks >= tpCtx->t1_5Ticks)
+        {
+          /* Flag frame as not okay (NOK). */
+          tpCtx->rxAduOkay = TBX_FALSE;
+        }
+        /* Check if the newly received data would still fit. Note that an ADU on RTU can
+         * have max 256 bytes:
+         * - Node address (1 byte)
+         * - Function code (1 byte)
+         * - Packet data (max 252 bytes)
+         * - CRC16 (2 bytes)
+         */
+        if ((tpCtx->rxAduWrIdx + len) > 256U)
+        {
+          /* Flag frame as not okay (NOK). */
+          tpCtx->rxAduOkay = TBX_FALSE;
+        }
+        /* Only process the newly received data if the ADU reception frame is still
+         * flagged as OK. If not, then eventually a 3.5 character idle time will be
+         * detected to mark the end of the packet/frame. At which point its data will be
+         * discarded.
+         */
+        if (tpCtx->rxAduOkay == TBX_TRUE)
+        {
+          /* Append the received data to the ADU. */
+          for (uint8_t idx = 0U; idx < len; idx++)
+          {
+            aduPtr[tpCtx->rxAduWrIdx + idx] = data[idx];
+          }
+          /* Update the write indexer into the ADU reception packet. */
+          tpCtx->rxAduWrIdx += len;
+        }
+      }
+      /* Are we in the IDLE state? */
+      else if (tpCtx->state == TBX_MB_RTU_STATE_IDLE)
+      {
+        /* Copy the received data at the start of the ADU. Note that there is no need
+         * to do a check to see if it fits in the ADU buffer. The ADU can have up to
+         * 256 bytes and the len parameter is an unsigned 8-bit so that always fits.
+         */
+        for (uint8_t idx = 0U; idx < len; idx++)
+        {
+          aduPtr[idx] = data[idx];
+        }
+        /* Initialize the write indexer into the ADU reception packet, while taking into
+         * account the bytes that were just written.
+         */
+        tpCtx->rxAduWrIdx = len;
+        /* Initialize frame OK/NOK flag to okay so far. */
+        tpCtx->rxAduOkay = TBX_TRUE;
+        /* Instruct the event task to call our polling function to be able to determine
+         * when the 3.5 character idle time occurred, which marks the end of the packet.
+         */
+        tTbxMbEvent newEvent = {.context = tpCtx, .id = TBX_MB_EVENT_ID_START_POLLING};
+        TbxMbOsalPostEvent(&newEvent, TBX_TRUE);
+      }
+      else
+      {
+        /* Nothing left to do, but MISRA requires this terminating else statement. */
       }
     }
   }
