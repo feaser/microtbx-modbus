@@ -49,9 +49,14 @@ typedef void (* tTbxMbSlaveProcess)(tTbxMbEvent * event);
  */
 typedef struct t_tbx_mb_slave_ctx
 {
-  uint8_t                  type;                 /**< Context type.                    */
+  /* Event interface methods. The following two entries must always be at the start
+   * and exactly match those in tTbxMbEventCtx. Think of it as the base that this struct
+   * derives from. 
+   */
   tTbxMbSlavePoll          pollFcn;              /**< Event poll function.             */
   tTbxMbSlaveProcess       processFcn;           /**< Event process function.          */
+  /* Private members. */
+  uint8_t                  type;                 /**< Context type.                    */
   struct t_tbx_mb_tp_ctx * tpCtx;                /**< Assigned transport layer context.*/
 } tTbxMbSlaveCtx;
 

@@ -53,7 +53,9 @@ typedef void (* tTbxMbEventProcess)(tTbxMbEvent * event);
  */
 typedef struct
 {
-  uint8_t            type;                       /**< Context type.                    */
+  /* The following two entries must always be at the start and not change order. They
+   * form the base that other context derive from.
+   */
   tTbxMbEventPoll    pollFcn;                    /**< Event poll function.             */
   tTbxMbEventProcess processFcn;                 /**< Event process function.          */
 } tTbxMbEventCtx;

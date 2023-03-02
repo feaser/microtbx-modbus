@@ -93,18 +93,34 @@ typedef void (* tTbxMbTpProcess)(tTbxMbEvent * event);
 
 
 /** \brief Transport layer interface function to start the transmission of the data 
- *         packet, stored in the transport layer context.
+ *         packet, stored in the transport layer context. Use getTxPacketFcn() to
+ *         obtain access to the transmit packet.
  */
 typedef uint8_t (* tTbxMbTpTransmit)(tTbxMbTp transport);
 
 
 /** \brief Transport layer interface function to signal that the channel is done
- *         processing the received PDU. Should be called by a channel after receiving
- *         the TBX_MB_EVENT_ID_PDU_RECEIVED event and no longer needing access to the
- *         PDU stored in the transport layer context.
+ *         processing the newly received packet and no longer needs access to it.
+ *         Should be called by a channel after it called getRxPacketFcn() while handling
+ *         the TBX_MB_EVENT_ID_PDU_RECEIVED event.
  */
 typedef void (* tTbxMbTpReceptionDone)(tTbxMbTp transport);
 
+
+/** \brief Transport layer interface function to be called by a channel to obtain read
+ *         access to the reception packet. Returns NULL is the packet is currently not
+ *         accessible. Can be called when processing the TBX_MB_EVENT_ID_PDU_RECEIVED
+ *         event.
+ */
+typedef tTbxMbTpPacket * (* tTbxMbTpGetRxPacket)(tTbxMbTp transport);
+
+
+/** \brief Transport layer interface function to be called by a channel to obtain write
+ *         access to the transmission packet. Returns NULL is the packet is currently not
+ *         accessible. Can by called to prepare the transmit packet before calling the
+ *         transport layer's transmitFcn().
+ */
+typedef tTbxMbTpPacket * (* tTbxMbTpGetTxPacket)(tTbxMbTp transport);
 
 
 /** \brief   Modbus transport layer context that groups all transport layer specific
@@ -123,14 +139,18 @@ typedef void (* tTbxMbTpReceptionDone)(tTbxMbTp transport);
  */
 typedef struct t_tbx_mb_tp_ctx
 {
-  uint8_t                 type;                  /**< Context type.                    */
+  /* Event interface methods. The following two entries must always be at the start
+   * and exactly match those in tTbxMbEventCtx. Think of it as the base that this struct
+   * derives from. 
+   */
   tTbxMbTpPoll            pollFcn;               /**< Event poll function.             */
   tTbxMbTpProcess         processFcn;            /**< Event process function.          */
+  /* Private members. */
+  uint8_t                 type;                  /**< Context type.                    */
   uint8_t                 nodeAddr;              /**< Node address (RTU/ASCII only).   */
   tTbxMbUartPort          port;                  /**< UART port (RTU/ASCII only)     . */
   tTbxMbTpPacket          txPacket;              /**< Transmit packet buffer.          */
-  uint16_t                txTime;                /**< Last Tx byte timestamp.          */
-  uint8_t                 txLocked;              /**< Transmit packet MUX flag.        */
+  uint16_t                txDoneTime;            /**< Tx packet done timestamp.        */
   tTbxMbTpPacket          rxPacket;              /**< Reception packet buffer.         */
   uint16_t                rxTime;                /**< Last Rx byte timestamp.          */
   uint16_t                rxAduWrIdx;            /**< ADU Rx packet write index.       */
@@ -138,10 +158,13 @@ typedef struct t_tbx_mb_tp_ctx
   uint16_t                t1_5Ticks;             /**< 1.5 character time in 50us ticks.*/
   uint16_t                t3_5Ticks;             /**< 3.5 character time in 50us ticks.*/
   uint8_t                 state;                 /**< Communication state.             */
+  uint8_t                 isMaster;              /**< Info about the channel context.  */
+  /* Public methods and members. */
+  void                  * channelCtx;            /**< Assigned channel context.        */
   tTbxMbTpTransmit        transmitFcn;           /**< Packet transmit function.        */
   tTbxMbTpReceptionDone   receptionDoneFcn;      /**< Rx packet processing done fcn.   */
-  void                  * channelCtx;            /**< Assigned channel context.        */
-  uint8_t                 isMaster;              /**< Info about the channel context.  */
+  tTbxMbTpGetRxPacket     getRxPacketFcn;        /**< Obtain Rx packet access function.*/
+  tTbxMbTpGetTxPacket     getTxPacketFcn;        /**< Obtain Rx packet access function.*/
 } tTbxMbTpCtx;
 
 

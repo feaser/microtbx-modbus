@@ -167,7 +167,12 @@ static void TbxMbSlaveProcessEvent(tTbxMbEvent * event)
       {
         case TBX_MB_EVENT_ID_PDU_RECEIVED:
         {
-          /* TODO Process the newly received PDU. */
+          /* TODO Process the newly received PDU. 
+           * - Use getRxPacketFcn() to access the rx packet.
+           * - Use getTxPacketFcn() to access the tx packet and prepare the reponse.
+           * - Use receptionDoneFcn() to release rx packet (and go to RTU IDLE).
+           * - Use transmitFcn() to transmit the tx response packet (from RTU IDLE).
+           */
 
           /* Inform the transport layer that we are done processing the PDU. */
           if (slaveCtx->tpCtx->receptionDoneFcn != NULL)
@@ -184,8 +189,6 @@ static void TbxMbSlaveProcessEvent(tTbxMbEvent * event)
         }
         break;
       }
-
-
     }
   }
 } /*** end of TbxMbSlaveProcessEvent ***/

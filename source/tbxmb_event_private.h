@@ -43,6 +43,8 @@ typedef enum
   TBX_MB_EVENT_ID_STOP_POLLING,
   /* Transport layer received a new protocol data unit (PDU). */
   TBX_MB_EVENT_ID_PDU_RECEIVED,
+  /* Transport layer completed transmission of a protocol data unit (PDU). */
+  TBX_MB_EVENT_ID_PDU_TRANSMITTED,
   /* Extra entry to obtain the number of elements. */
   TBX_MB_EVENT_NUM_ID
 } tTbxMbEventId;
