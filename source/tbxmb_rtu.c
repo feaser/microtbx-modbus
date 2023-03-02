@@ -43,6 +43,15 @@
 /** \brief Unique context type to identify a context as being an RTU transport layer. */
 #define TBX_MB_RTU_CONTEXT_TYPE             (84U)
 
+/** \brief Node address value for broadcast purposes. */
+#define TBX_MB_RTU_NODE_ADDR_BROADCAST      (0U)
+
+/** \brief Minimum value of a valid node address. */
+#define TBX_MB_RTU_NODE_ADDR_MIN            (1U)
+
+/** \brief Maximum value of a valid node address. */
+#define TBX_MB_RTU_NODE_ADDR_MAX            (247U)
+
 /** \brief Initial state. */
 #define TBX_MB_RTU_STATE_INIT               (0U)
 
@@ -57,15 +66,6 @@
 
 /** \brief Validating a newly received PDU state. */
 #define TBX_MB_RTU_STATE_VALIDATION         (4U)
-
-/** \brief Node address value for broadcast purposes. */
-#define TBX_MB_RTU_NODE_ADDR_BROADCAST      (0U)
-
-/** \brief Minimum value of a valid node address. */
-#define TBX_MB_RTU_NODE_ADDR_MIN            (1U)
-
-/** \brief Maximum value of a valid node address. */
-#define TBX_MB_RTU_NODE_ADDR_MAX            (247U)
 
 
 /****************************************************************************************
