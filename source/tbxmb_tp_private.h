@@ -79,7 +79,7 @@ typedef struct
   uint8_t     head[TBX_MB_TP_ADU_HEAD_LEN_MAX];        /**< ADU additional address.    */
   tTbxMbTpPdu pdu;                                     /**< Protocol data unit.        */
   uint8_t     tail[TBX_MB_TP_ADU_TAIL_LEN_MAX];        /**< ADU error check.           */
-  uint8_t     dataLen;                                /**< Number of PDU data bytes.  */
+  uint8_t     dataLen;                                 /**< Number of PDU data bytes.  */
   uint8_t     node;                                    /**< Node identifier.           */
 } tTbxMbTpPacket;
 
