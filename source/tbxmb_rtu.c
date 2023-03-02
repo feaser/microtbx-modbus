@@ -40,6 +40,21 @@
 /****************************************************************************************
 * Macro definitions
 ****************************************************************************************/
+#ifndef TBX_MB_RTU_T1_5_TIMEOUT_ENABLE
+/** \brief By default enable the monitoring of the max. 1.5 character time between
+ *         newly received bytes. The Modbus RTU protocol requires that there is no more
+ *         than a 1.5 character time between newly received packet bytes. Otherwise a
+ *         newly received packet should be ignored. This RTU transport layer supports
+ *         this monitoring if this configuration macro is > 0, which is recommended.
+ *         However, not all RTU hardware on the market fullfills this requirement. To
+ *         be able to still communicate with those types of devices, you can disable
+ *         this 1.5 character timeout monitoring. In this case you can override this
+ *         configuration by adding a macro with the same name, but with a value of 0
+ *         (disable), to "tbx_conf.h".
+ */
+#define TBX_MB_RTU_T1_5_TIMEOUT_ENABLE      (1U)
+#endif
+
 /** \brief Unique context type to identify a context as being an RTU transport layer. */
 #define TBX_MB_RTU_CONTEXT_TYPE             (84U)
 
@@ -813,7 +828,9 @@ static void TbxMbRtuDataReceived(      tTbxMbUartPort  port,
       /* Store the reception timestamp but first make a backup of the old timestamp, 
        * which is needed later on to do the 1.5 character timeout detection.
        */
+      #if (TBX_MB_RTU_T1_5_TIMEOUT_ENABLE > 0U)        
       uint16_t oldRxTime = tpCtx->rxTime;
+      #endif
       tpCtx->rxTime = TbxMbPortRtuTimerCount();
       /* The ADU for an RTU packet starts at one byte before the PDU, which is the last
        * byte of head[]. Get the pointer of where the ADU starts in the rxPacket.
@@ -824,6 +841,7 @@ static void TbxMbRtuDataReceived(      tTbxMbUartPort  port,
        */
       if (tpCtx->state == TBX_MB_RTU_STATE_RECEPTION)
       {
+        #if (TBX_MB_RTU_T1_5_TIMEOUT_ENABLE > 0U)        
         /* Check if a 1.5 character timeout occurred since the last reception. Note that
          * this calculation works, even if the RTU timer counter overflowed.
          */
@@ -833,6 +851,7 @@ static void TbxMbRtuDataReceived(      tTbxMbUartPort  port,
           /* Flag frame as not okay (NOK). */
           tpCtx->rxAduOkay = TBX_FALSE;
         }
+        #endif
         /* Check if the newly received data would still fit. Note that an ADU on RTU can
          * have max 256 bytes:
          * - Node address (1 byte)
