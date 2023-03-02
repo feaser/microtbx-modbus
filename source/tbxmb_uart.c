@@ -28,10 +28,9 @@
 /****************************************************************************************
 * Include files
 ****************************************************************************************/
-#include "tbxmb_options.h"                       /* MicroTBX-Modbus config options     */
+#include "microtbxmodbus.h"                      /* MicroTBX-Modbus module             */
 #include "microtbx.h"                            /* MicroTBX module                    */
 #include "tbxmb_checks.h"                        /* MicroTBX-Modbus config checks      */
-#include "microtbxmodbus.h"                      /* MicroTBX-Modbus module             */
 #include "tbxmb_uart_private.h"                  /* MicroTBX-Modbus UART private       */
 
 
@@ -50,7 +49,7 @@ typedef struct
 * Local data declarations
 ****************************************************************************************/
 /** \brief Array with UART port specific information. */
-static tTbxMbUartInfo uartInfo[TBX_MB_UART_NUM_PORT];
+static volatile tTbxMbUartInfo uartInfo[TBX_MB_UART_NUM_PORT];
 
 
 /************************************************************************************//**
@@ -139,7 +138,8 @@ uint8_t TbxMbUartTransmit(      tTbxMbUartPort   port,
 /************************************************************************************//**
 ** \brief     Event function to signal to this module that the entire transfer, initiated
 **            by TbxMbUartTransmit, completed.
-** \attention This function should be called by the hardware specific UART port.
+** \attention This function should be called by the hardware specific UART port at Tx
+**            interrupt level.
 ** \param     port The serial port that the transfer completed on.
 **
 ****************************************************************************************/
@@ -162,7 +162,8 @@ void TbxMbUartTransmitComplete(tTbxMbUartPort port)
 
 /************************************************************************************//**
 ** \brief     Event function to signal the reception of new data to this module.
-** \attention This function should be called by the hardware specific UART port.
+** \attention This function should be called by the hardware specific UART port at Rx
+**            interrupt level.
 ** \param     port The serial port that the new data was received on.
 ** \param     data Byte array with newly received data.
 ** \param     len Number of newly received bytes.

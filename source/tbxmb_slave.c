@@ -28,10 +28,9 @@
 /****************************************************************************************
 * Include files
 ****************************************************************************************/
-#include "tbxmb_options.h"                       /* MicroTBX-Modbus config options     */
+#include "microtbxmodbus.h"                      /* MicroTBX-Modbus module             */
 #include "microtbx.h"                            /* MicroTBX module                    */
 #include "tbxmb_checks.h"                        /* MicroTBX-Modbus config checks      */
-#include "microtbxmodbus.h"                      /* MicroTBX-Modbus module             */
 #include "tbxmb_event_private.h"                 /* MicroTBX-Modbus event private      */
 #include "tbxmb_tp_private.h"                    /* MicroTBX-Modbus TP private         */
 #include "tbxmb_osal_private.h"                  /* MicroTBX-Modbus OSAL private       */
@@ -63,9 +62,6 @@ static void TbxMbSlaveProcessEvent(tTbxMbEvent * event);
 tTbxMbSlave TbxMbSlaveCreate(tTbxMbTp transport)
 {
   tTbxMbSlave result = NULL;
-
-  /* Make sure the OSAL module is initialized. */
-  TbxMbOsalInit();
 
   /* Verify parameters. */
   TBX_ASSERT(transport != NULL);

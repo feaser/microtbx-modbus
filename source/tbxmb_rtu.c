@@ -28,10 +28,9 @@
 /****************************************************************************************
 * Include files
 ****************************************************************************************/
-#include "tbxmb_options.h"                       /* MicroTBX-Modbus config options     */
+#include "microtbxmodbus.h"                      /* MicroTBX-Modbus module             */
 #include "microtbx.h"                            /* MicroTBX module                    */
 #include "tbxmb_checks.h"                        /* MicroTBX-Modbus config checks      */
-#include "microtbxmodbus.h"                      /* MicroTBX-Modbus module             */
 #include "tbxmb_event_private.h"                 /* MicroTBX-Modbus event private      */
 #include "tbxmb_tp_private.h"                    /* MicroTBX-Modbus TP private         */
 #include "tbxmb_uart_private.h"                  /* MicroTBX-Modbus UART private       */
@@ -82,7 +81,7 @@ static uint16_t TbxMbRtuCalculatCrc(const uint8_t  * data,
  *         transport layer handle that uses a specific serial port, in a run-time
  *         efficient way.
  */
-static tTbxMbTpCtx * tbxMbRtuCtx[TBX_MB_UART_NUM_PORT] = { 0 };
+static tTbxMbTpCtx * volatile tbxMbRtuCtx[TBX_MB_UART_NUM_PORT] = { 0 };
 
 
 /************************************************************************************//**
@@ -107,7 +106,10 @@ tTbxMbTp TbxMbRtuCreate(uint8_t            nodeAddr,
 {
   tTbxMbTp result = NULL;
 
-  /* Make sure the OSAL module is initialized. */
+  /* Make sure the OSAL module is initialized. The application will always first create
+   * a transport layer object before a channel object. Consequently, this is the best
+   * place to do the OSAL module initialization.
+   */
   TbxMbOsalInit();
 
   /* Verify parameters. */
@@ -479,6 +481,12 @@ static uint8_t TbxMbRtuValidate(tTbxMbTp transport)
 /************************************************************************************//**
 ** \brief     Event function to signal to this module that the entire transfer completed.
 ** \attention This function should be called by the UART module.
+** \details   This function assumes that it is called at UART Tx interrupt level. It
+**            accesses the RTU context, which is a resource shared with the event task.
+**            In the case of an RTOS, the interrupt (SWI/Timer) that triggers a task
+**            switch will always either have the same or a lower priority than the
+**            interrupt that calls this function. Consequently, the is no need for a
+**            critical section inside this function, when accessing the context.
 ** \param     port The serial port that the transfer completed on.
 **
 ****************************************************************************************/
@@ -501,9 +509,10 @@ static void TbxMbRtuTransmitComplete(tTbxMbUartPort port)
     if (tpCtx != NULL)
     {
       /* Unlock access to the txPacket now that the transmission is complete. */
-      TbxCriticalSectionEnter();
+      /* TODO Might not actually need the lock variable, because of the RTU state 
+       *      machine.
+       */
       tpCtx->txLocked = TBX_FALSE;
-      TbxCriticalSectionExit();
 
       /* TODO Set an event for further handling at master/slave module task level. 
        * Probably want to pass the transport layer context to the event.
@@ -520,8 +529,13 @@ static void TbxMbRtuTransmitComplete(tTbxMbUartPort port)
 
 /************************************************************************************//**
 ** \brief     Event function to signal the reception of new data to this module.
-** \attention This function should be called by the UART module. It is most likely called
-**            at interrupt level, but that is not a given.
+** \attention This function should be called by the UART module. 
+** \details   This function assumes that it is called at UART Rx interrupt level. It
+**            accesses the RTU context, which is a resource shared with the event task.
+**            In the case of an RTOS, the interrupt (SWI/Timer) that triggers a task
+**            switch will always either have the same or a lower priority than the
+**            interrupt that calls this function. Consequently, the is no need for a
+**            critical section inside this function, when accessing the context.
 ** \param     port The serial port that the transfer completed on.
 ** \param     data Byte array with newly received data.
 ** \param     len Number of newly received bytes.
@@ -552,8 +566,11 @@ static void TbxMbRtuDataReceived(      tTbxMbUartPort  port,
     if (tpCtx != NULL)
     {
       /* Store the reception timestamp. */
-      TbxCriticalSectionEnter();
       tpCtx->rxTime = TbxMbPortRtuTimerCount();
+      /* TODO Use switch or if/else in a smart order to first handle the state that
+       * will happen the most to keep the ISR latency low.
+       */
+
       /* Only need to store the newly received byte in IDLE and RECEPTION state. */
       if ( (tpCtx->state == TBX_MB_RTU_STATE_IDLE) ||
            (tpCtx->state == TBX_MB_RTU_STATE_RECEPTION) )
@@ -562,7 +579,6 @@ static void TbxMbRtuDataReceived(      tTbxMbUartPort  port,
          * need a rxWrIdx (16-bit to be safe) for writing into the rxPacket.
         */
       }
-      TbxCriticalSectionExit();
     }
   }
 } /*** end of TbxMbRtuDataReceived ***/
