@@ -53,11 +53,12 @@ typedef struct
    * and exactly match those in tTbxMbEventCtx. Think of it as the base that this struct
    * derives from. 
    */
-  tTbxMbServerPoll      pollFcn;                  /**< Event poll function.             */
-  tTbxMbServerProcess   processFcn;               /**< Event process function.          */
+  tTbxMbServerPoll          pollFcn;             /**< Event poll function.             */
+  tTbxMbServerProcess       processFcn;          /**< Event process function.          */
   /* Private members. */
-  uint8_t              type;                     /**< Context type.                    */
-  tTbxMbTpCtx        * tpCtx;                    /**< Assigned transport layer context.*/
+  uint8_t                   type;                /**< Context type.                    */
+  tTbxMbTpCtx             * tpCtx;               /**< Assigned transport layer context.*/
+  tTbxMbServerReadInputReg  readInputRegFcn;     /**< Read input reg callback function.*/
 } tTbxMbServerCtx;
 
 

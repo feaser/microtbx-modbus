@@ -96,6 +96,7 @@ tTbxMbServer TbxMbServerCreate(tTbxMbTp transport)
       newServerCtx->type = TBX_MB_SERVER_CONTEXT_TYPE;
       newServerCtx->pollFcn = NULL;
       newServerCtx->processFcn = TbxMbServerProcessEvent;
+      newServerCtx->readInputRegFcn = NULL;
       newServerCtx->tpCtx = tpCtx;
       newServerCtx->tpCtx->channelCtx = newServerCtx;
       newServerCtx->tpCtx->isClient = TBX_FALSE;
@@ -142,6 +143,34 @@ void TbxMbServerFree(tTbxMbServer channel)
 
 
 /************************************************************************************//**
+** \brief     Registers the callback function that this server calls, whenever a client
+**            request the reading of a specific input register.
+** \param     channel Handle to the Modbus server channel object.
+** \param     callback Pointer to the callback function.
+**
+****************************************************************************************/
+void TbxMbServerSetCallbackReadInputReg(tTbxMbServer             channel,
+                                        tTbxMbServerReadInputReg callback)
+{
+  /* Verify parameters. */
+  TBX_ASSERT((channel != NULL) && (callback != NULL));
+
+  /* Only continue with valid parameters. */
+  if ((channel != NULL) && (callback != NULL))
+  {
+    /* Convert the server channel pointer to the context structure. */
+    tTbxMbServerCtx * serverCtx = (tTbxMbServerCtx *)channel;
+    /* Sanity check on the context type. */
+    TBX_ASSERT(serverCtx->type == TBX_MB_SERVER_CONTEXT_TYPE);
+    /* Store the callback function pointer. */
+    TbxCriticalSectionEnter();
+    serverCtx->readInputRegFcn = callback;
+    TbxCriticalSectionExit();
+  }
+} /*** end of TbxMbServerSetCallbackReadInputReg ***/
+
+
+/************************************************************************************//**
 ** \brief     Event processing function that is automatically called when an event for
 **            this server channel object was received in TbxMbEventTask().
 ** \param     event Pointer to the event to process. Note that the event->context points
@@ -178,7 +207,8 @@ static void TbxMbServerProcessEvent(tTbxMbEvent * event)
            * - Use receptionDoneFcn() to release rx packet (and go to RTU IDLE).
            * - Use transmitFcn() to transmit the tx response packet (from RTU IDLE).
            * 
-           * Current test code hardcodes the reading of the first input register.
+           * Current test code hardcodes the reading of the first input register and does
+           * not do all the needed error checking yet.
            */
           tTbxMbTpPacket *rxPacket = serverCtx->tpCtx->getRxPacketFcn(serverCtx->tpCtx);
           tTbxMbTpPacket *txPacket = serverCtx->tpCtx->getTxPacketFcn(serverCtx->tpCtx);
@@ -195,10 +225,15 @@ static void TbxMbServerProcessEvent(tTbxMbEvent * event)
             /* Reading just input register address 0 (element 1)? */
             if ( (startAddr == 0U) && (numRegs == 1U) )
             {
+              uint16_t inputRegValue = 0U;
+              if (serverCtx->readInputRegFcn != NULL)
+              {
+                serverCtx->readInputRegFcn(startAddr, &inputRegValue);
+              }
               txPacket->pdu.code = 4U;   
               txPacket->pdu.data[0] = 2U; /* Byte count. */
-              txPacket->pdu.data[1] = 0x55U;
-              txPacket->pdu.data[2] = 0xAAU;
+              txPacket->pdu.data[1] = (uint8_t)(inputRegValue >> 8U);
+              txPacket->pdu.data[2] = (uint8_t)inputRegValue;
               txPacket->dataLen = 3U;
               sendReponse = TBX_TRUE;
             }
