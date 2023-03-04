@@ -170,6 +170,7 @@ tTbxMbTp TbxMbRtuCreate(uint8_t            nodeAddr,
     {
       /* Initialize the transport context. */
       newTpCtx->type = TBX_MB_RTU_CONTEXT_TYPE;
+      newTpCtx->instancePtr = NULL;
       newTpCtx->pollFcn = TbxMbRtuPoll;
       newTpCtx->processFcn = NULL;
       newTpCtx->transmitFcn = TbxMbRtuTransmit;

@@ -89,6 +89,7 @@ tTbxMbClient TbxMbClientCreate(tTbxMbTp transport)
       tTbxMbTpCtx * tpCtx = (tTbxMbTpCtx *)transport;
       /* Initialize the channel context. Start by crosslinking the transport layer. */
       newClientCtx->type = TBX_MB_CLIENT_CONTEXT_TYPE;
+      newClientCtx->instancePtr = NULL;
       newClientCtx->pollFcn = NULL;
       newClientCtx->processFcn = TbxMbClientProcessEvent;
       newClientCtx->tpCtx = tpCtx;

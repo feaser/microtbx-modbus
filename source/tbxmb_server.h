@@ -54,8 +54,10 @@ typedef enum
 } tTbxMbServerResult;
 
 
-/** \brief Modbus callback function for reading an input register. */
-typedef tTbxMbServerResult (* tTbxMbServerReadInputReg)(uint16_t addr, uint16_t * value);
+/** \brief Modbus server callback function for reading an input register. */
+typedef tTbxMbServerResult (* tTbxMbServerReadInputReg)(tTbxMbServer   channel, 
+                                                        uint16_t       addr, 
+                                                        uint16_t     * value);
 
 
 /****************************************************************************************

@@ -94,6 +94,7 @@ tTbxMbServer TbxMbServerCreate(tTbxMbTp transport)
                  (tpCtx->getRxPacketFcn != NULL) && (tpCtx->getTxPacketFcn != NULL));
       /* Initialize the channel context. Start by crosslinking the transport layer. */
       newServerCtx->type = TBX_MB_SERVER_CONTEXT_TYPE;
+      newServerCtx->instancePtr = NULL;
       newServerCtx->pollFcn = NULL;
       newServerCtx->processFcn = TbxMbServerProcessEvent;
       newServerCtx->readInputRegFcn = NULL;
@@ -228,7 +229,7 @@ static void TbxMbServerProcessEvent(tTbxMbEvent * event)
               uint16_t inputRegValue = 0U;
               if (serverCtx->readInputRegFcn != NULL)
               {
-                serverCtx->readInputRegFcn(startAddr, &inputRegValue);
+                serverCtx->readInputRegFcn(serverCtx, startAddr, &inputRegValue);
               }
               txPacket->pdu.code = 4U;   
               txPacket->pdu.data[0] = 2U; /* Byte count. */

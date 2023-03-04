@@ -49,10 +49,11 @@ typedef void (* tTbxMbServerProcess)(tTbxMbEvent * event);
  */
 typedef struct
 {
-  /* Event interface methods. The following two entries must always be at the start
+  /* Event interface methods. The following three entries must always be at the start
    * and exactly match those in tTbxMbEventCtx. Think of it as the base that this struct
    * derives from. 
    */
+  void                   * instancePtr;          /**< Reserved for C++ wrapper.        */
   tTbxMbServerPoll          pollFcn;             /**< Event poll function.             */
   tTbxMbServerProcess       processFcn;          /**< Event process function.          */
   /* Private members. */
