@@ -1,6 +1,6 @@
 /************************************************************************************//**
-* \file         tbxmb_slave_private.h
-* \brief        Modbus slave private header file.
+* \file         tbxmb_client_private.h
+* \brief        Modbus client private header file.
 * \internal
 *----------------------------------------------------------------------------------------
 *                          C O P Y R I G H T
@@ -24,8 +24,8 @@
 *
 * \endinternal
 ****************************************************************************************/
-#ifndef TBXMB_SLAVE_PRIVATE_H
-#define TBXMB_SLAVE_PRIVATE_H
+#ifndef TBXMB_CLIENT_PRIVATE_H
+#define TBXMB_CLIENT_PRIVATE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,18 +34,18 @@ extern "C" {
 /****************************************************************************************
 * Type definitions
 ****************************************************************************************/
-/** \brief Modbus slave channel interface function to detect events in a polling
+/** \brief Modbus client channel interface function to detect events in a polling
  *         manner.
  */
-typedef void (* tTbxMbSlavePoll)(void * context);
+typedef void (* tTbxMbClientPoll)(void * context);
 
 
-/** \brief Modbus slave channel  interface function for processing events. */
-typedef void (* tTbxMbSlaveProcess)(tTbxMbEvent * event);
+/** \brief Modbus client channel  interface function for processing events. */
+typedef void (* tTbxMbClientProcess)(tTbxMbEvent * event);
 
 
-/** \brief Modbus slave channel layer context that groups all channel specific data. 
- *         It's what the tTbxMbSlave opaque pointer points to.
+/** \brief Modbus client channel layer context that groups all channel specific data. 
+ *         It's what the tTbxMbClient opaque pointer points to.
  */
 typedef struct
 {
@@ -53,17 +53,17 @@ typedef struct
    * and exactly match those in tTbxMbEventCtx. Think of it as the base that this struct
    * derives from. 
    */
-  tTbxMbSlavePoll      pollFcn;                  /**< Event poll function.             */
-  tTbxMbSlaveProcess   processFcn;               /**< Event process function.          */
+  tTbxMbClientPoll     pollFcn;                  /**< Event poll function.             */
+  tTbxMbClientProcess  processFcn;               /**< Event process function.          */
   /* Private members. */
   uint8_t              type;                     /**< Context type.                    */
   tTbxMbTpCtx        * tpCtx;                    /**< Assigned transport layer context.*/
-} tTbxMbSlaveCtx;
+} tTbxMbClientCtx;
 
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TBXMB_SLAVE_PRIVATE_H */
-/*********************************** end of tbxmb_slave_private.h **********************/
+#endif /* TBXMB_CLIENT_PRIVATE_H */
+/*********************************** end of tbxmb_client_private.h *********************/

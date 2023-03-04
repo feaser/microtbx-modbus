@@ -37,8 +37,8 @@
 #include "tbxmb_uart.h"                          /* MicroTBX-Modbus UART               */
 #include "tbxmb_rtu.h"                           /* MicroTBX-Modbus RTU                */
 #include "tbxmb_event.h"                         /* MicroTBX-Modbus event handling     */
-#include "tbxmb_slave.h"                         /* MicroTBX-Modbus slave              */
-#include "tbxmb_master.h"                        /* MicroTBX-Modbus master             */
+#include "tbxmb_server.h"                        /* MicroTBX-Modbus server             */
+#include "tbxmb_client.h"                        /* MicroTBX-Modbus client             */
 #include "tbxmb_port.h"                          /* MicroTBX-Modbus hardware port      */
 
 

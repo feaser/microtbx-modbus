@@ -112,8 +112,8 @@ static tTbxMbTpCtx * volatile tbxMbRtuCtx[TBX_MB_UART_NUM_PORT] = { 0 };
 
 /************************************************************************************//**
 ** \brief     Creates a Modbus RTU transport layer object.
-** \param     nodeAddr The address of the node. Can be in the range 1..247 for a slave
-**            node. Set it to 0 for the master.
+** \param     nodeAddr The address of the node. Can be in the range 1..247 for a server
+**            node. Set it to 0 for the client.
 ** \param     port The serial port to use. The actual meaning of the serial port is
 **            hardware dependent. It typically maps to the UART peripheral number. E.g. 
 **            TBX_MB_UART_PORT1 = USART1 on an STM32.
@@ -499,12 +499,12 @@ static uint8_t TbxMbRtuTransmit(tTbxMbTp transport)
       uint8_t * aduPtr = &tpCtx->txPacket.head[TBX_MB_TP_ADU_HEAD_LEN_MAX-1U];
       uint16_t  aduLen = tpCtx->txPacket.dataLen + 4U;
       /* Populate the ADU head. For RTU it is the address field right in front of the
-       * PDU. For master->slave transfers the address field is the slave's node address
-       * (unicast) or 0 (broadcast) and the master channel will have stored it in the
-       * txPacket.node element. For slave-master transfers it always the slave's
+       * PDU. For client->server transfers the address field is the servers's node
+       * address (unicast) or 0 (broadcast) and the client channel will have stored it in
+       * the txPacket.node element. For server-client transfers it always the servers's
        * node address as stored when creating the RTU transport layer context.
        */
-      aduPtr[0] = (tpCtx->isMaster == TBX_TRUE) ? tpCtx->txPacket.node : tpCtx->nodeAddr;
+      aduPtr[0] = (tpCtx->isClient == TBX_TRUE) ? tpCtx->txPacket.node : tpCtx->nodeAddr;
       /* Populate the ADU tail. For RTU it is the CRC16 right after the PDU's data. */
       uint16_t adu_crc = TbxMbRtuCalculatCrc(aduPtr, aduLen - 2U);
       aduPtr[aduLen - 2U] = (uint8_t)adu_crc;                         /* CRC16 low.  */
@@ -705,9 +705,9 @@ static uint8_t TbxMbRtuValidate(tTbxMbTp transport)
       if (packetCrc == calcCrc)
       {
         /* Checksum verification passed. Continue checking if the ADU is addresses to us.
-         * This check is different for a slave and a master. Start with the slave case.
+         * This check is different for a server and a client. Start with the server case.
          */
-        if (tpCtx->isMaster == TBX_FALSE)
+        if (tpCtx->isClient == TBX_FALSE)
         {
           /* Only process frames that are addressed to us (unicast or broadcast). */
           if ( (tpCtx->rxPacket.node == tpCtx->nodeAddr) ||
@@ -717,10 +717,10 @@ static uint8_t TbxMbRtuValidate(tTbxMbTp transport)
             result = TBX_OK;
           }
         }
-        /* Linked to a master channel. */
+        /* Linked to a client channel. */
         else
         {
-          /* Only process frames that are send from a valid slave. */
+          /* Only process frames that are send from a valid server. */
           if ( (tpCtx->rxPacket.node >= TBX_MB_RTU_NODE_ADDR_MIN) ||
                (tpCtx->rxPacket.node <= TBX_MB_RTU_NODE_ADDR_MAX) )
           {

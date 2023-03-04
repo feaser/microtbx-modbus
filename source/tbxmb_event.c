@@ -47,7 +47,7 @@ typedef void (* tTbxMbEventProcess)(tTbxMbEvent * event);
 
 
 /** \brief   Minimal context for accessing the event poll and process functions. Think of
- *           it as the base type for all the other context (master/slave/tp). That's the
+ *           it as the base type for all the other context (client/server/tp). That's the
  *           reason why these other context start with similar entries at exactly the
  *           same location. 
  */

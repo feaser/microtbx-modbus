@@ -1,6 +1,6 @@
 /************************************************************************************//**
-* \file         tbxmb_master.h
-* \brief        Modbus master header file.
+* \file         tbxmb_client.h
+* \brief        Modbus client header file.
 * \internal
 *----------------------------------------------------------------------------------------
 *                          C O P Y R I G H T
@@ -24,8 +24,8 @@
 *
 * \endinternal
 ****************************************************************************************/
-#ifndef TBXMB_MASTER_H
-#define TBXMB_MASTER_H
+#ifndef TBXMB_CLIENT_H
+#define TBXMB_CLIENT_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,22 +34,22 @@ extern "C" {
 /****************************************************************************************
 * Type definitions
 ****************************************************************************************/
-/** \brief Handle to a Modbus master channel object, in the format of an opaque
+/** \brief Handle to a Modbus client channel object, in the format of an opaque
  *         pointer.
  */
-typedef void * tTbxMbMaster;
+typedef void * tTbxMbClient;
 
 
 /****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
-tTbxMbMaster TbxMbMasterCreate(tTbxMbTp transport);
-void         TbxMbMasterFree(tTbxMbMaster channel);
+tTbxMbClient TbxMbClientCreate(tTbxMbTp transport);
+void         TbxMbClientFree(tTbxMbClient channel);
 
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TBXMB_MASTER_H */
-/*********************************** end of tbxmb_master.h *****************************/
+#endif /* TBXMB_CLIENT_H */
+/*********************************** end of tbxmb_client.h *****************************/

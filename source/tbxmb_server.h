@@ -1,6 +1,6 @@
 /************************************************************************************//**
-* \file         tbxmb_slave.h
-* \brief        Modbus slave header file.
+* \file         tbxmb_server.h
+* \brief        Modbus server header file.
 * \internal
 *----------------------------------------------------------------------------------------
 *                          C O P Y R I G H T
@@ -24,8 +24,8 @@
 *
 * \endinternal
 ****************************************************************************************/
-#ifndef TBXMB_SLAVE_H
-#define TBXMB_SLAVE_H
+#ifndef TBXMB_SERVER_H
+#define TBXMB_SERVER_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,19 +34,19 @@ extern "C" {
 /****************************************************************************************
 * Type definitions
 ****************************************************************************************/
-/** \brief Handle to a Modbus slave channel object, in the format of an opaque
+/** \brief Handle to a Modbus server channel object, in the format of an opaque
  *         pointer.
  */
-typedef void * tTbxMbSlave;
+typedef void * tTbxMbServer;
 
 
 /****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
-tTbxMbSlave TbxMbSlaveCreate(tTbxMbTp transport);
-void        TbxMbSlaveFree(tTbxMbSlave channel);
+tTbxMbServer TbxMbServerCreate(tTbxMbTp transport);
+void         TbxMbServerFree(tTbxMbServer channel);
 /* TODO Add API for registering the Read/Write coil/input/registers callbacks. Store
- * the function pointers in tTbxMbSlaveCtx.
+ * the function pointers in tTbxMbServerCtx.
  */
 
 
@@ -54,5 +54,5 @@ void        TbxMbSlaveFree(tTbxMbSlave channel);
 }
 #endif
 
-#endif /* TBXMB_SLAVE_H */
-/*********************************** end of tbxmb_slave.h ******************************/
+#endif /* TBXMB_SERVER_H */
+/*********************************** end of tbxmb_server.h *****************************/

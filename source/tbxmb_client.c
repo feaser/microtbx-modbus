@@ -1,6 +1,6 @@
 /************************************************************************************//**
-* \file         tbxmb_master.c
-* \brief        Modbus master source file.
+* \file         tbxmb_client.c
+* \brief        Modbus client source file.
 * \internal
 *----------------------------------------------------------------------------------------
 *                          C O P Y R I G H T
@@ -34,34 +34,34 @@
 #include "tbxmb_event_private.h"                 /* MicroTBX-Modbus event private      */
 #include "tbxmb_tp_private.h"                    /* MicroTBX-Modbus TP private         */
 #include "tbxmb_osal_private.h"                  /* MicroTBX-Modbus OSAL private       */
-#include "tbxmb_master_private.h"                /* MicroTBX-Modbus master private     */
+#include "tbxmb_client_private.h"                /* MicroTBX-Modbus client private     */
 
 
 /****************************************************************************************
 * Macro definitions
 ****************************************************************************************/
-/** \brief Unique context type to identify a context as being a master channel. */
-#define TBX_MB_MASTER_CONTEXT_TYPE     (23U)
+/** \brief Unique context type to identify a context as being a client channel. */
+#define TBX_MB_CLIENT_CONTEXT_TYPE     (23U)
 
 
 /****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
-static void TbxMbMasterProcessEvent(tTbxMbEvent * event);
+static void TbxMbClientProcessEvent(tTbxMbEvent * event);
 
 
 /************************************************************************************//**
-** \brief     Creates a Modbus master channel object and assigns the specified Modbus
+** \brief     Creates a Modbus client channel object and assigns the specified Modbus
 **            transport layer to the channel for packet transmission and reception.
 ** \param     transport Handle to a previously created Modbus transport layer object to
 **            assign to the channel.
-** \return    Handle to the newly created Modbus master channel object if successful,
+** \return    Handle to the newly created Modbus client channel object if successful,
 **            NULL otherwise.
 **
 ****************************************************************************************/
-tTbxMbMaster TbxMbMasterCreate(tTbxMbTp transport)
+tTbxMbClient TbxMbClientCreate(tTbxMbTp transport)
 {
-  tTbxMbMaster result = NULL;
+  tTbxMbClient result = NULL;
 
   /* Verify parameters. */
   TBX_ASSERT(transport != NULL);
@@ -70,46 +70,46 @@ tTbxMbMaster TbxMbMasterCreate(tTbxMbTp transport)
   if (transport != NULL)
   {
     /* Allocate memory for the new channel context. */
-    tTbxMbMasterCtx * newMasterCtx = TbxMemPoolAllocate(sizeof(tTbxMbMasterCtx));
+    tTbxMbClientCtx * newClientCtx = TbxMemPoolAllocate(sizeof(tTbxMbClientCtx));
     /* Automatically increase the memory pool, if it was too small. */
-    if (newMasterCtx == NULL)
+    if (newClientCtx == NULL)
     {
       /* No need to check the return value, because if it failed, the following
        * allocation fails too, which is verified later on.
        */
-      (void)TbxMemPoolCreate(1U, sizeof(tTbxMbMasterCtx));
-      newMasterCtx = TbxMemPoolAllocate(sizeof(tTbxMbMasterCtx));      
+      (void)TbxMemPoolCreate(1U, sizeof(tTbxMbClientCtx));
+      newClientCtx = TbxMemPoolAllocate(sizeof(tTbxMbClientCtx));      
     }
     /* Verify memory allocation of the channel context. */
-    TBX_ASSERT(newMasterCtx != NULL);
+    TBX_ASSERT(newClientCtx != NULL);
     /* Only continue if the memory allocation succeeded. */
-    if (newMasterCtx != NULL)
+    if (newClientCtx != NULL)
     {
       /* Convert the TP channel pointer to the context structure. */
       tTbxMbTpCtx * tpCtx = (tTbxMbTpCtx *)transport;
       /* Initialize the channel context. Start by crosslinking the transport layer. */
-      newMasterCtx->type = TBX_MB_MASTER_CONTEXT_TYPE;
-      newMasterCtx->pollFcn = NULL;
-      newMasterCtx->processFcn = TbxMbMasterProcessEvent;
-      newMasterCtx->tpCtx = tpCtx;
-      newMasterCtx->tpCtx->channelCtx = newMasterCtx;
-      newMasterCtx->tpCtx->isMaster = TBX_TRUE;
+      newClientCtx->type = TBX_MB_CLIENT_CONTEXT_TYPE;
+      newClientCtx->pollFcn = NULL;
+      newClientCtx->processFcn = TbxMbClientProcessEvent;
+      newClientCtx->tpCtx = tpCtx;
+      newClientCtx->tpCtx->channelCtx = newClientCtx;
+      newClientCtx->tpCtx->isClient = TBX_TRUE;
       /* Update the result. */
-      result = newMasterCtx;
+      result = newClientCtx;
     }
   }
   /* Give the result back to the caller. */
   return result;
-} /*** end of TbxMbMasterCreate ****/
+} /*** end of TbxMbClientCreate ****/
 
 
 /************************************************************************************//**
-** \brief     Releases a Modbus master channel object, previously created with
-**            TbxMbSlaveCreate().
-** \param     channel Handle to the Modbus master channel object to release.
+** \brief     Releases a Modbus client channel object, previously created with
+**            TbxMbClientCreate().
+** \param     channel Handle to the Modbus client channel object to release.
 **
 ****************************************************************************************/
-void TbxMbMasterFree(tTbxMbMaster channel)
+void TbxMbClientFree(tTbxMbClient channel)
 {
   /* Verify parameters. */
   TBX_ASSERT(channel != NULL);
@@ -117,33 +117,33 @@ void TbxMbMasterFree(tTbxMbMaster channel)
   /* Only continue with valid parameters. */
   if (channel != NULL)
   {
-    /* Convert the master channel pointer to the context structure. */
-    tTbxMbMasterCtx * masterCtx = (tTbxMbMasterCtx *)channel;
+    /* Convert the client channel pointer to the context structure. */
+    tTbxMbClientCtx * clientCtx = (tTbxMbClientCtx *)channel;
     /* Sanity check on the context type. */
-    TBX_ASSERT(masterCtx->type == TBX_MB_MASTER_CONTEXT_TYPE);
+    TBX_ASSERT(clientCtx->type == TBX_MB_CLIENT_CONTEXT_TYPE);
     /* Remove crosslink between the channel and the transport layer. */
     TbxCriticalSectionEnter();
-    masterCtx->tpCtx->channelCtx = NULL;
-    masterCtx->tpCtx = NULL;
+    clientCtx->tpCtx->channelCtx = NULL;
+    clientCtx->tpCtx = NULL;
     /* Invalidate the context to protect it from accidentally being used afterwards. */
-    masterCtx->type = 0U;
-    masterCtx->pollFcn = NULL;
-    masterCtx->processFcn = NULL;
+    clientCtx->type = 0U;
+    clientCtx->pollFcn = NULL;
+    clientCtx->processFcn = NULL;
     TbxCriticalSectionExit();
     /* Give the channel context back to the memory pool. */
-    TbxMemPoolRelease(masterCtx);
+    TbxMemPoolRelease(clientCtx);
   }
-} /*** end of TbxMbMasterFree ***/
+} /*** end of TbxMbClientFree ***/
 
 
 /************************************************************************************//**
 ** \brief     Event processing function that is automatically called when an event for
-**            this master channel object was received in TbxMbEventTask().
+**            this client channel object was received in TbxMbEventTask().
 ** \param     event Pointer to the event to process. Note that the event->context points
-**            to the handle of the Modbus master channel object.
+**            to the handle of the Modbus client channel object.
 **
 ****************************************************************************************/
-static void TbxMbMasterProcessEvent(tTbxMbEvent * event)
+static void TbxMbClientProcessEvent(tTbxMbEvent * event)
 {
   /* Verify parameters. */
   TBX_ASSERT(event != NULL);
@@ -153,20 +153,20 @@ static void TbxMbMasterProcessEvent(tTbxMbEvent * event)
   {
     /* Sanity check the context. */
     TBX_ASSERT(event->context != NULL);
-    /* Convert the event context  to the master channel context structure. */
-    tTbxMbMasterCtx * masterCtx = (tTbxMbMasterCtx *)event->context;
+    /* Convert the event context  to the client channel context structure. */
+    tTbxMbClientCtx * clientCtx = (tTbxMbClientCtx *)event->context;
     /* Make sure the context is valid. */
-    TBX_ASSERT(masterCtx != NULL);
+    TBX_ASSERT(clientCtx != NULL);
     /* Only continue with a valid context. */
-    if (masterCtx != NULL)
+    if (clientCtx != NULL)
     {
       /* Sanity check on the context type. */
-      TBX_ASSERT(masterCtx->type == TBX_MB_MASTER_CONTEXT_TYPE);
-      /* TODO Implement TbxMbMasterProcessEvent(). */
-      masterCtx->processFcn = TbxMbMasterProcessEvent; /* Dummy for now. */
+      TBX_ASSERT(clientCtx->type == TBX_MB_CLIENT_CONTEXT_TYPE);
+      /* TODO Implement TbxMbClientProcessEvent(). */
+      clientCtx->processFcn = TbxMbClientProcessEvent; /* Dummy for now. */
     }
   }
-} /*** end of TbxMbSlaveProcessEvent ***/
+} /*** end of TbxMbClientProcessEvent ***/
 
 
-/*********************************** end of tbxmb_master.c *****************************/
+/*********************************** end of tbxmb_client.c *****************************/

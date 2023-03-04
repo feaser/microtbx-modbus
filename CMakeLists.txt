@@ -6,8 +6,8 @@ target_sources(microtbx-modbus INTERFACE
     "${CMAKE_CURRENT_LIST_DIR}/source/tbxmb_rtu.c"
     "${CMAKE_CURRENT_LIST_DIR}/source/tbxmb_osal.c"
     "${CMAKE_CURRENT_LIST_DIR}/source/tbxmb_event.c"
-    "${CMAKE_CURRENT_LIST_DIR}/source/tbxmb_slave.c"
-    "${CMAKE_CURRENT_LIST_DIR}/source/tbxmb_master.c"
+    "${CMAKE_CURRENT_LIST_DIR}/source/tbxmb_server.c"
+    "${CMAKE_CURRENT_LIST_DIR}/source/tbxmb_client.c"
 )
 
 target_include_directories(microtbx-modbus INTERFACE 

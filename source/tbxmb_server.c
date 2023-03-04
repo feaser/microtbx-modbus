@@ -1,6 +1,6 @@
 /************************************************************************************//**
-* \file         tbxmb_slave.c
-* \brief        Modbus slave source file.
+* \file         tbxmb_server.c
+* \brief        Modbus server source file.
 * \internal
 *----------------------------------------------------------------------------------------
 *                          C O P Y R I G H T
@@ -34,34 +34,34 @@
 #include "tbxmb_event_private.h"                 /* MicroTBX-Modbus event private      */
 #include "tbxmb_tp_private.h"                    /* MicroTBX-Modbus TP private         */
 #include "tbxmb_osal_private.h"                  /* MicroTBX-Modbus OSAL private       */
-#include "tbxmb_slave_private.h"                 /* MicroTBX-Modbus slave private      */
+#include "tbxmb_server_private.h"                /* MicroTBX-Modbus server private     */
 
 
 /****************************************************************************************
 * Macro definitions
 ****************************************************************************************/
-/** \brief Unique context type to identify a context as being a slave channel. */
-#define TBX_MB_SLAVE_CONTEXT_TYPE      (37U)
+/** \brief Unique context type to identify a context as being a server channel. */
+#define TBX_MB_SERVER_CONTEXT_TYPE     (37U)
 
 
 /****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
-static void TbxMbSlaveProcessEvent(tTbxMbEvent * event);
+static void TbxMbServerProcessEvent(tTbxMbEvent * event);
 
 
 /************************************************************************************//**
-** \brief     Creates a Modbus slave channel object and assigs the specified Modbus
+** \brief     Creates a Modbus server channel object and assigs the specified Modbus
 **            transport layer to the channel for packet transmission and reception.
 ** \param     transport Handle to a previously created Modbus transport layer object to
 **            assign to the channel.
-** \return    Handle to the newly created Modbus slave channel object if successful, NULL
-**            otherwise.
+** \return    Handle to the newly created Modbus server channel object if successful,
+**            NULL otherwise.
 **
 ****************************************************************************************/
-tTbxMbSlave TbxMbSlaveCreate(tTbxMbTp transport)
+tTbxMbServer TbxMbServerCreate(tTbxMbTp transport)
 {
-  tTbxMbSlave result = NULL;
+  tTbxMbServer result = NULL;
 
   /* Verify parameters. */
   TBX_ASSERT(transport != NULL);
@@ -70,20 +70,20 @@ tTbxMbSlave TbxMbSlaveCreate(tTbxMbTp transport)
   if (transport != NULL)
   {
     /* Allocate memory for the new channel context. */
-    tTbxMbSlaveCtx * newSlaveCtx = TbxMemPoolAllocate(sizeof(tTbxMbSlaveCtx));
+    tTbxMbServerCtx * newServerCtx = TbxMemPoolAllocate(sizeof(tTbxMbServerCtx));
     /* Automatically increase the memory pool, if it was too small. */
-    if (newSlaveCtx == NULL)
+    if (newServerCtx == NULL)
     {
       /* No need to check the return value, because if it failed, the following
        * allocation fails too, which is verified later on.
        */
-      (void)TbxMemPoolCreate(1U, sizeof(tTbxMbSlaveCtx));
-      newSlaveCtx = TbxMemPoolAllocate(sizeof(tTbxMbSlaveCtx));      
+      (void)TbxMemPoolCreate(1U, sizeof(tTbxMbServerCtx));
+      newServerCtx = TbxMemPoolAllocate(sizeof(tTbxMbServerCtx));      
     }
     /* Verify memory allocation of the channel context. */
-    TBX_ASSERT(newSlaveCtx != NULL);
+    TBX_ASSERT(newServerCtx != NULL);
     /* Only continue if the memory allocation succeeded. */
-    if (newSlaveCtx != NULL)
+    if (newServerCtx != NULL)
     {
       /* Convert the TP channel pointer to the context structure. */
       tTbxMbTpCtx * tpCtx = (tTbxMbTpCtx *)transport;
@@ -93,28 +93,28 @@ tTbxMbSlave TbxMbSlaveCreate(tTbxMbTp transport)
       TBX_ASSERT((tpCtx->transmitFcn != NULL) && (tpCtx->receptionDoneFcn != NULL) &&
                  (tpCtx->getRxPacketFcn != NULL) && (tpCtx->getTxPacketFcn != NULL));
       /* Initialize the channel context. Start by crosslinking the transport layer. */
-      newSlaveCtx->type = TBX_MB_SLAVE_CONTEXT_TYPE;
-      newSlaveCtx->pollFcn = NULL;
-      newSlaveCtx->processFcn = TbxMbSlaveProcessEvent;
-      newSlaveCtx->tpCtx = tpCtx;
-      newSlaveCtx->tpCtx->channelCtx = newSlaveCtx;
-      newSlaveCtx->tpCtx->isMaster = TBX_FALSE;
+      newServerCtx->type = TBX_MB_SERVER_CONTEXT_TYPE;
+      newServerCtx->pollFcn = NULL;
+      newServerCtx->processFcn = TbxMbServerProcessEvent;
+      newServerCtx->tpCtx = tpCtx;
+      newServerCtx->tpCtx->channelCtx = newServerCtx;
+      newServerCtx->tpCtx->isClient = TBX_FALSE;
       /* Update the result. */
-      result = newSlaveCtx;
+      result = newServerCtx;
     }
   }
   /* Give the result back to the caller. */
   return result;
-} /*** end of TbxMbSlaveCreate ****/
+} /*** end of TbxMbServerCreate ****/
 
 
 /************************************************************************************//**
-** \brief     Releases a Modbus slave channel object, previously created with
-**            TbxMbSlaveCreate().
-** \param     channel Handle to the Modbus slave channel object to release.
+** \brief     Releases a Modbus server channel object, previously created with
+**            TbxMbServerCreate().
+** \param     channel Handle to the Modbus server channel object to release.
 **
 ****************************************************************************************/
-void TbxMbSlaveFree(tTbxMbSlave channel)
+void TbxMbServerFree(tTbxMbServer channel)
 {
   /* Verify parameters. */
   TBX_ASSERT(channel != NULL);
@@ -122,33 +122,33 @@ void TbxMbSlaveFree(tTbxMbSlave channel)
   /* Only continue with valid parameters. */
   if (channel != NULL)
   {
-    /* Convert the slave channel pointer to the context structure. */
-    tTbxMbSlaveCtx * slaveCtx = (tTbxMbSlaveCtx *)channel;
+    /* Convert the server channel pointer to the context structure. */
+    tTbxMbServerCtx * serverCtx = (tTbxMbServerCtx *)channel;
     /* Sanity check on the context type. */
-    TBX_ASSERT(slaveCtx->type == TBX_MB_SLAVE_CONTEXT_TYPE);
+    TBX_ASSERT(serverCtx->type == TBX_MB_SERVER_CONTEXT_TYPE);
     /* Remove crosslink between the channel and the transport layer. */
     TbxCriticalSectionEnter();
-    slaveCtx->tpCtx->channelCtx = NULL;
-    slaveCtx->tpCtx = NULL;
+    serverCtx->tpCtx->channelCtx = NULL;
+    serverCtx->tpCtx = NULL;
     /* Invalidate the context to protect it from accidentally being used afterwards. */
-    slaveCtx->type = 0U;
-    slaveCtx->pollFcn = NULL;
-    slaveCtx->processFcn = NULL;
+    serverCtx->type = 0U;
+    serverCtx->pollFcn = NULL;
+    serverCtx->processFcn = NULL;
     TbxCriticalSectionExit();
     /* Give the channel context back to the memory pool. */
-    TbxMemPoolRelease(slaveCtx);
+    TbxMemPoolRelease(serverCtx);
   }
-} /*** end of TbxMbSlaveFree ***/
+} /*** end of TbxMbServerFree ***/
 
 
 /************************************************************************************//**
 ** \brief     Event processing function that is automatically called when an event for
-**            this slave channel object was received in TbxMbEventTask().
+**            this server channel object was received in TbxMbEventTask().
 ** \param     event Pointer to the event to process. Note that the event->context points
-**            to the handle of the Modbus slave channel object.
+**            to the handle of the Modbus server channel object.
 **
 ****************************************************************************************/
-static void TbxMbSlaveProcessEvent(tTbxMbEvent * event)
+static void TbxMbServerProcessEvent(tTbxMbEvent * event)
 {
   /* Verify parameters. */
   TBX_ASSERT(event != NULL);
@@ -158,15 +158,15 @@ static void TbxMbSlaveProcessEvent(tTbxMbEvent * event)
   {
     /* Sanity check the context. */
     TBX_ASSERT(event->context != NULL);
-    /* Convert the event context to the slave channel context structure. */
-    tTbxMbSlaveCtx * slaveCtx = (tTbxMbSlaveCtx *)event->context;
+    /* Convert the event context to the server channel context structure. */
+    tTbxMbServerCtx * serverCtx = (tTbxMbServerCtx *)event->context;
     /* Make sure the context is valid. */
-    TBX_ASSERT(slaveCtx != NULL);
+    TBX_ASSERT(serverCtx != NULL);
     /* Only continue with a valid context. */
-    if (slaveCtx != NULL)
+    if (serverCtx != NULL)
     {
       /* Sanity check on the context type. */
-      TBX_ASSERT(slaveCtx->type == TBX_MB_SLAVE_CONTEXT_TYPE);
+      TBX_ASSERT(serverCtx->type == TBX_MB_SERVER_CONTEXT_TYPE);
       /* Filter on the event identifier. */
       switch (event->id)
       {
@@ -180,8 +180,8 @@ static void TbxMbSlaveProcessEvent(tTbxMbEvent * event)
            * 
            * Current test code hardcodes the reading of the first input register.
            */
-          tTbxMbTpPacket *rxPacket = slaveCtx->tpCtx->getRxPacketFcn(slaveCtx->tpCtx);
-          tTbxMbTpPacket *txPacket = slaveCtx->tpCtx->getTxPacketFcn(slaveCtx->tpCtx);
+          tTbxMbTpPacket *rxPacket = serverCtx->tpCtx->getRxPacketFcn(serverCtx->tpCtx);
+          tTbxMbTpPacket *txPacket = serverCtx->tpCtx->getTxPacketFcn(serverCtx->tpCtx);
           uint8_t sendReponse = TBX_FALSE;
           TBX_ASSERT(rxPacket != NULL);
           TBX_ASSERT(txPacket != NULL);
@@ -204,13 +204,13 @@ static void TbxMbSlaveProcessEvent(tTbxMbEvent * event)
             }
           }
           /* Release rx packet (and go to RTU IDLE). */
-          slaveCtx->tpCtx->receptionDoneFcn(slaveCtx->tpCtx);
+          serverCtx->tpCtx->receptionDoneFcn(serverCtx->tpCtx);
           /* Transmit response? Should be done after receptionDoneFcn() otherwise
            * RTU is not in IDLE.
            */
           if (sendReponse == TBX_TRUE)
           {
-            (void)slaveCtx->tpCtx->transmitFcn(slaveCtx->tpCtx);
+            (void)serverCtx->tpCtx->transmitFcn(serverCtx->tpCtx);
           }
         }
         break;
@@ -232,7 +232,7 @@ static void TbxMbSlaveProcessEvent(tTbxMbEvent * event)
       }
     }
   }
-} /*** end of TbxMbSlaveProcessEvent ***/
+} /*** end of TbxMbServerProcessEvent ***/
 
 
-/*********************************** end of tbxmb_slave.c ******************************/
+/*********************************** end of tbxmb_server.c *****************************/

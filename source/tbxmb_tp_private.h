@@ -158,7 +158,7 @@ typedef struct
   uint16_t                t1_5Ticks;             /**< 1.5 character time in 50us ticks.*/
   uint16_t                t3_5Ticks;             /**< 3.5 character time in 50us ticks.*/
   uint8_t                 state;                 /**< Communication state.             */
-  uint8_t                 isMaster;              /**< Info about the channel context.  */
+  uint8_t                 isClient;              /**< Info about the channel context.  */
   /* Public methods and members. */
   void                  * channelCtx;            /**< Assigned channel context.        */
   tTbxMbTpTransmit        transmitFcn;           /**< Packet transmit function.        */
