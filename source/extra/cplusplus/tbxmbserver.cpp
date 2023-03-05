@@ -54,16 +54,15 @@ TbxMbServer::~TbxMbServer()
 **            0 - 65535, not its element number (1 - 65536).
 ** \param     addr Element address (0..65535).
 ** \param     value Reference where to store the value of the discrete input.
-** \return    TbxMbServer::Result::OK if successful, 
-**            TbxMbServer::Result::ERR_ILLEGAL_DATA_ADDR if the specific data element
-**            address is not supported by this server, 
-**            TbxMbServer::Result::ERR_DEVICE_FAILURE otherwise.
+** \return    TBX_MB_SERVER_OK if successful, TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR if the
+**            specific data element address is not supported by this server, 
+**            TBX_MB_SERVER_ERR_DEVICE_FAILURE otherwise.
 **
 ****************************************************************************************/
-TbxMbServer::Result TbxMbServer::readInput(uint16_t addr, 
+tTbxMbServerResult TbxMbServer::readInput(uint16_t addr, 
                                            bool&    value)
 {
-  return TbxMbServer::Result::ERR_ILLEGAL_DATA_ADDR;
+  return TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
 } /*** end of readInput ***/
 
 
@@ -73,16 +72,15 @@ TbxMbServer::Result TbxMbServer::readInput(uint16_t addr,
 **            0 - 65535, not its element number (1 - 65536).
 ** \param     addr Element address (0..65535).
 ** \param     value Reference where to store the value of the coil.
-** \return    TbxMbServer::Result::OK if successful, 
-**            TbxMbServer::Result::ERR_ILLEGAL_DATA_ADDR if the specific data element
-**            address is not supported by this server, 
-**            TbxMbServer::Result::ERR_DEVICE_FAILURE otherwise.
+** \return    TBX_MB_SERVER_OK if successful, TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR if the
+**            specific data element address is not supported by this server, 
+**            TBX_MB_SERVER_ERR_DEVICE_FAILURE otherwise.
 **
 ****************************************************************************************/
-TbxMbServer::Result TbxMbServer::readCoil(uint16_t addr,
+tTbxMbServerResult TbxMbServer::readCoil(uint16_t addr,
                                           bool&    value)
 {
-  return TbxMbServer::Result::ERR_ILLEGAL_DATA_ADDR;
+  return TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
 } /*** end of readCoil ***/
 
 
@@ -92,16 +90,15 @@ TbxMbServer::Result TbxMbServer::readCoil(uint16_t addr,
 **            0 - 65535, not its element number (1 - 65536).
 ** \param     addr Element address (0..65535).
 ** \param     value Coil value.
-** \return    TbxMbServer::Result::OK if successful, 
-**            TbxMbServer::Result::ERR_ILLEGAL_DATA_ADDR if the specific data element
-**            address is not supported by this server, 
-**            TbxMbServer::Result::ERR_DEVICE_FAILURE otherwise.
+** \return    TBX_MB_SERVER_OK if successful, TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR if the
+**            specific data element address is not supported by this server, 
+**            TBX_MB_SERVER_ERR_DEVICE_FAILURE otherwise.
 **
 ****************************************************************************************/
-TbxMbServer::Result TbxMbServer::writeCoil(uint16_t addr, 
+tTbxMbServerResult TbxMbServer::writeCoil(uint16_t addr, 
                                            bool    value)
 {
-  return TbxMbServer::Result::ERR_ILLEGAL_DATA_ADDR;
+  return TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
 } /*** end of writeCoil ***/
 
 
@@ -114,16 +111,15 @@ TbxMbServer::Result TbxMbServer::writeCoil(uint16_t addr,
 **            that the Modbus protocol requires.
 ** \param     addr Element address (0..65535).
 ** \param     value Reference where to store the value of the input register.
-** \return    TbxMbServer::Result::OK if successful, 
-**            TbxMbServer::Result::ERR_ILLEGAL_DATA_ADDR if the specific data element
-**            address is not supported by this server, 
-**            TbxMbServer::Result::ERR_DEVICE_FAILURE otherwise.
+** \return    TBX_MB_SERVER_OK if successful, TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR if the
+**            specific data element address is not supported by this server, 
+**            TBX_MB_SERVER_ERR_DEVICE_FAILURE otherwise.
 **
 ****************************************************************************************/
-TbxMbServer::Result TbxMbServer::readInputReg(uint16_t  addr, 
+tTbxMbServerResult TbxMbServer::readInputReg(uint16_t  addr, 
                                               uint16_t& value)
 {
-  return TbxMbServer::Result::ERR_ILLEGAL_DATA_ADDR;
+  return TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
 } /*** end of readInputReg ***/
 
 
@@ -136,16 +132,15 @@ TbxMbServer::Result TbxMbServer::readInputReg(uint16_t  addr,
 **            that the Modbus protocol requires.
 ** \param     addr Element address (0..65535).
 ** \param     value Reference where to store the value of the holding register.
-** \return    TbxMbServer::Result::OK if successful, 
-**            TbxMbServer::Result::ERR_ILLEGAL_DATA_ADDR if the specific data element
-**            address is not supported by this server, 
-**            TbxMbServer::Result::ERR_DEVICE_FAILURE otherwise.
+** \return    TBX_MB_SERVER_OK if successful, TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR if the
+**            specific data element address is not supported by this server, 
+**            TBX_MB_SERVER_ERR_DEVICE_FAILURE otherwise.
 **
 ****************************************************************************************/
-TbxMbServer::Result TbxMbServer::readHoldingReg(uint16_t  addr, 
+tTbxMbServerResult TbxMbServer::readHoldingReg(uint16_t  addr, 
                                                 uint16_t& value)
 {
-  return TbxMbServer::Result::ERR_ILLEGAL_DATA_ADDR;
+  return TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
 } /*** end of readHoldingReg ***/
 
 
@@ -156,16 +151,15 @@ TbxMbServer::Result TbxMbServer::readHoldingReg(uint16_t  addr,
 ** \attention The value of the holding register in already in your CPUs native endianess.
 ** \param     addr Element address (0..65535).
 ** \param     value Value of the holding register.
-** \return    TbxMbServer::Result::OK if successful, 
-**            TbxMbServer::Result::ERR_ILLEGAL_DATA_ADDR if the specific data element
-**            address is not supported by this server, 
-**            TbxMbServer::Result::ERR_DEVICE_FAILURE otherwise.
+** \return    TBX_MB_SERVER_OK if successful, TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR if the
+**            specific data element address is not supported by this server, 
+**            TBX_MB_SERVER_ERR_DEVICE_FAILURE otherwise.
 **
 ****************************************************************************************/
-TbxMbServer::Result TbxMbServer::writeHoldingReg(uint16_t addr,
+tTbxMbServerResult TbxMbServer::writeHoldingReg(uint16_t addr,
                                                 uint16_t  value)
 {
-  return TbxMbServer::Result::ERR_ILLEGAL_DATA_ADDR;
+  return TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
 } /*** end of writeHoldingReg ***/
 
 
@@ -202,13 +196,12 @@ tTbxMbServerResult TbxMbServer::callbackbReadInput(tTbxMbServer   channel,
       TbxMbServer * serverPtr = static_cast<TbxMbServer *>(channelCtx->instancePtr);
       /* Call the related instance method. */
       bool inputValue = false;
-      TbxMbServer::Result srvResult = serverPtr->readInput(addr, inputValue);
+      result = serverPtr->readInput(addr, inputValue);
       /* Process the result. */
-      if (srvResult == TbxMbServer::Result::OK)
+      if (result == TBX_MB_SERVER_OK)
       {
         *value = (inputValue == false) ? TBX_FALSE : TBX_TRUE;
       }
-      result = static_cast<tTbxMbServerResult>(srvResult);
     }
   }
   /* Give the result back to the caller. */
@@ -249,13 +242,12 @@ tTbxMbServerResult TbxMbServer::callbackReadCoil(tTbxMbServer   channel,
       TbxMbServer * serverPtr = static_cast<TbxMbServer *>(channelCtx->instancePtr);
       /* Call the related instance method. */
       bool coilValue = false;
-      TbxMbServer::Result srvResult = serverPtr->readCoil(addr, coilValue);
+      result = serverPtr->readCoil(addr, coilValue);
       /* Process the result. */
-      if (srvResult == TbxMbServer::Result::OK)
+      if (result == TBX_MB_SERVER_OK)
       {
         *value = (coilValue == false) ? TBX_FALSE : TBX_TRUE;
       }
-      result = static_cast<tTbxMbServerResult>(srvResult);
     }
   }
   /* Give the result back to the caller. */
@@ -296,9 +288,7 @@ tTbxMbServerResult TbxMbServer::callbackWriteCoil(tTbxMbServer channel,
       TbxMbServer * serverPtr = static_cast<TbxMbServer *>(channelCtx->instancePtr);
       /* Call the related instance method. */
       bool coilValue = (value == TBX_FALSE) ? false : true;
-      TbxMbServer::Result srvResult = serverPtr->writeCoil(addr, coilValue);
-      /* Process the result. */
-      result = static_cast<tTbxMbServerResult>(srvResult);
+      result = serverPtr->writeCoil(addr, coilValue);
     }
   }
   /* Give the result back to the caller. */
@@ -338,13 +328,12 @@ tTbxMbServerResult TbxMbServer::callbackReadInputReg(tTbxMbServer  channel,
       TbxMbServer * serverPtr = static_cast<TbxMbServer *>(channelCtx->instancePtr);
       /* Call the related instance method. */
       uint16_t inputRegValue = 0U;
-      TbxMbServer::Result srvResult = serverPtr->readInputReg(addr, inputRegValue);
+      result = serverPtr->readInputReg(addr, inputRegValue);
       /* Process the result. */
-      if (srvResult == TbxMbServer::Result::OK)
+      if (result == TBX_MB_SERVER_OK)
       {
         *value = inputRegValue;
       }
-      result = static_cast<tTbxMbServerResult>(srvResult);
     }
   }
   /* Give the result back to the caller. */
@@ -384,13 +373,12 @@ tTbxMbServerResult TbxMbServer::callbackReadHoldingReg(tTbxMbServer   channel,
       TbxMbServer * serverPtr = static_cast<TbxMbServer *>(channelCtx->instancePtr);
       /* Call the related instance method. */
       uint16_t holdingRegValue = 0U;
-      TbxMbServer::Result srvResult = serverPtr->readHoldingReg(addr, holdingRegValue);
+      result = serverPtr->readHoldingReg(addr, holdingRegValue);
       /* Process the result. */
-      if (srvResult == TbxMbServer::Result::OK)
+      if (result == TBX_MB_SERVER_OK)
       {
         *value = holdingRegValue;
       }
-      result = static_cast<tTbxMbServerResult>(srvResult);
     }
   }
   /* Give the result back to the caller. */
@@ -429,9 +417,7 @@ tTbxMbServerResult TbxMbServer::callbackWriteHoldingReg(tTbxMbServer channel,
        */
       TbxMbServer * serverPtr = static_cast<TbxMbServer *>(channelCtx->instancePtr);
       /* Call the related instance method. */
-      TbxMbServer::Result srvResult = serverPtr->writeHoldingReg(addr, value);
-      /* Process the result. */
-      result = static_cast<tTbxMbServerResult>(srvResult);
+      result = serverPtr->writeHoldingReg(addr, value);
     }
   }
   /* Give the result back to the caller. */

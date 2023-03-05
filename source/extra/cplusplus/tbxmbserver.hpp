@@ -39,22 +39,15 @@ public:
   /* Constructors and destructor. */
   TbxMbServer() : m_Channel(nullptr) { }
   virtual ~TbxMbServer() = 0;
-  /* Enumerated types. */
-  enum class Result : uint8_t
-  {
-    OK                    = TBX_MB_SERVER_OK,
-    ERR_ILLEGAL_DATA_ADDR = TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR,
-    ERR_DEVICE_FAILURE    = TBX_MB_SERVER_ERR_DEVICE_FAILURE
-  };
 
 private:
   /* Methods. */
-  virtual Result readInput(uint16_t addr, bool& value);
-  virtual Result readCoil(uint16_t addr, bool& value);
-  virtual Result writeCoil(uint16_t addr, bool value);
-  virtual Result readInputReg(uint16_t addr, uint16_t& value);
-  virtual Result readHoldingReg(uint16_t addr, uint16_t& value);
-  virtual Result writeHoldingReg(uint16_t addr, uint16_t value);
+  virtual tTbxMbServerResult readInput(uint16_t addr, bool& value);
+  virtual tTbxMbServerResult readCoil(uint16_t addr, bool& value);
+  virtual tTbxMbServerResult writeCoil(uint16_t addr, bool value);
+  virtual tTbxMbServerResult readInputReg(uint16_t addr, uint16_t& value);
+  virtual tTbxMbServerResult readHoldingReg(uint16_t addr, uint16_t& value);
+  virtual tTbxMbServerResult writeHoldingReg(uint16_t addr, uint16_t value);
 
 protected:
   /* Types. */
