@@ -60,7 +60,7 @@ TbxMbServer::~TbxMbServer()
 **
 ****************************************************************************************/
 tTbxMbServerResult TbxMbServer::readInput(uint16_t addr, 
-                                           bool&    value)
+                                          bool&    value)
 {
   return TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
 } /*** end of readInput ***/
@@ -78,7 +78,7 @@ tTbxMbServerResult TbxMbServer::readInput(uint16_t addr,
 **
 ****************************************************************************************/
 tTbxMbServerResult TbxMbServer::readCoil(uint16_t addr,
-                                          bool&    value)
+                                         bool&    value)
 {
   return TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
 } /*** end of readCoil ***/
@@ -96,7 +96,7 @@ tTbxMbServerResult TbxMbServer::readCoil(uint16_t addr,
 **
 ****************************************************************************************/
 tTbxMbServerResult TbxMbServer::writeCoil(uint16_t addr, 
-                                           bool    value)
+                                          bool    value)
 {
   return TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
 } /*** end of writeCoil ***/
@@ -117,7 +117,7 @@ tTbxMbServerResult TbxMbServer::writeCoil(uint16_t addr,
 **
 ****************************************************************************************/
 tTbxMbServerResult TbxMbServer::readInputReg(uint16_t  addr, 
-                                              uint16_t& value)
+                                             uint16_t& value)
 {
   return TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
 } /*** end of readInputReg ***/
@@ -138,7 +138,7 @@ tTbxMbServerResult TbxMbServer::readInputReg(uint16_t  addr,
 **
 ****************************************************************************************/
 tTbxMbServerResult TbxMbServer::readHoldingReg(uint16_t  addr, 
-                                                uint16_t& value)
+                                               uint16_t& value)
 {
   return TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
 } /*** end of readHoldingReg ***/
@@ -210,8 +210,8 @@ tTbxMbServerResult TbxMbServer::callbackbReadInput(tTbxMbServer   channel,
 
 
 /************************************************************************************//**
-** \brief     Wrapper to connect this callback to the callbackReadCoil() method of a
-**            class instance.
+** \brief     Wrapper to connect this callback to the readCoil() method of a class
+**            instance.
 ** \param     channel Handle to the Modbus server channel object that triggered the 
 **            callback.
 ** \param     addr Element address (0..65535).
@@ -256,8 +256,8 @@ tTbxMbServerResult TbxMbServer::callbackReadCoil(tTbxMbServer   channel,
 
 
 /************************************************************************************//**
-** \brief     Wrapper to connect this callback to the callbackWriteCoil() method of a
-**            class instance.
+** \brief     Wrapper to connect this callback to the writeCoil() method of a class
+**            instance.
 ** \param     channel Handle to the Modbus server channel object that triggered the 
 **            callback.
 ** \param     addr Element address (0..65535).
@@ -297,8 +297,8 @@ tTbxMbServerResult TbxMbServer::callbackWriteCoil(tTbxMbServer channel,
 
 
 /************************************************************************************//**
-** \brief     Wrapper to connect this callback to the callbackReadInputReg() method of a
-**            class instance.
+** \brief     Wrapper to connect this callback to the readInputReg() method of a class
+**            instance.
 ** \param     channel Handle to the Modbus server channel object that triggered the 
 **            callback.
 ** \param     addr Element address (0..65535).
@@ -342,8 +342,8 @@ tTbxMbServerResult TbxMbServer::callbackReadInputReg(tTbxMbServer  channel,
 
 
 /************************************************************************************//**
-** \brief     Wrapper to connect this callback to the callbackReadHoldingReg() method of
-**            a class instance.
+** \brief     Wrapper to connect this callback to the readHoldingReg() method of a class
+**            instance.
 ** \param     channel Handle to the Modbus server channel object that triggered the 
 **            callback.
 ** \param     addr Element address (0..65535).
@@ -387,8 +387,8 @@ tTbxMbServerResult TbxMbServer::callbackReadHoldingReg(tTbxMbServer   channel,
 
 
 /************************************************************************************//**
-** \brief     Wrapper to connect this callback to the callbackWriteHoldingReg() method of
-**            a class instance.
+** \brief     Wrapper to connect this callback to the writeHoldingReg() method of a class
+**            instance.
 ** \param     channel Handle to the Modbus server channel object that triggered the 
 **            callback.
 ** \param     addr Element address (0..65535).
@@ -430,13 +430,21 @@ tTbxMbServerResult TbxMbServer::callbackWriteHoldingReg(tTbxMbServer channel,
 ****************************************************************************************/
 /************************************************************************************//**
 ** \brief     Modbus RTU server constructor.
+** \param     nodeAddr The address of the node. Can be in the range 1..247 for a server
+**            node. Set it to 0 for the client.
+** \param     port The serial port to use. The actual meaning of the serial port is
+**            hardware dependent. It typically maps to the UART peripheral number. E.g. 
+**            TBX_MB_UART_PORT1 = USART1 on an STM32.
+** \param     baudrate The desired communication speed.
+** \param     stopbits Number of stop bits at the end of a character.
+** \param     parity Parity bit type to use.
 **
 ****************************************************************************************/
 TbxMbServerRtu::TbxMbServerRtu(uint8_t            nodeAddr, 
                                tTbxMbUartPort     serialPort, 
                                tTbxMbUartBaudrate baudrate,
                                tTbxMbUartStopbits stopbits,
-                               tTbxMbUartParity    parity)
+                               tTbxMbUartParity   parity)
   : TbxMbServer(), m_Transport(nullptr)
 {
   /* Create the Modbus RTU transport layer object. */
