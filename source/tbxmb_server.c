@@ -97,7 +97,12 @@ tTbxMbServer TbxMbServerCreate(tTbxMbTp transport)
       newServerCtx->instancePtr = NULL;
       newServerCtx->pollFcn = NULL;
       newServerCtx->processFcn = TbxMbServerProcessEvent;
+      newServerCtx->readInputFcn = NULL;
+      newServerCtx->readCoilFcn = NULL;
+      newServerCtx->writeCoilFcn = NULL;
       newServerCtx->readInputRegFcn = NULL;
+      newServerCtx->readHoldingRegFcn = NULL;
+      newServerCtx->writeHoldingRegFcn = NULL;
       newServerCtx->tpCtx = tpCtx;
       newServerCtx->tpCtx->channelCtx = newServerCtx;
       newServerCtx->tpCtx->isClient = TBX_FALSE;
@@ -145,6 +150,90 @@ void TbxMbServerFree(tTbxMbServer channel)
 
 /************************************************************************************//**
 ** \brief     Registers the callback function that this server calls, whenever a client
+**            request the reading of a specific discrete input.
+** \param     channel Handle to the Modbus server channel object.
+** \param     callback Pointer to the callback function.
+**
+****************************************************************************************/
+void TbxMbServerSetCallbackReadInput(tTbxMbServer          channel,
+                                     tTbxMbServerReadInput callback)
+{
+  /* Verify parameters. */
+  TBX_ASSERT((channel != NULL) && (callback != NULL));
+
+  /* Only continue with valid parameters. */
+  if ((channel != NULL) && (callback != NULL))
+  {
+    /* Convert the server channel pointer to the context structure. */
+    tTbxMbServerCtx * serverCtx = (tTbxMbServerCtx *)channel;
+    /* Sanity check on the context type. */
+    TBX_ASSERT(serverCtx->type == TBX_MB_SERVER_CONTEXT_TYPE);
+    /* Store the callback function pointer. */
+    TbxCriticalSectionEnter();
+    serverCtx->readInputFcn = callback;
+    TbxCriticalSectionExit();
+  }
+} /*** end of TbxMbServerSetCallbackReadInput ***/
+
+
+/************************************************************************************//**
+** \brief     Registers the callback function that this server calls, whenever a client
+**            request the reading of a specific coil.
+** \param     channel Handle to the Modbus server channel object.
+** \param     callback Pointer to the callback function.
+**
+****************************************************************************************/
+void TbxMbServerSetCallbackReadCoil(tTbxMbServer         channel,
+                                    tTbxMbServerReadCoil callback)
+{
+  /* Verify parameters. */
+  TBX_ASSERT((channel != NULL) && (callback != NULL));
+
+  /* Only continue with valid parameters. */
+  if ((channel != NULL) && (callback != NULL))
+  {
+    /* Convert the server channel pointer to the context structure. */
+    tTbxMbServerCtx * serverCtx = (tTbxMbServerCtx *)channel;
+    /* Sanity check on the context type. */
+    TBX_ASSERT(serverCtx->type == TBX_MB_SERVER_CONTEXT_TYPE);
+    /* Store the callback function pointer. */
+    TbxCriticalSectionEnter();
+    serverCtx->readCoilFcn = callback;
+    TbxCriticalSectionExit();
+  }
+} /*** end of TbxMbServerSetCallbackReadCoil ***/
+
+
+/************************************************************************************//**
+** \brief     Registers the callback function that this server calls, whenever a client
+**            request the writing of a specific coil.
+** \param     channel Handle to the Modbus server channel object.
+** \param     callback Pointer to the callback function.
+**
+****************************************************************************************/
+void TbxMbServerSetCallbackWriteCoil(tTbxMbServer          channel,
+                                     tTbxMbServerWriteCoil callback)
+{
+  /* Verify parameters. */
+  TBX_ASSERT((channel != NULL) && (callback != NULL));
+
+  /* Only continue with valid parameters. */
+  if ((channel != NULL) && (callback != NULL))
+  {
+    /* Convert the server channel pointer to the context structure. */
+    tTbxMbServerCtx * serverCtx = (tTbxMbServerCtx *)channel;
+    /* Sanity check on the context type. */
+    TBX_ASSERT(serverCtx->type == TBX_MB_SERVER_CONTEXT_TYPE);
+    /* Store the callback function pointer. */
+    TbxCriticalSectionEnter();
+    serverCtx->writeCoilFcn = callback;
+    TbxCriticalSectionExit();
+  }
+} /*** end of TbxMbServerSetCallbackWriteCoil ***/
+
+
+/************************************************************************************//**
+** \brief     Registers the callback function that this server calls, whenever a client
 **            request the reading of a specific input register.
 ** \param     channel Handle to the Modbus server channel object.
 ** \param     callback Pointer to the callback function.
@@ -169,6 +258,62 @@ void TbxMbServerSetCallbackReadInputReg(tTbxMbServer             channel,
     TbxCriticalSectionExit();
   }
 } /*** end of TbxMbServerSetCallbackReadInputReg ***/
+
+
+/************************************************************************************//**
+** \brief     Registers the callback function that this server calls, whenever a client
+**            request the reading of a specific holding register.
+** \param     channel Handle to the Modbus server channel object.
+** \param     callback Pointer to the callback function.
+**
+****************************************************************************************/
+void TbxMbServerSetCallbackReadHoldingReg(tTbxMbServer               channel,
+                                          tTbxMbServerReadHoldingReg callback)
+{
+  /* Verify parameters. */
+  TBX_ASSERT((channel != NULL) && (callback != NULL));
+
+  /* Only continue with valid parameters. */
+  if ((channel != NULL) && (callback != NULL))
+  {
+    /* Convert the server channel pointer to the context structure. */
+    tTbxMbServerCtx * serverCtx = (tTbxMbServerCtx *)channel;
+    /* Sanity check on the context type. */
+    TBX_ASSERT(serverCtx->type == TBX_MB_SERVER_CONTEXT_TYPE);
+    /* Store the callback function pointer. */
+    TbxCriticalSectionEnter();
+    serverCtx->readHoldingRegFcn = callback;
+    TbxCriticalSectionExit();
+  }
+} /*** end of TbxMbServerSetCallbackReadHoldingReg ***/
+
+
+/************************************************************************************//**
+** \brief     Registers the callback function that this server calls, whenever a client
+**            request the writing of a specific holding register.
+** \param     channel Handle to the Modbus server channel object.
+** \param     callback Pointer to the callback function.
+**
+****************************************************************************************/
+void TbxMbServerSetCallbackWriteHoldingReg(tTbxMbServer                channel,
+                                           tTbxMbServerWriteHoldingReg callback)
+{
+  /* Verify parameters. */
+  TBX_ASSERT((channel != NULL) && (callback != NULL));
+
+  /* Only continue with valid parameters. */
+  if ((channel != NULL) && (callback != NULL))
+  {
+    /* Convert the server channel pointer to the context structure. */
+    tTbxMbServerCtx * serverCtx = (tTbxMbServerCtx *)channel;
+    /* Sanity check on the context type. */
+    TBX_ASSERT(serverCtx->type == TBX_MB_SERVER_CONTEXT_TYPE);
+    /* Store the callback function pointer. */
+    TbxCriticalSectionEnter();
+    serverCtx->writeHoldingRegFcn = callback;
+    TbxCriticalSectionExit();
+  }
+} /*** end of TbxMbServerSetCallbackWriteHoldingReg ***/
 
 
 /************************************************************************************//**

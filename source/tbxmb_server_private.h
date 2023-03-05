@@ -53,13 +53,18 @@ typedef struct
    * and exactly match those in tTbxMbEventCtx. Think of it as the base that this struct
    * derives from. 
    */
-  void                   * instancePtr;          /**< Reserved for C++ wrapper.        */
-  tTbxMbServerPoll          pollFcn;             /**< Event poll function.             */
-  tTbxMbServerProcess       processFcn;          /**< Event process function.          */
+  void                       * instancePtr;         /**< Reserved for C++ wrapper.     */
+  tTbxMbServerPoll              pollFcn;            /**< Event poll function.          */
+  tTbxMbServerProcess           processFcn;         /**< Event process function.       */
   /* Private members. */
-  uint8_t                   type;                /**< Context type.                    */
-  tTbxMbTpCtx             * tpCtx;               /**< Assigned transport layer context.*/
-  tTbxMbServerReadInputReg  readInputRegFcn;     /**< Read input reg callback function.*/
+  uint8_t                       type;               /**< Context type.                 */
+  tTbxMbTpCtx                 * tpCtx;              /**< Assigned transport layer ctx. */
+  tTbxMbServerReadInput         readInputFcn;       /**< Read discrete input callback. */
+  tTbxMbServerReadCoil          readCoilFcn;        /**< Read coil callback.           */
+  tTbxMbServerWriteCoil         writeCoilFcn;       /**< Write coil callback.          */
+  tTbxMbServerReadInputReg      readInputRegFcn;    /**< Read input register callback. */
+  tTbxMbServerReadHoldingReg    readHoldingRegFcn;  /**< Read holding register cb.     */
+  tTbxMbServerWriteHoldingReg   writeHoldingRegFcn; /**< Write holding register cb.    */
 } tTbxMbServerCtx;
 
 

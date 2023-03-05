@@ -54,10 +54,39 @@ typedef enum
 } tTbxMbServerResult;
 
 
+/** \brief Modbus server callback function for reading a discrete input. */
+typedef tTbxMbServerResult (* tTbxMbServerReadInput)(tTbxMbServer   channel, 
+                                                     uint16_t       addr, 
+                                                     uint8_t      * value);
+
+/** \brief Modbus server callback function for reading a coil. */
+typedef tTbxMbServerResult (* tTbxMbServerReadCoil)(tTbxMbServer   channel, 
+                                                    uint16_t       addr, 
+                                                    uint8_t      * value);
+
+
+/** \brief Modbus server callback function for writing a coil. */
+typedef tTbxMbServerResult (* tTbxMbServerWriteCoil)(tTbxMbServer channel, 
+                                                     uint16_t     addr, 
+                                                     uint8_t      value);
+
+
 /** \brief Modbus server callback function for reading an input register. */
 typedef tTbxMbServerResult (* tTbxMbServerReadInputReg)(tTbxMbServer   channel, 
                                                         uint16_t       addr, 
                                                         uint16_t     * value);
+
+
+/** \brief Modbus server callback function for reading a holding register. */
+typedef tTbxMbServerResult (* tTbxMbServerReadHoldingReg)(tTbxMbServer   channel, 
+                                                          uint16_t       addr, 
+                                                          uint16_t     * value);
+
+
+/** \brief Modbus server callback function for writing a holding register. */
+typedef tTbxMbServerResult (* tTbxMbServerWriteHoldingReg)(tTbxMbServer channel, 
+                                                           uint16_t     addr, 
+                                                           uint16_t     value);
 
 
 /****************************************************************************************
@@ -65,11 +94,18 @@ typedef tTbxMbServerResult (* tTbxMbServerReadInputReg)(tTbxMbServer   channel,
 ****************************************************************************************/
 tTbxMbServer TbxMbServerCreate(tTbxMbTp transport);
 void         TbxMbServerFree(tTbxMbServer channel);
+void         TbxMbServerSetCallbackReadInput(tTbxMbServer          channel,
+                                             tTbxMbServerReadInput callback);
+void         TbxMbServerSetCallbackReadCoil(tTbxMbServer         channel,
+                                            tTbxMbServerReadCoil callback);
+void         TbxMbServerSetCallbackWriteCoil(tTbxMbServer          channel,
+                                             tTbxMbServerWriteCoil callback);
 void         TbxMbServerSetCallbackReadInputReg(tTbxMbServer             channel,
                                                 tTbxMbServerReadInputReg callback);
-/* TODO Add API for registering the Read/Write coil/input/registers callbacks. Store
- * the function pointers in tTbxMbServerCtx.
- */
+void         TbxMbServerSetCallbackReadHoldingReg(tTbxMbServer               channel,
+                                                  tTbxMbServerReadHoldingReg callback);
+void         TbxMbServerSetCallbackWriteHoldingReg(tTbxMbServer                channel,
+                                                   tTbxMbServerWriteHoldingReg callback);
 
 
 #ifdef __cplusplus
