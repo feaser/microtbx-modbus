@@ -740,12 +740,13 @@ static uint8_t TbxMbRtuValidate(tTbxMbTp transport)
 /************************************************************************************//**
 ** \brief     Event function to signal to this module that the entire transfer completed.
 ** \attention This function should be called by the UART module.
-** \details   This function assumes that it is called at UART Tx interrupt level. It
-**            accesses the RTU context, which is a resource shared with the event task.
-**            In the case of an RTOS, the interrupt (SWI/Timer) that triggers a task
-**            switch will always either have the same or a lower priority than the
-**            interrupt that calls this function. Consequently, the is no need for a
-**            critical section inside this function, when accessing the context.
+** \details   This function accesses the transport layer context, which is a shared
+**            resource. Even though this function is called at UART Tx interrupt level,
+**            it is still necessary to access the transport layer context through a
+**            critical section. On a multicore target, the event thread might run on
+**            one core, while this interrupt runs on another core. A critical section
+**            for such a target manages a spin lock, needed to have mutual exclusive
+**            access to the shared resource.
 ** \param     port The serial port that the transfer completed on.
 **
 ****************************************************************************************/
@@ -767,15 +768,20 @@ static void TbxMbRtuTransmitComplete(tTbxMbUartPort port)
      */
     if (tpCtx != NULL)
     {
+      TbxCriticalSectionEnter();
+      uint8_t stateCopy = tpCtx->state;
+      TbxCriticalSectionExit();
       /* This function should only be called when in the TRANSMISSION state. Verify
        * this. 
        */
-      TBX_ASSERT(tpCtx->state == TBX_MB_RTU_STATE_TRANSMISSION);
+      TBX_ASSERT(stateCopy == TBX_MB_RTU_STATE_TRANSMISSION);
       /* Only continue in the TRANSMISSION state. */
-      if (tpCtx->state == TBX_MB_RTU_STATE_TRANSMISSION)
+      if (stateCopy == TBX_MB_RTU_STATE_TRANSMISSION)
       {
         /* Store the time that the transmission completed. */
+        TbxCriticalSectionEnter();
         tpCtx->txDoneTime = TbxMbPortRtuTimerCount();
+        TbxCriticalSectionExit();
         /* Instruct the event task to start calling our polling function. Needed to
          * detect the 3.5 character timeout, after which we can transition back to the
          * IDLE state.
@@ -791,12 +797,13 @@ static void TbxMbRtuTransmitComplete(tTbxMbUartPort port)
 /************************************************************************************//**
 ** \brief     Event function to signal the reception of new data to this module.
 ** \attention This function should be called by the UART module. 
-** \details   This function assumes that it is called at UART Rx interrupt level. It
-**            accesses the RTU context, which is a resource shared with the event task.
-**            In the case of an RTOS, the interrupt (SWI/Timer) that triggers a task
-**            switch will always either have the same or a lower priority than the
-**            interrupt that calls this function. Consequently, the is no need for a
-**            critical section inside this function, when accessing the context.
+** \details   This function accesses the transport layer context, which is a shared
+**            resource. Even though this function is called at UART Tx interrupt level,
+**            it is still necessary to access the transport layer context through a
+**            critical section. On a multicore target, the event thread might run on
+**            one core, while this interrupt runs on another core. A critical section
+**            for such a target manages a spin lock, needed to have mutual exclusive
+**            access to the shared resource.
 ** \param     port The serial port that the transfer completed on.
 ** \param     data Byte array with newly received data.
 ** \param     len Number of newly received bytes.
@@ -826,22 +833,29 @@ static void TbxMbRtuDataReceived(      tTbxMbUartPort  port,
      */
     if (tpCtx != NULL)
     {
+      /* Get current time in RTU timer ticks. */
+      uint16_t currentTime = TbxMbPortRtuTimerCount();
+      TbxCriticalSectionEnter();
       /* Store the reception timestamp but first make a backup of the old timestamp, 
        * which is needed later on to do the 1.5 character timeout detection.
        */
       #if (TBX_MB_RTU_T1_5_TIMEOUT_ENABLE > 0U)        
       uint16_t oldRxTime = tpCtx->rxTime;
       #endif
-      tpCtx->rxTime = TbxMbPortRtuTimerCount();
+      tpCtx->rxTime = currentTime;
       /* The ADU for an RTU packet starts at one byte before the PDU, which is the last
        * byte of head[]. Get the pointer of where the ADU starts in the rxPacket.
        */
       uint8_t * aduPtr = &tpCtx->rxPacket.head[TBX_MB_TP_ADU_HEAD_LEN_MAX-1U];
+      /* Get copy of the state so the we can exit the critical section. */
+      uint8_t stateCopy = tpCtx->state;
+      TbxCriticalSectionExit();
       /* Are we in the RECEPTION state? Make sure to check this one first, as it will 
        * happen the most.
        */
-      if (tpCtx->state == TBX_MB_RTU_STATE_RECEPTION)
+      if (stateCopy == TBX_MB_RTU_STATE_RECEPTION)
       {
+        TbxCriticalSectionEnter();
         #if (TBX_MB_RTU_T1_5_TIMEOUT_ENABLE > 0U)        
         /* Check if a 1.5 character timeout occurred since the last reception. Note that
          * this calculation works, even if the RTU timer counter overflowed.
@@ -880,10 +894,12 @@ static void TbxMbRtuDataReceived(      tTbxMbUartPort  port,
           /* Update the write indexer into the ADU reception packet. */
           tpCtx->rxAduWrIdx += len;
         }
+        TbxCriticalSectionExit();
       }
       /* Are we in the IDLE state? */
-      else if (tpCtx->state == TBX_MB_RTU_STATE_IDLE)
+      else if (stateCopy == TBX_MB_RTU_STATE_IDLE)
       {
+        TbxCriticalSectionEnter();
         /* Transition to the RECEIVING state. */
         tpCtx->state = TBX_MB_RTU_STATE_RECEPTION;
         /* Copy the received data at the start of the ADU. Note that there is no need
@@ -900,6 +916,7 @@ static void TbxMbRtuDataReceived(      tTbxMbUartPort  port,
         tpCtx->rxAduWrIdx = len;
         /* Initialize frame OK/NOK flag to okay so far. */
         tpCtx->rxAduOkay = TBX_TRUE;
+        TbxCriticalSectionExit();
         /* Instruct the event task to call our polling function to be able to determine
          * when the 3.5 character idle time occurred, which marks the end of the packet.
          */
