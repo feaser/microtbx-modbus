@@ -28,12 +28,12 @@
 /****************************************************************************************
 * Include files
 ****************************************************************************************/
-#include "microtbxmodbus.h"                      /* MicroTBX-Modbus module             */
 #include "microtbx.h"                            /* MicroTBX module                    */
+#include "microtbxmodbus.h"                      /* MicroTBX-Modbus module             */
 #include "tbxmb_checks.h"                        /* MicroTBX-Modbus config checks      */
 #include "tbxmb_event_private.h"                 /* MicroTBX-Modbus event private      */
 #include "tbxmb_osal_private.h"                  /* MicroTBX-Modbus OSAL private       */
-#if (TBX_MB_CONF_OSAL == TBX_MB_OPT_OSAL_FREERTOS)
+#if (TBX_CONF_OSAL == 1U) /* FreeRTOS */
 #include <FreeRTOS.h>
 #include <task.h>
 #include <queue.h>
@@ -54,7 +54,7 @@
 #endif
 
 
-#if (TBX_MB_CONF_OSAL == TBX_MB_OPT_OSAL_NONE)
+#if (TBX_CONF_OSAL == 0U) /* Superloop */
 /****************************************************************************************
 *                             O S A L   N O N E
 ****************************************************************************************/
@@ -199,10 +199,10 @@ uint8_t TbxMbOsalWaitEvent(tTbxMbEvent * event,
   /* Give the result back to the caller. */
   return result;
 } /*** end of TbxMbOsalWaitEvent ***/
-#endif /* (TBX_MB_CONF_OSAL == TBX_MB_OPT_OSAL_NONE) */
+#endif /* (TBX_CONF_OSAL == 0U) */
 
 
-#if (TBX_MB_CONF_OSAL == TBX_MB_OPT_OSAL_FREERTOS)
+#if (TBX_CONF_OSAL == 1U) /* FreeRTOS */
 /****************************************************************************************
 *                             O S A L   F R E E R T O S
 ****************************************************************************************/
@@ -322,7 +322,7 @@ uint8_t TbxMbOsalWaitEvent(tTbxMbEvent * event,
   /* Give the result back to the caller. */
   return result;
 } /*** end of TbxMbOsalWaitEvent ***/
-#endif /* (TBX_MB_CONF_OSAL == TBX_MB_OPT_OSAL_FREERTOS) */
+#endif /* (TBX_CONF_OSAL == 1U) */
 
 
 /*********************************** end of tbxmb_osal.c *******************************/

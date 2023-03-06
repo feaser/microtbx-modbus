@@ -28,8 +28,8 @@
 /****************************************************************************************
 * Include files
 ****************************************************************************************/
-#include "microtbxmodbus.h"                      /* MicroTBX-Modbus module             */
 #include "microtbx.h"                            /* MicroTBX module                    */
+#include "microtbxmodbus.h"                      /* MicroTBX-Modbus module             */
 #include "tbxmb_checks.h"                        /* MicroTBX-Modbus config checks      */
 #include "tbxmb_uart_private.h"                  /* MicroTBX-Modbus UART private       */
 
