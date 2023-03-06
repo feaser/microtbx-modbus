@@ -30,7 +30,6 @@
 /****************************************************************************************
 * Include files
 ****************************************************************************************/
-#include "microtbx.h"                            /* MicroTBX library                   */
 #include "microtbxmodbus.h"                      /* MicroTBX-Modbus library            */
 #include "tbxmbserver.hpp"                       /* MicroTBX-Modbus C++ server         */
 
