@@ -107,7 +107,7 @@ static uint16_t         TbxMbRtuCalculatCrc(const uint8_t  * data,
  *         transport layer handle that uses a specific serial port, in a run-time
  *         efficient way.
  */
-static tTbxMbTpCtx * volatile tbxMbRtuCtx[TBX_MB_UART_NUM_PORT] = { 0 };
+static volatile tTbxMbTpCtx * tbxMbRtuCtx[TBX_MB_UART_NUM_PORT] = { 0 };
 
 
 /************************************************************************************//**
@@ -759,7 +759,7 @@ static void TbxMbRtuTransmitComplete(tTbxMbUartPort port)
   if (port < TBX_MB_UART_NUM_PORT)
   {
     /* Obtain transport layer context linked to UART port of this event. */
-    tTbxMbTpCtx * tpCtx = tbxMbRtuCtx[port];
+    tTbxMbTpCtx volatile * tpCtx = tbxMbRtuCtx[port];
     /* Verify transport layer context. */
     TBX_ASSERT(tpCtx != NULL)
     /* Only continue with a valid transport layer context. Note that there is no need
@@ -786,7 +786,9 @@ static void TbxMbRtuTransmitComplete(tTbxMbUartPort port)
          * detect the 3.5 character timeout, after which we can transition back to the
          * IDLE state.
          */
-        tTbxMbEvent newEvent = {.context = tpCtx, .id = TBX_MB_EVENT_ID_START_POLLING};
+        tTbxMbEvent newEvent;
+        newEvent.context = (void *)tpCtx;
+        newEvent.id = TBX_MB_EVENT_ID_START_POLLING;
         TbxMbOsalPostEvent(&newEvent, TBX_TRUE);
       }
     }
@@ -824,7 +826,7 @@ static void TbxMbRtuDataReceived(      tTbxMbUartPort  port,
       (len > 0U))
   {
     /* Obtain transport layer context linked to UART port of this event. */
-    tTbxMbTpCtx * tpCtx = tbxMbRtuCtx[port];
+    tTbxMbTpCtx volatile * tpCtx = tbxMbRtuCtx[port];
     /* Verify transport layer context. */
     TBX_ASSERT(tpCtx != NULL)
     /* Only continue with a valid transport layer context. Note that there is no need
@@ -846,7 +848,7 @@ static void TbxMbRtuDataReceived(      tTbxMbUartPort  port,
       /* The ADU for an RTU packet starts at one byte before the PDU, which is the last
        * byte of head[]. Get the pointer of where the ADU starts in the rxPacket.
        */
-      uint8_t * aduPtr = &tpCtx->rxPacket.head[TBX_MB_TP_ADU_HEAD_LEN_MAX-1U];
+      uint8_t volatile * aduPtr = &tpCtx->rxPacket.head[TBX_MB_TP_ADU_HEAD_LEN_MAX-1U];
       /* Get copy of the state so the we can exit the critical section. */
       uint8_t stateCopy = tpCtx->state;
       TbxCriticalSectionExit();
@@ -920,7 +922,9 @@ static void TbxMbRtuDataReceived(      tTbxMbUartPort  port,
         /* Instruct the event task to call our polling function to be able to determine
          * when the 3.5 character idle time occurred, which marks the end of the packet.
          */
-        tTbxMbEvent newEvent = {.context = tpCtx, .id = TBX_MB_EVENT_ID_START_POLLING};
+        tTbxMbEvent newEvent;
+        newEvent.context = (void *)tpCtx;
+        newEvent.id = TBX_MB_EVENT_ID_START_POLLING;
         TbxMbOsalPostEvent(&newEvent, TBX_TRUE);
       }
       else
