@@ -32,6 +32,7 @@
 ****************************************************************************************/
 #include <stdint.h>                              /* Standard integer types             */
 #include <stddef.h>                              /* Standard definitions               */
+#include "tbxmb_common.h"                        /* MicroTBX-Modbus common definitions */
 #include "tbxmb_tp.h"                            /* MicroTBX-Modbus transport layer    */
 #include "tbxmb_uart.h"                          /* MicroTBX-Modbus UART               */
 #include "tbxmb_rtu.h"                           /* MicroTBX-Modbus RTU                */

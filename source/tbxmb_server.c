@@ -48,6 +48,9 @@
 * Function prototypes
 ****************************************************************************************/
 static void TbxMbServerProcessEvent(tTbxMbEvent * event);
+static void TbxMbServerFC04ReadInputReg(tTbxMbServerCtx       * context,
+                                        tTbxMbTpPacket  const * rxPacket,
+                                        tTbxMbTpPacket        * txPacket);
 
 
 /************************************************************************************//**
@@ -317,6 +320,42 @@ void TbxMbServerSetCallbackWriteHoldingReg(tTbxMbServer                channel,
 
 
 /************************************************************************************//**
+** \brief     Helper function to extract an unsigned 16-bit value from the data of a 
+**            Modbus packet. Note that unsigned 16-bit values are always store in the
+**            big endian format, e.g. 0x1234 is stored as:
+**            - data[0] = 0x12
+**            - data[1] = 0x34
+** \param     data Pointer to the byte array that holds the two bytes to extract, stored
+**            in the big endian format.
+** \return    The 16-bit unsigned integer value.
+**
+****************************************************************************************/
+static inline uint16_t TbxMbServerExtractUInt16BE(uint8_t const * data)
+{
+  return ((uint16_t)data[0] << 8U) | data[1];
+} /*** end of TbxMbServerExtractUInt16BE ***/
+
+
+/************************************************************************************//**
+** \brief     Helper function to store an unsigned 16-bit value in the data of a Modbus
+**            packet. Note that unsigned 16-bit values are always stored in the
+**            big endian format, e.g. 0x1234 is stored as:
+**            - data[0] = 0x12
+**            - data[1] = 0x34
+** \param     value The unsigned 16-bit value to store.
+** \param     data Pointer to the byte array where to store the value in the big endian
+**            format.
+**
+****************************************************************************************/
+static inline void TbxMbServerStoreUInt16BE(uint16_t   value,
+                                            uint8_t  * data)
+{
+  data[0] = (uint8_t)(value >> 8U);
+  data[1] = (uint8_t)value;
+} /*** end of TbxMbServerExtractUInt16BE ***/
+
+
+/************************************************************************************//**
 ** \brief     Event processing function that is automatically called when an event for
 **            this server channel object was received in TbxMbEventTask().
 ** \param     event Pointer to the event to process. Note that the event->context points
@@ -347,49 +386,54 @@ static void TbxMbServerProcessEvent(tTbxMbEvent * event)
       {
         case TBX_MB_EVENT_ID_PDU_RECEIVED:
         {
-          /* TODO Process the newly received PDU. 
-           * - Use getRxPacketFcn() to access the rx packet.
-           * - Use getTxPacketFcn() to access the tx packet and prepare the reponse.
-           * - Use receptionDoneFcn() to release rx packet (and go to RTU IDLE).
-           * - Use transmitFcn() to transmit the tx response packet (from RTU IDLE).
-           * 
-           * Current test code hardcodes the reading of the first input register and does
-           * not do all the needed error checking yet.
+          uint8_t okayToSendResponse = TBX_FALSE;
+          /* Obtain read access to the newly received packet and write access to the
+           * response packet. 
            */
-          tTbxMbTpPacket *rxPacket = serverCtx->tpCtx->getRxPacketFcn(serverCtx->tpCtx);
-          tTbxMbTpPacket *txPacket = serverCtx->tpCtx->getTxPacketFcn(serverCtx->tpCtx);
-          uint8_t sendReponse = TBX_FALSE;
-          TBX_ASSERT(rxPacket != NULL);
-          TBX_ASSERT(txPacket != NULL);
-          /* Read discrete input register? */
-          if (rxPacket->pdu.code == 4U)
+          tTbxMbTpPacket * rxPacket = serverCtx->tpCtx->getRxPacketFcn(serverCtx->tpCtx);
+          tTbxMbTpPacket * txPacket = serverCtx->tpCtx->getTxPacketFcn(serverCtx->tpCtx);
+          /* Since we're requested to process a newly received PDU, these packet accesses
+           * should always succeed. Sanity check anyways, just in case.
+           */
+          TBX_ASSERT((rxPacket != NULL) && (txPacket != NULL));
+          /* Only continue with packet access. */
+          if ((rxPacket != NULL) && (txPacket != NULL))
           {
-            uint16_t startAddr;
-            uint16_t numRegs;
-            startAddr = (uint16_t)(rxPacket->pdu.data[0] << 8U) | rxPacket->pdu.data[1];
-            numRegs   = (uint16_t)(rxPacket->pdu.data[2] << 8U) | rxPacket->pdu.data[3];
-            /* Reading just input register address 0 (element 1)? */
-            if ( (startAddr == 0U) && (numRegs == 1U) )
+            /* Update flag that we can actually send a response, now that we know we 
+             * have access to txPacket.
+             */
+            okayToSendResponse = TBX_TRUE;
+            /* Prepare the response packet function code. */
+            txPacket->pdu.code = rxPacket->pdu.code;
+            /* Filter on the function code. */
+            switch (rxPacket->pdu.code)
             {
-              uint16_t inputRegValue = 0U;
-              if (serverCtx->readInputRegFcn != NULL)
+              /* ---------------- FC04 - Read Input Register ------------------------- */
+              case TBX_MB_FC04_READ_INPUT_REGISTER:
               {
-                serverCtx->readInputRegFcn(serverCtx, startAddr, &inputRegValue);
+                TbxMbServerFC04ReadInputReg(serverCtx, rxPacket, txPacket);
               }
-              txPacket->pdu.code = 4U;   
-              txPacket->pdu.data[0] = 2U; /* Byte count. */
-              txPacket->pdu.data[1] = (uint8_t)(inputRegValue >> 8U);
-              txPacket->pdu.data[2] = (uint8_t)inputRegValue;
-              txPacket->dataLen = 3U;
-              sendReponse = TBX_TRUE;
+              break;
+
+              /* ---------------- Unsupported function code -------------------------- */
+              default:
+              {
+                /* This function code is currently not supported. */
+                txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+                txPacket->pdu.data[0] = TBX_MB_EC01_ILLEGAL_FUNCTION;
+                txPacket->dataLen = 1U;
+              }
+              break;
             }
           }
-          /* Release rx packet (and go to RTU IDLE). */
-          serverCtx->tpCtx->receptionDoneFcn(serverCtx->tpCtx);
-          /* Transmit response? Should be done after receptionDoneFcn() otherwise
-           * RTU is not in IDLE.
+          /* Inform the transport layer that were done with the rx packet and no longer
+           * need access to it.
            */
-          if (sendReponse == TBX_TRUE)
+          serverCtx->tpCtx->receptionDoneFcn(serverCtx->tpCtx);
+          /* Request the transport layer to transmit the response. Note that
+           * transmitFcn() should only be called after calling receptionDoneFcn().
+           */
+          if (okayToSendResponse == TBX_TRUE)
           {
             (void)serverCtx->tpCtx->transmitFcn(serverCtx->tpCtx);
           }
@@ -414,6 +458,87 @@ static void TbxMbServerProcessEvent(tTbxMbEvent * event)
     }
   }
 } /*** end of TbxMbServerProcessEvent ***/
+
+
+/************************************************************************************//**
+** \brief     Handles a newly received PDU for function code 4 - Read Input Registers.
+** \details   Note that this function is called at a time that txPacket->code is already
+**            prepared. Also note that txPacket->node should not be touched here.
+** \param     context Pointer to the Modbus server channel context.
+** \param     rxPacket Received PDU packet with MUX access.
+** \param     txPacket Storage for the PDU response packet with MUX access.
+**
+****************************************************************************************/
+static void TbxMbServerFC04ReadInputReg(tTbxMbServerCtx       * context,
+                                        tTbxMbTpPacket  const * rxPacket,
+                                        tTbxMbTpPacket        * txPacket)
+{
+  /* Verify parameters. */
+  TBX_ASSERT((context != NULL) && (rxPacket != NULL) && (txPacket != NULL));
+
+  /* Only continue with valid parameters. */
+  if ((context != NULL) && (rxPacket != NULL) && (txPacket != NULL))
+  {
+    /* Read out request packet parameters. */
+    uint16_t startAddr = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[0]);
+    uint16_t numRegs   = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[2]);
+
+    /* Check if a callback function was registered. */
+    if (context->readInputRegFcn == NULL)
+    {
+      /* Prepare exception response. */
+      txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+      txPacket->pdu.data[0] = TBX_MB_EC01_ILLEGAL_FUNCTION;
+      txPacket->dataLen = 1U;
+    }
+    /* Check if the quantity of registers is invalid. */
+    else if ( (numRegs < 1U) || (numRegs > 125U) )
+    {
+      /* Prepare exception response. */
+      txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+      txPacket->pdu.data[0] = TBX_MB_EC03_ILLEGAL_DATA_VALUE;
+      txPacket->dataLen = 1U;
+    }
+    /* All is good for further processing. */
+    else
+    {
+      /* Store byte count in the response and prepare the data lenght. */
+      txPacket->pdu.data[0] = 2U * numRegs;
+      txPacket->dataLen = txPacket->pdu.data[0] + 1U;
+      /* Loop through all the registers. */
+      for (uint8_t idx = 0U; idx < numRegs; idx++)
+      {
+        uint16_t regValue = 0U;
+        tTbxMbServerResult srvResult;
+        /* Obtain register value. */
+        srvResult = context->readInputRegFcn(context, startAddr + idx, &regValue);
+        /* No exception reported? */
+        if (srvResult == TBX_MB_SERVER_OK)
+        {
+          /* Store the register value in the response. */
+          TbxMbServerStoreUInt16BE(regValue, &txPacket->pdu.data[1U + (idx * 2U)]);
+        }
+        /* Exception detected. */
+        else
+        {
+          /* Prepare exception response. */
+          txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+          if (srvResult == TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR)
+          {
+            txPacket->pdu.data[0] = TBX_MB_EC02_ILLEGAL_DATA_ADDRESS;
+          }
+          else
+          {
+            txPacket->pdu.data[0] = TBX_MB_EC04_SERVER_DEVICE_FAILURE;
+          }
+          txPacket->dataLen = 1U;
+          /* Stop looping. */
+          break;
+        }
+      }
+    }
+  }
+} /*** end of TbxMbServerFC04ReadInputReg ***/
 
 
 /*********************************** end of tbxmb_server.c *****************************/

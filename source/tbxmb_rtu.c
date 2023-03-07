@@ -478,13 +478,30 @@ static uint8_t TbxMbRtuTransmit(tTbxMbTp transport)
     TbxCriticalSectionEnter();
     if (tpCtx->state == TBX_MB_RTU_STATE_IDLE)
     {
-      okayToTransmit = TBX_TRUE;
-      /* Transistion to the TRANSMISSION state to lock access to the txPacket for the
-       * duration of the transmission. Note that the unlock happens once the state 
-       * transitions back to IDLE. This happens 3.5 character times after the 
-       * completion of the transmission.
+      /* Should a response actually be transmitted? If we are a server, then upon
+       * reception packet validation, txPacket.node was already set to 
+       * TBX_MB_RTU_NODE_ADDR_BROADCAST for us, in case of a broadcast request, which
+       * does not require a response.
        */
-      tpCtx->state = TBX_MB_RTU_STATE_TRANSMISSION;
+      if ( (tpCtx->isClient == TBX_FALSE) && 
+           (tpCtx->txPacket.node == TBX_MB_RTU_NODE_ADDR_BROADCAST) )
+      {
+        /* To bypass the actual response transmission, simply update the result to
+         * indicate success and keep the okayToTransmit set to its default TBX_FALSE.
+         */
+        result = TBX_OK;
+      }
+      /* Okay to transmit the response. */
+      else
+      {
+        okayToTransmit = TBX_TRUE;
+        /* Transition to the TRANSMISSION state to lock access to the txPacket for the
+         * duration of the transmission. Note that the unlock happens once the state 
+         * transitions back to IDLE. This happens 3.5 character times after the 
+         * completion of the transmission.
+         */
+        tpCtx->state = TBX_MB_RTU_STATE_TRANSMISSION;
+      }
     }
     TbxCriticalSectionExit();
     /* Only continue if no other packet transmission is already in progress. */
@@ -711,9 +728,16 @@ static uint8_t TbxMbRtuValidate(tTbxMbTp transport)
         if (tpCtx->isClient == TBX_FALSE)
         {
           /* Only process frames that are addressed to us (unicast or broadcast). */
-          if ( (tpCtx->rxPacket.node == tpCtx->nodeAddr) ||
-               (tpCtx->rxPacket.node == TBX_MB_RTU_NODE_ADDR_BROADCAST) )
+          if ((tpCtx->rxPacket.node == tpCtx->nodeAddr) ||
+              (tpCtx->rxPacket.node == TBX_MB_RTU_NODE_ADDR_BROADCAST))
           {
+            /* Set the node address in the txPacket node element. It is used during
+             * transmission to decided if the actual sending of the response should be
+             * suppressed, which is the case for TBX_MB_RTU_NODE_ADDR_BROADCAST. No need
+             * for a critical section, because we are guaranteed not in the IDLE or
+             * TRANSMISSION states.
+             */
+            tpCtx->txPacket.node = tpCtx->rxPacket.node;
             /* Packet is valid. Update the result accordingly. */
             result = TBX_OK;
           }
