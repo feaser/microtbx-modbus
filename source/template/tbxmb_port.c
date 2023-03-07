@@ -53,9 +53,9 @@ void TbxMbPortUartRxInterrupt(tTbxMbUartPort port);
  */
 static volatile struct
 {
-  uint8_t const * data;                  /**< Pointer of the transmit data byte array. */
-  uint16_t        nextIdx;               /**< Index of the next byte to transmit.      */
-  uint16_t        totalLen;              /**< Total number of bytes to transmit.       */
+  uint8_t  const * data;                 /**< Pointer of the transmit data byte array. */
+  uint16_t         nextIdx;              /**< Index of the next byte to transmit.      */
+  uint16_t         totalLen;             /**< Total number of bytes to transmit.       */
 } transmitInfo[TBX_MB_UART_NUM_PORT];
 
 
@@ -111,9 +111,9 @@ void TbxMbPortUartInit(tTbxMbUartPort     port,
 ** \return    TBX_OK if successful, TBX_ERROR otherwise.  
 **
 ****************************************************************************************/
-uint8_t TbxMbPortUartTransmit(      tTbxMbUartPort   port, 
-                              const uint8_t        * data, 
-                                    uint16_t         len)
+uint8_t TbxMbPortUartTransmit(tTbxMbUartPort         port, 
+                              uint8_t        const * data, 
+                              uint16_t               len)
 {
   uint8_t result = TBX_OK;
 

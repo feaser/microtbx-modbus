@@ -95,8 +95,8 @@ void TbxMbOsalInit(void)
 **            routine, TBX_FALSE otherwise.
 **
 ****************************************************************************************/
-void TbxMbOsalPostEvent(const tTbxMbEvent * event, 
-                              uint8_t       fromIsr)
+void TbxMbOsalPostEvent(tTbxMbEvent const * event, 
+                        uint8_t             fromIsr)
 {
   TBX_UNUSED_ARG(fromIsr);
 
@@ -243,8 +243,8 @@ void TbxMbOsalInit(void)
 **            routine, TBX_FALSE otherwise.
 **
 ****************************************************************************************/
-void TbxMbOsalPostEvent(const tTbxMbEvent * event, 
-                              uint8_t       fromIsr)
+void TbxMbOsalPostEvent(tTbxMbEvent const * event, 
+                        uint8_t             fromIsr)
 {
   /* Verify parameters. */
   TBX_ASSERT(event != NULL);
@@ -258,7 +258,7 @@ void TbxMbOsalPostEvent(const tTbxMbEvent * event,
       /* Add the event to the queue. There should be space in the queue so no need to
        * wait for a spot to become available in the queue.
        */
-      BaseType_t queueResult = xQueueSend(eventQueue, (const void *)event, 0U);
+      BaseType_t queueResult = xQueueSend(eventQueue, (void const *)event, 0U);
       /* Make sure the event could be added. If not, then the event queue size is set
        * too small. In this case increase the event queue size using configuration
        * macro TBX_MB_EVENT_QUEUE_SIZE.

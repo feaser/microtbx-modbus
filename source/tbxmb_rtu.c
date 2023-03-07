@@ -93,11 +93,11 @@ static tTbxMbTpPacket * TbxMbRtuGetRxPacket(tTbxMbTp transport);
 static tTbxMbTpPacket * TbxMbRtuGetTxPacket(tTbxMbTp transport);
 static uint8_t          TbxMbRtuValidate(tTbxMbTp transport);
 static void             TbxMbRtuTransmitComplete(tTbxMbUartPort port);
-static void             TbxMbRtuDataReceived(      tTbxMbUartPort   port, 
-                                             const uint8_t        * data, 
-                                                   uint8_t          len);
-static uint16_t         TbxMbRtuCalculatCrc(const uint8_t  * data, 
-                                                  uint16_t   len);
+static void             TbxMbRtuDataReceived(tTbxMbUartPort         port, 
+                                             uint8_t        const * data, 
+                                             uint8_t                len);
+static uint16_t         TbxMbRtuCalculatCrc(uint8_t  const * data, 
+                                            uint16_t         len);
 
 
 /****************************************************************************************
@@ -835,9 +835,9 @@ static void TbxMbRtuTransmitComplete(tTbxMbUartPort port)
 ** \param     len Number of newly received bytes.
 **
 ****************************************************************************************/
-static void TbxMbRtuDataReceived(      tTbxMbUartPort  port, 
-                                 const uint8_t       * data, 
-                                       uint8_t         len)
+static void TbxMbRtuDataReceived(tTbxMbUartPort         port, 
+                                 uint8_t        const * data, 
+                                 uint8_t                len)
 {
   /* Verify parameters. */
   TBX_ASSERT((port < TBX_MB_UART_NUM_PORT) && 
@@ -968,8 +968,8 @@ static void TbxMbRtuDataReceived(      tTbxMbUartPort  port,
 ** \return    The calculated CRC16 checksum value.
 **
 ****************************************************************************************/
-static uint16_t TbxMbRtuCalculatCrc(const uint8_t  * data, 
-                                          uint16_t   len)
+static uint16_t TbxMbRtuCalculatCrc(uint8_t  const * data, 
+                                    uint16_t         len)
 {
   /* Lookup table for fast CRC16 calculation. Made static to lower the stack load. */
   static const uint16_t tbxMbRtuCrcTable[] =

@@ -40,9 +40,9 @@ void     TbxMbPortUartInit(tTbxMbUartPort     port,
                            tTbxMbUartDatabits databits, 
                            tTbxMbUartStopbits stopbits,
                            tTbxMbUartParity   parity);
-uint8_t  TbxMbPortUartTransmit(      tTbxMbUartPort   port, 
-                               const uint8_t        * data, 
-                                     uint16_t         len);
+uint8_t  TbxMbPortUartTransmit(tTbxMbUartPort         port, 
+                               uint8_t        const * data, 
+                               uint16_t               len);
 
 /* RTU hardware port functions. */
 uint16_t TbxMbPortRtuTimerCount(void);

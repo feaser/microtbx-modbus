@@ -492,7 +492,7 @@ static void TbxMbServerFC04ReadInputReg(tTbxMbServerCtx       * context,
       txPacket->dataLen = 1U;
     }
     /* Check if the quantity of registers is invalid. */
-    else if ( (numRegs < 1U) || (numRegs > 125U) )
+    else if ((numRegs < 1U) || (numRegs > 125U))
     {
       /* Prepare exception response. */
       txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
@@ -502,13 +502,13 @@ static void TbxMbServerFC04ReadInputReg(tTbxMbServerCtx       * context,
     /* All is good for further processing. */
     else
     {
-      /* Store byte count in the response and prepare the data lenght. */
+      /* Store byte count in the response and prepare the data length. */
       txPacket->pdu.data[0] = 2U * numRegs;
       txPacket->dataLen = txPacket->pdu.data[0] + 1U;
       /* Loop through all the registers. */
       for (uint8_t idx = 0U; idx < numRegs; idx++)
       {
-        uint16_t regValue = 0U;
+        uint16_t           regValue = 0U;
         tTbxMbServerResult srvResult;
         /* Obtain register value. */
         srvResult = context->readInputRegFcn(context, startAddr + idx, &regValue);

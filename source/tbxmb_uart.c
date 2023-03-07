@@ -111,9 +111,9 @@ void TbxMbUartInit(tTbxMbUartPort             port,
 ** \return    TBX_OK if successful, TBX_ERROR otherwise.  
 **
 ****************************************************************************************/
-uint8_t TbxMbUartTransmit(      tTbxMbUartPort   port, 
-                          const uint8_t        * data, 
-                                uint16_t         len)
+uint8_t TbxMbUartTransmit(tTbxMbUartPort         port, 
+                          uint8_t        const * data, 
+                          uint16_t               len)
 {
   uint8_t result = TBX_ERROR;
 
@@ -169,9 +169,9 @@ void TbxMbUartTransmitComplete(tTbxMbUartPort port)
 ** \param     len Number of newly received bytes.
 **
 ****************************************************************************************/
-void TbxMbUartDataReceived(      tTbxMbUartPort   port, 
-                           const uint8_t        * data, 
-                                 uint8_t          len)
+void TbxMbUartDataReceived(tTbxMbUartPort         port, 
+                           uint8_t        const * data, 
+                           uint8_t                len)
 {
   /* Verify parameters. */
   TBX_ASSERT((port < TBX_MB_UART_NUM_PORT) && 
