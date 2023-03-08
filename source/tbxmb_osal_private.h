@@ -34,9 +34,14 @@ extern "C" {
 /****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
-void    TbxMbOsalInit(void);
-void    TbxMbOsalPostEvent(tTbxMbEvent const * event, uint8_t fromIsr);
-uint8_t TbxMbOsalWaitEvent(tTbxMbEvent * event, uint16_t timeoutMs);
+void    TbxMbOsalInit     (void);
+
+void    TbxMbOsalPostEvent(tTbxMbEvent const * event, 
+                           uint8_t             fromIsr);
+
+uint8_t TbxMbOsalWaitEvent(tTbxMbEvent       * event, 
+                           uint16_t            timeoutMs);
+
 
 #ifdef __cplusplus
 }

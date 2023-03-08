@@ -47,16 +47,20 @@
 /****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
-static void TbxMbServerProcessEvent(tTbxMbEvent * event);
-static void TbxMbServerFC03ReadHoldingRegs(tTbxMbServerCtx       * context,
-                                           tTbxMbTpPacket  const * rxPacket,
-                                           tTbxMbTpPacket        * txPacket);
-static void TbxMbServerFC04ReadInputRegs(tTbxMbServerCtx       * context,
-                                         tTbxMbTpPacket  const * rxPacket,
-                                         tTbxMbTpPacket        * txPacket);
-static void TbxMbServerFC06WriteSingleReg(tTbxMbServerCtx       * context,
-                                          tTbxMbTpPacket  const * rxPacket,
-                                          tTbxMbTpPacket        * txPacket);
+static void TbxMbServerProcessEvent         (tTbxMbEvent           * event);
+
+static void TbxMbServerFC03ReadHoldingRegs  (tTbxMbServerCtx       * context,
+                                             tTbxMbTpPacket  const * rxPacket,
+                                             tTbxMbTpPacket        * txPacket);
+
+static void TbxMbServerFC04ReadInputRegs    (tTbxMbServerCtx       * context,
+                                             tTbxMbTpPacket  const * rxPacket,
+                                             tTbxMbTpPacket        * txPacket);
+
+static void TbxMbServerFC06WriteSingleReg   (tTbxMbServerCtx       * context,
+                                             tTbxMbTpPacket  const * rxPacket,
+                                             tTbxMbTpPacket        * txPacket);
+
 static void TbxMbServerFC16WriteMultipleRegs(tTbxMbServerCtx       * context,
                                              tTbxMbTpPacket  const * rxPacket,
                                              tTbxMbTpPacket        * txPacket);

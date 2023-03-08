@@ -43,8 +43,9 @@ typedef void * tTbxMbClient;
 /****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
-tTbxMbClient TbxMbClientCreate(tTbxMbTp transport);
-void         TbxMbClientFree(tTbxMbClient channel);
+tTbxMbClient TbxMbClientCreate(tTbxMbTp     transport);
+
+void         TbxMbClientFree  (tTbxMbClient channel);
 
 
 #ifdef __cplusplus

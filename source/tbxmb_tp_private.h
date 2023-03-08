@@ -68,8 +68,8 @@ extern "C" {
 /** \brief Type for grouping all "Protocol Data Unit" data together. */
 typedef struct
 {
-  uint8_t code;                                        /**< PDU function code.         */
-  uint8_t data[TBX_MB_TP_PDU_DATA_LEN_MAX];            /**< PDU data bytes.            */
+  uint8_t     code;                                    /**< PDU function code.         */
+  uint8_t     data[TBX_MB_TP_PDU_DATA_LEN_MAX];        /**< PDU data bytes.            */
 } tTbxMbTpPdu;
 
 
@@ -85,18 +85,18 @@ typedef struct
 
 
 /** \brief Transport layer interface function to detect events in a polling manner. */
-typedef void (* tTbxMbTpPoll)(void * context);
+typedef void (* tTbxMbTpPoll)                   (void        * context);
 
 
 /** \brief Transport layer interface function for processing events. */
-typedef void (* tTbxMbTpProcess)(tTbxMbEvent * event);
+typedef void (* tTbxMbTpProcess)                (tTbxMbEvent * event);
 
 
 /** \brief Transport layer interface function to start the transmission of the data 
  *         packet, stored in the transport layer context. Use getTxPacketFcn() to
  *         obtain access to the transmit packet.
  */
-typedef uint8_t (* tTbxMbTpTransmit)(tTbxMbTp transport);
+typedef uint8_t (* tTbxMbTpTransmit)            (tTbxMbTp      transport);
 
 
 /** \brief Transport layer interface function to signal that the channel is done
@@ -104,7 +104,7 @@ typedef uint8_t (* tTbxMbTpTransmit)(tTbxMbTp transport);
  *         Should be called by a channel after it called getRxPacketFcn() while handling
  *         the TBX_MB_EVENT_ID_PDU_RECEIVED event.
  */
-typedef void (* tTbxMbTpReceptionDone)(tTbxMbTp transport);
+typedef void (* tTbxMbTpReceptionDone)          (tTbxMbTp      transport);
 
 
 /** \brief Transport layer interface function to be called by a channel to obtain read
@@ -112,7 +112,7 @@ typedef void (* tTbxMbTpReceptionDone)(tTbxMbTp transport);
  *         accessible. Can be called when processing the TBX_MB_EVENT_ID_PDU_RECEIVED
  *         event.
  */
-typedef tTbxMbTpPacket * (* tTbxMbTpGetRxPacket)(tTbxMbTp transport);
+typedef tTbxMbTpPacket * (* tTbxMbTpGetRxPacket)(tTbxMbTp      transport);
 
 
 /** \brief Transport layer interface function to be called by a channel to obtain write
@@ -120,7 +120,7 @@ typedef tTbxMbTpPacket * (* tTbxMbTpGetRxPacket)(tTbxMbTp transport);
  *         accessible. Can by called to prepare the transmit packet before calling the
  *         transport layer's transmitFcn().
  */
-typedef tTbxMbTpPacket * (* tTbxMbTpGetTxPacket)(tTbxMbTp transport);
+typedef tTbxMbTpPacket * (* tTbxMbTpGetTxPacket)(tTbxMbTp      transport);
 
 
 /** \brief   Modbus transport layer context that groups all transport layer specific

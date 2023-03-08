@@ -37,7 +37,7 @@ extern "C" {
 /** \brief Modbus client channel interface function to detect events in a polling
  *         manner.
  */
-typedef void (* tTbxMbClientPoll)(void * context);
+typedef void (* tTbxMbClientPoll)   (void        * context);
 
 
 /** \brief Modbus client channel  interface function for processing events. */

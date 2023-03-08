@@ -38,27 +38,29 @@ extern "C" {
 /** \brief Transport layer callback function to signal the completion of a data transmit
  *         transfer.
  */
-typedef void (* tTbxMbUartTransmitComplete)(tTbxMbUartPort port);
+typedef void (* tTbxMbUartTransmitComplete)(tTbxMbUartPort         port);
+
 
 /** \breif Transport layer callback function to signal the reception of new data. */
-typedef void (* tTbxMbUartDataReceived)(tTbxMbUartPort         port, 
-                                        uint8_t        const * data, 
-                                        uint8_t                len);
+typedef void (* tTbxMbUartDataReceived)    (tTbxMbUartPort         port, 
+                                            uint8_t        const * data, 
+                                            uint8_t                len);
 
 
 /****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
-void    TbxMbUartInit(tTbxMbUartPort             port, 
-                      tTbxMbUartBaudrate         baudrate,
-                      tTbxMbUartDatabits         databits, 
-                      tTbxMbUartStopbits         stopbits,
-                      tTbxMbUartParity           parity,
-                      tTbxMbUartTransmitComplete transmitCompleteFcn,
-                      tTbxMbUartDataReceived     dataReceivedFcn);
-uint8_t TbxMbUartTransmit(tTbxMbUartPort         port, 
-                          uint8_t        const * data, 
-                          uint16_t               len);
+void    TbxMbUartInit    (tTbxMbUartPort                     port, 
+                          tTbxMbUartBaudrate                 baudrate,
+                          tTbxMbUartDatabits                 databits, 
+                          tTbxMbUartStopbits                 stopbits,
+                          tTbxMbUartParity                   parity,
+                          tTbxMbUartTransmitComplete         transmitCompleteFcn,
+                          tTbxMbUartDataReceived             dataReceivedFcn);
+
+uint8_t TbxMbUartTransmit(tTbxMbUartPort                     port, 
+                          uint8_t                    const * data, 
+                          uint16_t                           len);
 
 
 #ifdef __cplusplus

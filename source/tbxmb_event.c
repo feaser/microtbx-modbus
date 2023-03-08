@@ -39,7 +39,7 @@
 * Type definitions
 ****************************************************************************************/
 /** \brief Event task interface function to detect events in a polling manner. */
-typedef void (* tTbxMbEventPoll)(void * context);
+typedef void (* tTbxMbEventPoll)   (void        * context);
 
 
 /** \brief Event processor interface function for processing events. */

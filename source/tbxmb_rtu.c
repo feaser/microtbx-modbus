@@ -86,18 +86,26 @@
 /****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
-static void             TbxMbRtuPoll(tTbxMbTp transport);
-static uint8_t          TbxMbRtuTransmit(tTbxMbTp transport);
-static void             TbxMbRtuReceptionDone(tTbxMbTp transport);
-static tTbxMbTpPacket * TbxMbRtuGetRxPacket(tTbxMbTp transport);
-static tTbxMbTpPacket * TbxMbRtuGetTxPacket(tTbxMbTp transport);
-static uint8_t          TbxMbRtuValidate(tTbxMbTp transport);
-static void             TbxMbRtuTransmitComplete(tTbxMbUartPort port);
-static void             TbxMbRtuDataReceived(tTbxMbUartPort         port, 
-                                             uint8_t        const * data, 
-                                             uint8_t                len);
-static uint16_t         TbxMbRtuCalculatCrc(uint8_t  const * data, 
-                                            uint16_t         len);
+static void             TbxMbRtuPoll            (tTbxMbTp               transport);
+
+static uint8_t          TbxMbRtuTransmit        (tTbxMbTp               transport);
+
+static void             TbxMbRtuReceptionDone   (tTbxMbTp               transport);
+
+static tTbxMbTpPacket * TbxMbRtuGetRxPacket     (tTbxMbTp               transport);
+
+static tTbxMbTpPacket * TbxMbRtuGetTxPacket     (tTbxMbTp               transport);
+
+static uint8_t          TbxMbRtuValidate        (tTbxMbTp               transport);
+
+static void             TbxMbRtuTransmitComplete(tTbxMbUartPort         port);
+
+static void             TbxMbRtuDataReceived    (tTbxMbUartPort         port, 
+                                                 uint8_t        const * data, 
+                                                 uint8_t                len);
+                                                 
+static uint16_t         TbxMbRtuCalculatCrc     (uint8_t        const * data, 
+                                                 uint16_t               len);
 
 
 /****************************************************************************************

@@ -123,10 +123,11 @@ typedef enum
 /****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
-void TbxMbUartTransmitComplete(tTbxMbUartPort port);
-void TbxMbUartDataReceived(tTbxMbUartPort         port, 
-                           uint8_t        const * data, 
-                           uint8_t                len);
+void TbxMbUartTransmitComplete(tTbxMbUartPort         port);
+
+void TbxMbUartDataReceived    (tTbxMbUartPort         port, 
+                               uint8_t        const * data, 
+                               uint8_t                len);
 
 
 #ifdef __cplusplus
