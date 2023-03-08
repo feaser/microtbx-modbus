@@ -48,9 +48,12 @@
 * Function prototypes
 ****************************************************************************************/
 static void TbxMbServerProcessEvent(tTbxMbEvent * event);
-static void TbxMbServerFC04ReadInputReg(tTbxMbServerCtx       * context,
-                                        tTbxMbTpPacket  const * rxPacket,
-                                        tTbxMbTpPacket        * txPacket);
+static void TbxMbServerFC03ReadHoldingRegs(tTbxMbServerCtx       * context,
+                                           tTbxMbTpPacket  const * rxPacket,
+                                           tTbxMbTpPacket        * txPacket);
+static void TbxMbServerFC04ReadInputRegs(tTbxMbServerCtx       * context,
+                                         tTbxMbTpPacket  const * rxPacket,
+                                         tTbxMbTpPacket        * txPacket);
 
 
 /************************************************************************************//**
@@ -408,10 +411,17 @@ static void TbxMbServerProcessEvent(tTbxMbEvent * event)
             /* Filter on the function code. */
             switch (rxPacket->pdu.code)
             {
-              /* ---------------- FC04 - Read Input Register ------------------------- */
-              case TBX_MB_FC04_READ_INPUT_REGISTER:
+              /* ---------------- FC03 - Read Holding Registers ---------------------- */
+              case TBX_MB_FC03_READ_HOLDING_REGISTERS:
               {
-                TbxMbServerFC04ReadInputReg(serverCtx, rxPacket, txPacket);
+                TbxMbServerFC03ReadHoldingRegs(serverCtx, rxPacket, txPacket);
+              }
+              break;
+
+              /* ---------------- FC04 - Read Input Register ------------------------- */
+              case TBX_MB_FC04_READ_INPUT_REGISTERS:
+              {
+                TbxMbServerFC04ReadInputRegs(serverCtx, rxPacket, txPacket);
               }
               break;
 
@@ -461,6 +471,87 @@ static void TbxMbServerProcessEvent(tTbxMbEvent * event)
 
 
 /************************************************************************************//**
+** \brief     Handles a newly received PDU for function code 3 - Read Holding Registers.
+** \details   Note that this function is called at a time that txPacket->code is already
+**            prepared. Also note that txPacket->node should not be touched here.
+** \param     context Pointer to the Modbus server channel context.
+** \param     rxPacket Received PDU packet with MUX access.
+** \param     txPacket Storage for the PDU response packet with MUX access.
+**
+****************************************************************************************/
+static void TbxMbServerFC03ReadHoldingRegs(tTbxMbServerCtx       * context,
+                                           tTbxMbTpPacket  const * rxPacket,
+                                           tTbxMbTpPacket        * txPacket)
+{
+  /* Verify parameters. */
+  TBX_ASSERT((context != NULL) && (rxPacket != NULL) && (txPacket != NULL));
+
+  /* Only continue with valid parameters. */
+  if ((context != NULL) && (rxPacket != NULL) && (txPacket != NULL))
+  {
+    /* Read out request packet parameters. */
+    uint16_t startAddr = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[0]);
+    uint16_t numRegs   = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[2]);
+
+    /* Check if a callback function was registered. */
+    if (context->readHoldingRegFcn == NULL)
+    {
+      /* Prepare exception response. */
+      txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+      txPacket->pdu.data[0] = TBX_MB_EC01_ILLEGAL_FUNCTION;
+      txPacket->dataLen = 1U;
+    }
+    /* Check if the quantity of registers is invalid. */
+    else if ((numRegs < 1U) || (numRegs > 125U))
+    {
+      /* Prepare exception response. */
+      txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+      txPacket->pdu.data[0] = TBX_MB_EC03_ILLEGAL_DATA_VALUE;
+      txPacket->dataLen = 1U;
+    }
+    /* All is good for further processing. */
+    else
+    {
+      /* Store byte count in the response and prepare the data length. */
+      txPacket->pdu.data[0] = 2U * numRegs;
+      txPacket->dataLen = txPacket->pdu.data[0] + 1U;
+      /* Loop through all the registers. */
+      for (uint8_t idx = 0U; idx < numRegs; idx++)
+      {
+        uint16_t           regValue = 0U;
+        tTbxMbServerResult srvResult;
+        /* Obtain register value. */
+        srvResult = context->readHoldingRegFcn(context, startAddr + idx, &regValue);
+        /* No exception reported? */
+        if (srvResult == TBX_MB_SERVER_OK)
+        {
+          /* Store the register value in the response. */
+          TbxMbServerStoreUInt16BE(regValue, &txPacket->pdu.data[1U + (idx * 2U)]);
+        }
+        /* Exception detected. */
+        else
+        {
+          /* Prepare exception response. */
+          txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+          if (srvResult == TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR)
+          {
+            txPacket->pdu.data[0] = TBX_MB_EC02_ILLEGAL_DATA_ADDRESS;
+          }
+          else
+          {
+            txPacket->pdu.data[0] = TBX_MB_EC04_SERVER_DEVICE_FAILURE;
+          }
+          txPacket->dataLen = 1U;
+          /* Stop looping. */
+          break;
+        }
+      }
+    }
+  }
+} /*** end of TbxMbServerFC03ReadHoldingRegs ***/
+
+
+/************************************************************************************//**
 ** \brief     Handles a newly received PDU for function code 4 - Read Input Registers.
 ** \details   Note that this function is called at a time that txPacket->code is already
 **            prepared. Also note that txPacket->node should not be touched here.
@@ -469,7 +560,7 @@ static void TbxMbServerProcessEvent(tTbxMbEvent * event)
 ** \param     txPacket Storage for the PDU response packet with MUX access.
 **
 ****************************************************************************************/
-static void TbxMbServerFC04ReadInputReg(tTbxMbServerCtx       * context,
+static void TbxMbServerFC04ReadInputRegs(tTbxMbServerCtx       * context,
                                         tTbxMbTpPacket  const * rxPacket,
                                         tTbxMbTpPacket        * txPacket)
 {
@@ -538,7 +629,7 @@ static void TbxMbServerFC04ReadInputReg(tTbxMbServerCtx       * context,
       }
     }
   }
-} /*** end of TbxMbServerFC04ReadInputReg ***/
+} /*** end of TbxMbServerFC04ReadInputRegs ***/
 
 
 /*********************************** end of tbxmb_server.c *****************************/

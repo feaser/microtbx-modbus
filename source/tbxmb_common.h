@@ -34,8 +34,11 @@ extern "C" {
 /****************************************************************************************
 * Macro definitions
 ****************************************************************************************/
-/** \brief Modbus function code 04 - Read Input Register. */
-#define TBX_MB_FC04_READ_INPUT_REGISTER               (4U)
+/** \brief Modbus function code 03 - Read Holding Registers. */
+#define TBX_MB_FC03_READ_HOLDING_REGISTERS            (3U)
+
+/** \brief Modbus function code 04 - Read Input Registers. */
+#define TBX_MB_FC04_READ_INPUT_REGISTERS              (4U)
 
 /** \brief Modbus exception code 01 - Illegal function. */
 #define TBX_MB_EC01_ILLEGAL_FUNCTION                  (1U)
