@@ -93,15 +93,15 @@ typedef tTbxMbServerResult (* tTbxMbServerWriteHoldingReg) (tTbxMbServer   chann
 /****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
-tTbxMbServer TbxMbServerCreate                    (tTbxMbTp                    transport);
+tTbxMbServer TbxMbServerCreate                    (tTbxMbTp                   transport);
 
 void         TbxMbServerFree                      (tTbxMbServer                channel);
 
 void         TbxMbServerSetCallbackReadInput      (tTbxMbServer                channel,
-                                                  tTbxMbServerReadInput        callback);
+                                                   tTbxMbServerReadInput       callback);
 
 void         TbxMbServerSetCallbackReadCoil       (tTbxMbServer                channel,
-                                                  tTbxMbServerReadCoil         callback);
+                                                   tTbxMbServerReadCoil        callback);
 
 void         TbxMbServerSetCallbackWriteCoil      (tTbxMbServer                channel,
                                                    tTbxMbServerWriteCoil       callback);

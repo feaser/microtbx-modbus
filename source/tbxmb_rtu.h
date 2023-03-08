@@ -39,7 +39,8 @@ tTbxMbTp TbxMbRtuCreate(uint8_t            nodeAddr,
                         tTbxMbUartBaudrate baudrate, 
                         tTbxMbUartStopbits stopbits,
                         tTbxMbUartParity   parity);
-void     TbxMbRtuFree(tTbxMbTp transport);
+
+void     TbxMbRtuFree  (tTbxMbTp           transport);
 
 #ifdef __cplusplus
 }
