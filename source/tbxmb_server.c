@@ -749,7 +749,7 @@ static void TbxMbServerFC16WriteMultipleRegs(tTbxMbServerCtx       * context,
       txPacket->dataLen = 1U;
     }
     /* Check if the quantity of registers is invalid. */
-    else if (((numRegs < 1U) || (numRegs > 123U)) || (byteCnt != numRegs * 2U))
+    else if (((numRegs < 1U) || (numRegs > 123U)) || (byteCnt != (numRegs * 2U)))
     {
       /* Prepare exception response. */
       txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
