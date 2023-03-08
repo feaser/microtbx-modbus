@@ -170,8 +170,8 @@ tTbxMbServerResult TbxMbServer::writeHoldingReg(uint16_t addr,
 ** \param     channel Handle to the Modbus server channel object that triggered the 
 **            callback.
 ** \param     addr Element address (0..65535).
-** \param     value Pointer to write the value of the discrete input to. Use TBX_TRUE if
-**            the input is on, TBX_FALSE for off.
+** \param     value Pointer to write the value of the discrete input to. Use TBX_ON if
+**            the input is on, TBX_OFF for off.
 ** \return    TBX_MB_SERVER_OK if successful, TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR if the
 **            specific data element address is not supported by this server, 
 **            TBX_MB_SERVER_ERR_DEVICE_FAILURE otherwise.
@@ -201,7 +201,7 @@ tTbxMbServerResult TbxMbServer::callbackbReadInput(tTbxMbServer   channel,
       /* Process the result. */
       if (result == TBX_MB_SERVER_OK)
       {
-        *value = (inputValue == false) ? TBX_FALSE : TBX_TRUE;
+        *value = (inputValue == false) ? TBX_OFF : TBX_ON;
       }
     }
   }
@@ -216,8 +216,8 @@ tTbxMbServerResult TbxMbServer::callbackbReadInput(tTbxMbServer   channel,
 ** \param     channel Handle to the Modbus server channel object that triggered the 
 **            callback.
 ** \param     addr Element address (0..65535).
-** \param     value Pointer to write the value of the coil to. Use TBX_TRUE if the coil
-**            is on, TBX_FALSE for off.
+** \param     value Pointer to write the value of the coil to. Use TBX_ON if the coil
+**            is on, TBX_OFF for off.
 ** \return    TBX_MB_SERVER_OK if successful, TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR if the
 **            specific data element address is not supported by this server, 
 **            TBX_MB_SERVER_ERR_DEVICE_FAILURE otherwise.
@@ -247,7 +247,7 @@ tTbxMbServerResult TbxMbServer::callbackReadCoil(tTbxMbServer   channel,
       /* Process the result. */
       if (result == TBX_MB_SERVER_OK)
       {
-        *value = (coilValue == false) ? TBX_FALSE : TBX_TRUE;
+        *value = (coilValue == false) ? TBX_OFF : TBX_ON;
       }
     }
   }
@@ -262,8 +262,8 @@ tTbxMbServerResult TbxMbServer::callbackReadCoil(tTbxMbServer   channel,
 ** \param     channel Handle to the Modbus server channel object that triggered the 
 **            callback.
 ** \param     addr Element address (0..65535).
-** \param     value Value of the coil. TBX_TRUE if the new coil state should be on,
-**            TBX_FALSE for off.
+** \param     value Value of the coil. TBX_ON if the new coil state should be on,
+**            TBX_OFF for off.
 ** \return    TBX_MB_SERVER_OK if successful, TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR if the
 **            specific data element address is not supported by this server, 
 **            TBX_MB_SERVER_ERR_DEVICE_FAILURE otherwise.
@@ -288,7 +288,7 @@ tTbxMbServerResult TbxMbServer::callbackWriteCoil(tTbxMbServer channel,
        */
       TbxMbServer * serverPtr = static_cast<TbxMbServer *>(channelCtx->instancePtr);
       /* Call the related instance method. */
-      bool coilValue = (value == TBX_FALSE) ? false : true;
+      bool coilValue = (value == TBX_OFF) ? false : true;
       result = serverPtr->writeCoil(addr, coilValue);
     }
   }
