@@ -34,12 +34,21 @@ extern "C" {
 /****************************************************************************************
 * Macro definitions
 ****************************************************************************************/
+/* ------------------------- Function codes ------------------------------------------ */
 /** \brief Modbus function code 03 - Read Holding Registers. */
 #define TBX_MB_FC03_READ_HOLDING_REGISTERS            (3U)
 
 /** \brief Modbus function code 04 - Read Input Registers. */
 #define TBX_MB_FC04_READ_INPUT_REGISTERS              (4U)
 
+/** \brief Modbus function code 06 - Write Single Register. */
+#define TBX_MB_FC06_WRITE_SINGLE_REGISTER             (6U)
+
+/** \brief Modbus function code 16 - Write Multiple Registers. */
+#define TBX_MB_FC16_WRITE_MULTIPLE_REGISTERS          (16U)
+
+
+/* ------------------------- Exception codes ----------------------------------------- */
 /** \brief Modbus exception code 01 - Illegal function. */
 #define TBX_MB_EC01_ILLEGAL_FUNCTION                  (1U)
 
@@ -52,6 +61,8 @@ extern "C" {
 /** \brief Modbus exception code 04 - Server device failure. */
 #define TBX_MB_EC04_SERVER_DEVICE_FAILURE             (4U)
 
+
+/* ------------------------- Bit masks ----------------------------------------------- */
 /** \brief Bit mask to OR to the function code to flag it as an exception response. */
 #define TBX_MB_FC_EXCEPTION_MASK                      (0x80U)
 

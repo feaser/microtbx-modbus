@@ -54,6 +54,12 @@ static void TbxMbServerFC03ReadHoldingRegs(tTbxMbServerCtx       * context,
 static void TbxMbServerFC04ReadInputRegs(tTbxMbServerCtx       * context,
                                          tTbxMbTpPacket  const * rxPacket,
                                          tTbxMbTpPacket        * txPacket);
+static void TbxMbServerFC06WriteSingleReg(tTbxMbServerCtx       * context,
+                                          tTbxMbTpPacket  const * rxPacket,
+                                          tTbxMbTpPacket        * txPacket);
+static void TbxMbServerFC16WriteMultipleRegs(tTbxMbServerCtx       * context,
+                                             tTbxMbTpPacket  const * rxPacket,
+                                             tTbxMbTpPacket        * txPacket);
 
 
 /************************************************************************************//**
@@ -418,10 +424,24 @@ static void TbxMbServerProcessEvent(tTbxMbEvent * event)
               }
               break;
 
-              /* ---------------- FC04 - Read Input Register ------------------------- */
+              /* ---------------- FC04 - Read Input Registers ------------------------ */
               case TBX_MB_FC04_READ_INPUT_REGISTERS:
               {
                 TbxMbServerFC04ReadInputRegs(serverCtx, rxPacket, txPacket);
+              }
+              break;
+
+              /* ---------------- FC06 - Write Single Register ----------------------- */
+              case TBX_MB_FC06_WRITE_SINGLE_REGISTER:
+              {
+                TbxMbServerFC06WriteSingleReg(serverCtx, rxPacket, txPacket);
+              }
+              break;
+
+              /* ---------------- FC16 - Write Multiple Register --------------------- */
+              case TBX_MB_FC16_WRITE_MULTIPLE_REGISTERS:
+              {
+                TbxMbServerFC16WriteMultipleRegs(serverCtx, rxPacket, txPacket);
               }
               break;
 
@@ -630,6 +650,151 @@ static void TbxMbServerFC04ReadInputRegs(tTbxMbServerCtx       * context,
     }
   }
 } /*** end of TbxMbServerFC04ReadInputRegs ***/
+
+
+/************************************************************************************//**
+** \brief     Handles a newly received PDU for function code 6 - Write Single Register.
+** \details   Note that this function is called at a time that txPacket->code is already
+**            prepared. Also note that txPacket->node should not be touched here.
+** \param     context Pointer to the Modbus server channel context.
+** \param     rxPacket Received PDU packet with MUX access.
+** \param     txPacket Storage for the PDU response packet with MUX access.
+**
+****************************************************************************************/
+static void TbxMbServerFC06WriteSingleReg(tTbxMbServerCtx       * context,
+                                          tTbxMbTpPacket  const * rxPacket,
+                                          tTbxMbTpPacket        * txPacket)
+{
+  /* Verify parameters. */
+  TBX_ASSERT((context != NULL) && (rxPacket != NULL) && (txPacket != NULL));
+
+  /* Only continue with valid parameters. */
+  if ((context != NULL) && (rxPacket != NULL) && (txPacket != NULL))
+  {
+    /* Read out request packet parameters. */
+    uint16_t regAddr  = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[0]);
+    uint16_t regValue = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[2]);
+
+    /* Check if a callback function was registered. */
+    if (context->writeHoldingRegFcn == NULL)
+    {
+      /* Prepare exception response. */
+      txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+      txPacket->pdu.data[0] = TBX_MB_EC01_ILLEGAL_FUNCTION;
+      txPacket->dataLen = 1U;
+    }
+    /* All is good for further processing. */
+    else
+    {
+      /* Prepare the response and its data length. It's the same as the request. */
+      txPacket->pdu.data[0U] = rxPacket->pdu.data[0U];
+      txPacket->pdu.data[1U] = rxPacket->pdu.data[1U];
+      txPacket->pdu.data[2U] = rxPacket->pdu.data[2U];
+      txPacket->pdu.data[3U] = rxPacket->pdu.data[3U];
+      txPacket->dataLen = 4U;
+      /* Write the register value. */
+      tTbxMbServerResult srvResult;
+      srvResult = context->writeHoldingRegFcn(context, regAddr, regValue);
+      /* Exception reported? */
+      if (srvResult != TBX_MB_SERVER_OK)
+      {
+        /* Prepare exception response. */
+        txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+        if (srvResult == TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR)
+        {
+          txPacket->pdu.data[0] = TBX_MB_EC02_ILLEGAL_DATA_ADDRESS;
+        }
+        else
+        {
+          txPacket->pdu.data[0] = TBX_MB_EC04_SERVER_DEVICE_FAILURE;
+        }
+        txPacket->dataLen = 1U;
+      }
+    }
+  }
+} /*** end of TbxMbServerFC06WriteSingleReg ***/
+
+
+/************************************************************************************//**
+** \brief     Handles a newly received PDU for function code 16 - Write Multiple
+**            Registers.
+** \details   Note that this function is called at a time that txPacket->code is already
+**            prepared. Also note that txPacket->node should not be touched here.
+** \param     context Pointer to the Modbus server channel context.
+** \param     rxPacket Received PDU packet with MUX access.
+** \param     txPacket Storage for the PDU response packet with MUX access.
+**
+****************************************************************************************/
+static void TbxMbServerFC16WriteMultipleRegs(tTbxMbServerCtx       * context,
+                                             tTbxMbTpPacket  const * rxPacket,
+                                             tTbxMbTpPacket        * txPacket)
+{
+  /* Verify parameters. */
+  TBX_ASSERT((context != NULL) && (rxPacket != NULL) && (txPacket != NULL));
+
+  /* Only continue with valid parameters. */
+  if ((context != NULL) && (rxPacket != NULL) && (txPacket != NULL))
+  {
+    /* Read out request packet parameters. */
+    uint16_t startAddr = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[0]);
+    uint16_t numRegs   = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[2]);
+    uint8_t  byteCnt   = rxPacket->pdu.data[4];
+
+    /* Check if a callback function was registered. */
+    if (context->readHoldingRegFcn == NULL)
+    {
+      /* Prepare exception response. */
+      txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+      txPacket->pdu.data[0] = TBX_MB_EC01_ILLEGAL_FUNCTION;
+      txPacket->dataLen = 1U;
+    }
+    /* Check if the quantity of registers is invalid. */
+    else if (((numRegs < 1U) || (numRegs > 123U)) || (byteCnt != numRegs * 2U))
+    {
+      /* Prepare exception response. */
+      txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+      txPacket->pdu.data[0] = TBX_MB_EC03_ILLEGAL_DATA_VALUE;
+      txPacket->dataLen = 1U;
+    }
+    /* All is good for further processing. */
+    else
+    {
+      /* Prepare the response and its data length. It's mostly the same as the request.*/
+      txPacket->pdu.data[0U] = rxPacket->pdu.data[0U];
+      txPacket->pdu.data[1U] = rxPacket->pdu.data[1U];
+      txPacket->pdu.data[2U] = rxPacket->pdu.data[2U];
+      txPacket->pdu.data[3U] = rxPacket->pdu.data[3U];
+      txPacket->dataLen = 4U;
+      /* Loop through all the registers. */
+      for (uint8_t idx = 0U; idx < numRegs; idx++)
+      {
+        uint16_t           regValue;
+        tTbxMbServerResult srvResult;
+        /* Read out the current register value. */
+        regValue = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[5U + (idx * 2U)]);
+        /* Write the register value. */
+        srvResult = context->writeHoldingRegFcn(context, startAddr + idx, regValue);
+        /* Exception reported? */
+        if (srvResult != TBX_MB_SERVER_OK)
+        {
+          /* Prepare exception response. */
+          txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+          if (srvResult == TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR)
+          {
+            txPacket->pdu.data[0] = TBX_MB_EC02_ILLEGAL_DATA_ADDRESS;
+          }
+          else
+          {
+            txPacket->pdu.data[0] = TBX_MB_EC04_SERVER_DEVICE_FAILURE;
+          }
+          txPacket->dataLen = 1U;
+          /* Stop looping. */
+          break;
+        }
+      }
+    }
+  }
+} /*** end of TbxMbServerFC16WriteMultipleRegs ***/
 
 
 /*********************************** end of tbxmb_server.c *****************************/
