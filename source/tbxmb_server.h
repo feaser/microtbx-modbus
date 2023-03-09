@@ -166,7 +166,7 @@ typedef tTbxMbServerResult (* tTbxMbServerWriteHoldingReg) (tTbxMbServer    chan
  *           PDU. The first byte (i.e. rxPdu[0]) contains the function code, followed by
  *           its data bytes. Upon calling the callback, the "len" parameter contains the
  *           length of "rxPdu". When preparing the response, you can write the length
- *           of the "txPdu" esponse to "len" as well.
+ *           of the "txPdu" response to "len" as well.
  *  \param   channel Handle to the Modbus server channel object that triggered the 
  *           callback.
  *  \param   rxPdu Pointer to a byte array for reading the received PDU.
