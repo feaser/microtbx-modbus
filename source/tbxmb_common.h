@@ -53,6 +53,9 @@ extern "C" {
 /** \brief Modbus function code 06 - Write Single Register. */
 #define TBX_MB_FC06_WRITE_SINGLE_REGISTER             (6U)
 
+/** \brief Modbus function code 08 - Diagnostics. */
+#define TBX_MB_FC08_DIAGNOSTICS                       (8U)
+
 /** \brief Modbus function code 15 - Write Multiple Coils. */
 #define TBX_MB_FC15_WRITE_MULTIPLE_COILS              (15U)
 
@@ -72,6 +75,29 @@ extern "C" {
 
 /** \brief Modbus exception code 04 - Server device failure. */
 #define TBX_MB_EC04_SERVER_DEVICE_FAILURE             (4U)
+
+
+/* ------------------------- Diagnostics sub codes ----------------------------------- */
+/** \brief Diagnostics sub-function code - Return Query Data. */
+#define TBX_MB_DIAG_SC_QUERY_DATA                     (0U)
+
+/** \brief Diagnostics sub-function code - Clear Counters. */
+#define TBX_MB_DIAG_SC_CLEAR_COUNTERS                 (10U)
+
+/** \brief Diagnostics sub-function code - Return Bus Message Count. */
+#define TBX_MB_DIAG_SC_BUS_MESSAGE_COUNT              (11U)
+
+/** \brief Diagnostics sub-function code - Return Bus Communication Error Count. */
+#define TBX_MB_DIAG_SC_BUS_COMM_ERROR_COUNT           (12U)
+
+/** \brief Diagnostics sub-function code - Return Bus Exception Error Count. */
+#define TBX_MB_DIAG_SC_BUS_EXCEPTION_ERROR_COUNT      (13U)
+
+/** \brief Diagnostics sub-function code - Return Server Message Count. */
+#define TBX_MB_DIAG_SC_SERVER_MESSAGE_COUNT           (14U)
+
+/** \brief Diagnostics sub-function code - Return Server No Response Count. */
+#define TBX_MB_DIAG_SC_SERVER_NO_RESPONSE_COUNT       (15U)
 
 
 /* ------------------------- Bit masks ----------------------------------------------- */

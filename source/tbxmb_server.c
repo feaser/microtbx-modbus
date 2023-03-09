@@ -73,6 +73,10 @@ static void TbxMbServerFC06WriteSingleReg    (tTbxMbServerCtx       * context,
                                               tTbxMbTpPacket  const * rxPacket,
                                               tTbxMbTpPacket        * txPacket);
 
+static void TbxMbServerFC08Diagnostics       (tTbxMbServerCtx       * context,
+                                              tTbxMbTpPacket  const * rxPacket,
+                                              tTbxMbTpPacket        * txPacket);
+
 static void TbxMbServerFC15WriteMultipleCoils(tTbxMbServerCtx       * context,
                                               tTbxMbTpPacket  const * rxPacket,
                                               tTbxMbTpPacket        * txPacket);
@@ -476,6 +480,13 @@ static void TbxMbServerProcessEvent(tTbxMbEvent * event)
               case TBX_MB_FC06_WRITE_SINGLE_REGISTER:
               {
                 TbxMbServerFC06WriteSingleReg(serverCtx, rxPacket, txPacket);
+              }
+              break;
+
+              /* ---------------- FC08 - Diagnostics --------------------------------- */
+              case TBX_MB_FC08_DIAGNOSTICS:
+              {
+                TbxMbServerFC08Diagnostics(serverCtx, rxPacket, txPacket);
               }
               break;
 
@@ -1062,6 +1073,187 @@ static void TbxMbServerFC06WriteSingleReg(tTbxMbServerCtx       * context,
     }
   }
 } /*** end of TbxMbServerFC06WriteSingleReg ***/
+
+
+/************************************************************************************//**
+** \brief     Handles a newly received PDU for function code 8 - Diagnostics.
+** \details   Note that this function is called at a time that txPacket->code is already
+**            prepared. Also note that txPacket->node should not be touched here.
+** \param     context Pointer to the Modbus server channel context.
+** \param     rxPacket Received PDU packet with MUX access.
+** \param     txPacket Storage for the PDU response packet with MUX access.
+**
+****************************************************************************************/
+static void TbxMbServerFC08Diagnostics(tTbxMbServerCtx       * context,
+                                       tTbxMbTpPacket  const * rxPacket,
+                                       tTbxMbTpPacket        * txPacket)
+{
+  /* Verify parameters. */
+  TBX_ASSERT((context != NULL) && (rxPacket != NULL) && (txPacket != NULL));
+
+  /* Only continue with valid parameters. */
+  if ((context != NULL) && (rxPacket != NULL) && (txPacket != NULL))
+  {
+    /* Read out request packet parameters. */
+    uint16_t subCode   = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[0]);
+    uint16_t dataField = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[2]);
+    /* Prepare the most common response. It's typically the sub-function code echoed,
+     * together with a 16-bit unsigned value.
+     */
+    txPacket->pdu.data[0U] = rxPacket->pdu.data[0U];
+    txPacket->pdu.data[1U] = rxPacket->pdu.data[1U];
+    txPacket->dataLen = 4U;
+
+    /* Filter on the received sub-function code. */
+    switch (subCode)
+    {
+      case TBX_MB_DIAG_SC_QUERY_DATA:
+      {
+        /* Echo the received data back. */
+        for (uint8_t idx = 0U; idx < rxPacket->dataLen; idx++)
+        {
+         txPacket->pdu.data[idx] = rxPacket->pdu.data[idx];
+        }
+        txPacket->dataLen = rxPacket->dataLen;
+      }
+      break;
+
+      case TBX_MB_DIAG_SC_CLEAR_COUNTERS:
+      {
+        /* Data field not valid? */
+        if (dataField != 0x0000U)
+        {
+          /* Prepare exception response. */
+          txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+          txPacket->pdu.data[0] = TBX_MB_EC03_ILLEGAL_DATA_VALUE;
+          txPacket->dataLen = 1U;
+        }
+        /* All is good for further processing. */        
+        else
+        {
+          /* Clear the diagnostic counters. */
+          context->tpCtx->diagInfo.busMsgCnt     = 0U;
+          context->tpCtx->diagInfo.busCommErrCnt = 0U;
+          context->tpCtx->diagInfo.busExcpErrCnt = 0U;
+          context->tpCtx->diagInfo.srvMsgCnt     = 0U;
+          context->tpCtx->diagInfo.srvNoRespCnt  = 0U;
+          /* Echo the request data field. */
+          TbxMbServerStoreUInt16BE(dataField, &txPacket->pdu.data[2U]);
+        }
+      }
+      break;
+
+      case TBX_MB_DIAG_SC_BUS_MESSAGE_COUNT:
+      {
+        /* Data field not valid? */
+        if (dataField != 0x0000U)
+        {
+          /* Prepare exception response. */
+          txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+          txPacket->pdu.data[0] = TBX_MB_EC03_ILLEGAL_DATA_VALUE;
+          txPacket->dataLen = 1U;
+        }
+        /* All is good for further processing. */        
+        else
+        {
+          /* Store he bus message count. */
+          TbxMbServerStoreUInt16BE(context->tpCtx->diagInfo.busMsgCnt, 
+                                   &txPacket->pdu.data[2U]);
+        }
+      }
+      break;
+
+      case TBX_MB_DIAG_SC_BUS_COMM_ERROR_COUNT:
+      {
+        /* Data field not valid? */
+        if (dataField != 0x0000U)
+        {
+          /* Prepare exception response. */
+          txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+          txPacket->pdu.data[0] = TBX_MB_EC03_ILLEGAL_DATA_VALUE;
+          txPacket->dataLen = 1U;
+        }
+        /* All is good for further processing. */        
+        else
+        {
+          /* Store he bus message count. */
+          TbxMbServerStoreUInt16BE(context->tpCtx->diagInfo.busCommErrCnt, 
+                                   &txPacket->pdu.data[2U]);
+        }
+      }
+      break;
+
+      case TBX_MB_DIAG_SC_BUS_EXCEPTION_ERROR_COUNT:
+      {
+        /* Data field not valid? */
+        if (dataField != 0x0000U)
+        {
+          /* Prepare exception response. */
+          txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+          txPacket->pdu.data[0] = TBX_MB_EC03_ILLEGAL_DATA_VALUE;
+          txPacket->dataLen = 1U;
+        }
+        /* All is good for further processing. */        
+        else
+        {
+          /* Store he bus message count. */
+          TbxMbServerStoreUInt16BE(context->tpCtx->diagInfo.busExcpErrCnt, 
+                                   &txPacket->pdu.data[2U]);
+        }
+      }
+      break;
+
+      case TBX_MB_DIAG_SC_SERVER_MESSAGE_COUNT:
+      {
+        /* Data field not valid? */
+        if (dataField != 0x0000U)
+        {
+          /* Prepare exception response. */
+          txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+          txPacket->pdu.data[0] = TBX_MB_EC03_ILLEGAL_DATA_VALUE;
+          txPacket->dataLen = 1U;
+        }
+        /* All is good for further processing. */        
+        else
+        {
+          /* Store he bus message count. */
+          TbxMbServerStoreUInt16BE(context->tpCtx->diagInfo.srvMsgCnt, 
+                                   &txPacket->pdu.data[2U]);
+        }
+      }
+      break;
+
+      case TBX_MB_DIAG_SC_SERVER_NO_RESPONSE_COUNT:
+      {
+        /* Data field not valid? */
+        if (dataField != 0x0000U)
+        {
+          /* Prepare exception response. */
+          txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+          txPacket->pdu.data[0] = TBX_MB_EC03_ILLEGAL_DATA_VALUE;
+          txPacket->dataLen = 1U;
+        }
+        /* All is good for further processing. */        
+        else
+        {
+          /* Store he bus message count. */
+          TbxMbServerStoreUInt16BE(context->tpCtx->diagInfo.srvNoRespCnt, 
+                                   &txPacket->pdu.data[2U]);
+        }
+      }
+      break;
+
+      default:
+      {
+        /* Unsupported sub-function code. Prepare exception response. */
+        txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+        txPacket->pdu.data[0] = TBX_MB_EC01_ILLEGAL_FUNCTION;
+        txPacket->dataLen = 1U;
+      }
+      break;
+    }
+  }
+} /*** end of TbxMbServerFC08Diagnostics ***/
 
 
 /************************************************************************************//**
