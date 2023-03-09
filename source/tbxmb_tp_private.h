@@ -84,6 +84,22 @@ typedef struct
 } tTbxMbTpPacket;
 
 
+/** \brief Type for grouping all diagnostics related information together. */
+typedef struct
+{
+  /** \brief Total number of received packets regardless of addressing or CRC. */
+  uint16_t busMsgCnt; 
+  /** \brief Total number of busMsgCnt that had an incorrect CRC issue. */
+  uint16_t busCommErrCnt;
+  /** \brief Total number of transmitted exception responses. */
+  uint16_t busExcpErrCnt;
+  /** \brief Total number of addresssed (uni/broad) reception packets with correct CRC.*/
+  uint16_t srvMsgCnt;
+  /** \brief Total number responses that could not be transmitted. */
+  uint16_t srvNoRespCnt;
+} tTbxMbTpDiagInfo;
+
+
 /** \brief Transport layer interface function to detect events in a polling manner. */
 typedef void (* tTbxMbTpPoll)                   (void        * context);
 
@@ -162,6 +178,7 @@ typedef struct
   uint8_t                 isClient;              /**< Info about the channel context.  */
   /* Public methods and members. */
   void                  * channelCtx;            /**< Assigned channel context.        */
+  tTbxMbTpDiagInfo        diagInfo;              /**< Diagnostics information.         */ 
   tTbxMbTpTransmit        transmitFcn;           /**< Packet transmit function.        */
   tTbxMbTpReceptionDone   receptionDoneFcn;      /**< Rx packet processing done fcn.   */
   tTbxMbTpGetRxPacket     getRxPacketFcn;        /**< Obtain Rx packet access function.*/

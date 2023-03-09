@@ -189,6 +189,11 @@ tTbxMbTp TbxMbRtuCreate(uint8_t            nodeAddr,
       newTpCtx->port = port;
       newTpCtx->state = TBX_MB_RTU_STATE_INIT;
       newTpCtx->rxTime = TbxMbPortRtuTimerCount();
+      newTpCtx->diagInfo.busMsgCnt = 0U;
+      newTpCtx->diagInfo.busCommErrCnt = 0U;
+      newTpCtx->diagInfo.busExcpErrCnt = 0U;
+      newTpCtx->diagInfo.srvMsgCnt = 0U;
+      newTpCtx->diagInfo.srvNoRespCnt = 0U;
       /* Store the transport context in the lookup table. */
       tbxMbRtuCtx[port] = newTpCtx;
       /* Initialize the port. Note the RTU always uses 8 databits. */
@@ -481,6 +486,15 @@ static uint8_t TbxMbRtuTransmit(tTbxMbTp transport)
     tTbxMbTpCtx * tpCtx = (tTbxMbTpCtx *)transport;
     /* Sanity check on the context type. */
     TBX_ASSERT(tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE);
+    /* Are we requested to transmit an exception response? */
+    TbxCriticalSectionEnter();
+    uint8_t codeCopy = tpCtx->txPacket.pdu.code;
+    TbxCriticalSectionExit();
+    if ((codeCopy & TBX_MB_FC_EXCEPTION_MASK) == TBX_MB_FC_EXCEPTION_MASK)
+    {
+      /* Increment the total number of exception responses. */
+      tpCtx->diagInfo.busExcpErrCnt++;
+    }
     /* New transmissions are only possible from the IDLE state. */
     uint8_t okayToTransmit = TBX_FALSE;
     TbxCriticalSectionEnter();
@@ -546,6 +560,12 @@ static uint8_t TbxMbRtuTransmit(tTbxMbTp transport)
         tpCtx->state = TBX_MB_RTU_STATE_IDLE;
         TbxCriticalSectionExit();
       }
+    }
+    /* Problem detected that prevented the response from being sent? */
+    if (result == TBX_ERROR)
+    {
+      /* Increment the total number of not sent responses. */
+      tpCtx->diagInfo.srvNoRespCnt++;
     }
   }
   /* Give the result back to the caller. */
@@ -710,6 +730,10 @@ static uint8_t TbxMbRtuValidate(tTbxMbTp transport)
      */
     if (currentState == TBX_MB_RTU_STATE_VALIDATION)
     {
+      /* Increment the total number of received packets, regardless of addressing or
+       * CRC.
+       */
+      tpCtx->diagInfo.busMsgCnt++;
       /* The ADU for an RTU packet starts at one byte before the PDU, which is the last
        * byte of head[]. Get the pointer of where the ADU starts in the rxPacket.
        */
@@ -727,11 +751,17 @@ static uint8_t TbxMbRtuValidate(tTbxMbTp transport)
        * entire ADU data, just excluding the last two byte with the CRC16.
        */
       uint16_t calcCrc = TbxMbRtuCalculatCrc(aduPtr, tpCtx->rxPacket.dataLen + 2U);
-      /* Are the two CRC16s a match? */
-      if (packetCrc == calcCrc)
+      /* Are the two CRC16s a mismatch? */
+      if (packetCrc != calcCrc)
       {
-        /* Checksum verification passed. Continue checking if the ADU is addresses to us.
-         * This check is different for a server and a client. Start with the server case.
+        /* Increment the total number of received packets with an incorrect CRC. */
+        tpCtx->diagInfo.busCommErrCnt++;
+      }
+      /* CRC16 check passed. */
+      else
+      {
+        /* Continue checking if the ADU is addressed to us. This check is different for a
+         * server and a client. Start with the server case.
          */
         if (tpCtx->isClient == TBX_FALSE)
         {
@@ -739,6 +769,10 @@ static uint8_t TbxMbRtuValidate(tTbxMbTp transport)
           if ((tpCtx->rxPacket.node == tpCtx->nodeAddr) ||
               (tpCtx->rxPacket.node == TBX_MB_RTU_NODE_ADDR_BROADCAST))
           {
+            /* Increment the total number of received packets with a correct CRC, that
+             * were addressed to us. Either via unicast of broadcast.
+             */
+            tpCtx->diagInfo.srvMsgCnt++;
             /* Set the node address in the txPacket node element. It is used during
              * transmission to decided if the actual sending of the response should be
              * suppressed, which is the case for TBX_MB_RTU_NODE_ADDR_BROADCAST. No need
