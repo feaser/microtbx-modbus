@@ -35,6 +35,12 @@ extern "C" {
 * Macro definitions
 ****************************************************************************************/
 /* ------------------------- Function codes ------------------------------------------ */
+/** \brief Modbus function code 01 - Read Coils. */
+#define TBX_MB_FC01_READ_COILS                        (1U)
+
+/** \brief Modbus function code 02 - Read Discrete Inputs. */
+#define TBX_MB_FC02_READ_DISCRETE_INPUTS              (2U)
+
 /** \brief Modbus function code 03 - Read Holding Registers. */
 #define TBX_MB_FC03_READ_HOLDING_REGISTERS            (3U)
 

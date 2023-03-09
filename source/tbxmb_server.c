@@ -49,6 +49,14 @@
 ****************************************************************************************/
 static void TbxMbServerProcessEvent         (tTbxMbEvent           * event);
 
+static void TbxMbServerFC01ReadCoils        (tTbxMbServerCtx       * context,
+                                             tTbxMbTpPacket  const * rxPacket,
+                                             tTbxMbTpPacket        * txPacket);
+
+static void TbxMbServerFC02ReadInputs       (tTbxMbServerCtx       * context,
+                                             tTbxMbTpPacket  const * rxPacket,
+                                             tTbxMbTpPacket        * txPacket);
+
 static void TbxMbServerFC03ReadHoldingRegs  (tTbxMbServerCtx       * context,
                                              tTbxMbTpPacket  const * rxPacket,
                                              tTbxMbTpPacket        * txPacket);
@@ -421,6 +429,20 @@ static void TbxMbServerProcessEvent(tTbxMbEvent * event)
             /* Filter on the function code. */
             switch (rxPacket->pdu.code)
             {
+              /* ---------------- FC01 - Read Coils ---------------------------------- */
+              case TBX_MB_FC01_READ_COILS:
+              {
+                TbxMbServerFC01ReadCoils(serverCtx, rxPacket, txPacket);
+              }
+              break;
+
+              /* ---------------- FC02 - Read Discrete Inputs ------------------------ */
+              case TBX_MB_FC02_READ_DISCRETE_INPUTS:
+              {
+                TbxMbServerFC02ReadInputs(serverCtx, rxPacket, txPacket);
+              }
+              break;
+
               /* ---------------- FC03 - Read Holding Registers ---------------------- */
               case TBX_MB_FC03_READ_HOLDING_REGISTERS:
               {
@@ -492,6 +514,235 @@ static void TbxMbServerProcessEvent(tTbxMbEvent * event)
     }
   }
 } /*** end of TbxMbServerProcessEvent ***/
+
+
+/************************************************************************************//**
+** \brief     Handles a newly received PDU for function code 1 - Read Coils.
+** \details   Note that this function is called at a time that txPacket->code is already
+**            prepared. Also note that txPacket->node should not be touched here.
+** \param     context Pointer to the Modbus server channel context.
+** \param     rxPacket Received PDU packet with MUX access.
+** \param     txPacket Storage for the PDU response packet with MUX access.
+**
+****************************************************************************************/
+static void TbxMbServerFC01ReadCoils(tTbxMbServerCtx       * context,
+                                     tTbxMbTpPacket  const * rxPacket,
+                                     tTbxMbTpPacket        * txPacket)
+{
+  /* Verify parameters. */
+  TBX_ASSERT((context != NULL) && (rxPacket != NULL) && (txPacket != NULL));
+
+  /* Only continue with valid parameters. */
+  if ((context != NULL) && (rxPacket != NULL) && (txPacket != NULL))
+  {
+    /* Read out request packet parameters. */
+    uint16_t startAddr = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[0]);
+    uint16_t numCoils  = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[2]);
+
+    /* Check if a callback function was registered. */
+    if (context->readCoilFcn == NULL)
+    {
+      /* Prepare exception response. */
+      txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+      txPacket->pdu.data[0] = TBX_MB_EC01_ILLEGAL_FUNCTION;
+      txPacket->dataLen = 1U;
+    }
+    /* Check if the quantity of coils is invalid. */
+    else if ((numCoils < 1U) || (numCoils > 2000U))
+    {
+      /* Prepare exception response. */
+      txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+      txPacket->pdu.data[0] = TBX_MB_EC03_ILLEGAL_DATA_VALUE;
+      txPacket->dataLen = 1U;
+    }
+    /* All is good for further processing. */
+    else
+    {
+      /* Determine the number of bytes needed to hold all the coil bits. The cast to
+       * U8 is okay, because we know that numCoils is <= 2000.
+       */
+      uint8_t numBytes = (uint8_t)(numCoils / 8U);
+      if ((numCoils % 8U) != 0U)
+      {
+        numBytes++;
+      }
+      /* Store byte count in the response and prepare the data length. */
+      txPacket->pdu.data[0] = numBytes;
+      txPacket->dataLen = txPacket->pdu.data[0] + 1U;
+      /* Prepare loop indices that aid with storing the coil bits. */
+      uint8_t   bitIdx  = 0U;
+      uint8_t   byteIdx = 0U;
+      /* Initialize byte array pointer for writing the coil bits in the response and
+       * already initialize the first byte to all zero (coils OFF) bits.
+       */
+      uint8_t * coilData = &txPacket->pdu.data[1];
+      coilData[0] = 0U;
+      /* Loop through all the coils. */
+      for (uint16_t idx = 0U; idx < numCoils; idx++)
+      {
+        uint8_t            coilValue = TBX_OFF;
+        tTbxMbServerResult srvResult;
+        /* Obtain coil value. */
+        srvResult = context->readCoilFcn(context, startAddr + idx, &coilValue);
+        /* No exception reported? */
+        if (srvResult == TBX_MB_SERVER_OK)
+        {
+          /* Store the coil value in the response. Note that the coil bits in a byte are
+           * initialized to all zeroes, so only update if a coil is in the ON state.
+           */
+          if (coilValue != TBX_OFF)
+          {
+            coilData[byteIdx] |= (1U << bitIdx);
+          }
+          /* Update the bit index. */
+          bitIdx++;
+          /* Time to move to the next byte? */
+          if (bitIdx == 8U)
+          {
+            /* Reset the bit index, increment the byte index and initialize the byte to
+             * all zero (coils OFF) bits.
+             */
+            bitIdx = 0U;
+            byteIdx++;
+            coilData[byteIdx] = 0U;
+          }
+        }
+        /* Exception detected. */
+        else
+        {
+          /* Prepare exception response. */
+          txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+          if (srvResult == TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR)
+          {
+            txPacket->pdu.data[0] = TBX_MB_EC02_ILLEGAL_DATA_ADDRESS;
+          }
+          else
+          {
+            txPacket->pdu.data[0] = TBX_MB_EC04_SERVER_DEVICE_FAILURE;
+          }
+          txPacket->dataLen = 1U;
+          /* Stop looping. */
+          break;
+        }
+      }
+    }
+  }
+} /*** end of TbxMbServerFC01ReadCoils ***/
+
+
+/************************************************************************************//**
+** \brief     Handles a newly received PDU for function code 2 - Read Discrete Inputs.
+** \details   Note that this function is called at a time that txPacket->code is already
+**            prepared. Also note that txPacket->node should not be touched here.
+** \param     context Pointer to the Modbus server channel context.
+** \param     rxPacket Received PDU packet with MUX access.
+** \param     txPacket Storage for the PDU response packet with MUX access.
+**
+****************************************************************************************/
+static void TbxMbServerFC02ReadInputs(tTbxMbServerCtx       * context,
+                                      tTbxMbTpPacket  const * rxPacket,
+                                      tTbxMbTpPacket        * txPacket)
+{
+  /* Verify parameters. */
+  TBX_ASSERT((context != NULL) && (rxPacket != NULL) && (txPacket != NULL));
+
+  /* Only continue with valid parameters. */
+  if ((context != NULL) && (rxPacket != NULL) && (txPacket != NULL))
+  {
+    /* Read out request packet parameters. */
+    uint16_t startAddr = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[0]);
+    uint16_t numInputs = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[2]);
+
+    /* Check if a callback function was registered. */
+    if (context->readCoilFcn == NULL)
+    {
+      /* Prepare exception response. */
+      txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+      txPacket->pdu.data[0] = TBX_MB_EC01_ILLEGAL_FUNCTION;
+      txPacket->dataLen = 1U;
+    }
+    /* Check if the quantity of inputs is invalid. */
+    else if ((numInputs < 1U) || (numInputs > 2000U))
+    {
+      /* Prepare exception response. */
+      txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+      txPacket->pdu.data[0] = TBX_MB_EC03_ILLEGAL_DATA_VALUE;
+      txPacket->dataLen = 1U;
+    }
+    /* All is good for further processing. */
+    else
+    {
+      /* Determine the number of bytes needed to hold all the input bits. The cast to
+       * U8 is okay, because we know that numInputs is <= 2000.
+       */
+      uint8_t numBytes = (uint8_t)(numInputs / 8U);
+      if ((numInputs % 8U) != 0U)
+      {
+        numBytes++;
+      }
+      /* Store byte count in the response and prepare the data length. */
+      txPacket->pdu.data[0] = numBytes;
+      txPacket->dataLen = txPacket->pdu.data[0] + 1U;
+      /* Prepare loop indices that aid with storing the input bits. */
+      uint8_t   bitIdx  = 0U;
+      uint8_t   byteIdx = 0U;
+      /* Initialize byte array pointer for writing the input bits in the response and
+       * already initialize the first byte to all zero (input OFF) bits.
+       */
+      uint8_t * inputData = &txPacket->pdu.data[1];
+      inputData[0] = 0U;
+      /* Loop through all the inputs. */
+      for (uint16_t idx = 0U; idx < numInputs; idx++)
+      {
+        uint8_t            inputValue = TBX_OFF;
+        tTbxMbServerResult srvResult;
+        /* Obtain input value. */
+        srvResult = context->readInputFcn(context, startAddr + idx, &inputValue);
+        /* No exception reported? */
+        if (srvResult == TBX_MB_SERVER_OK)
+        {
+          /* Store the input value in the response. Note that the input bits in a byte
+           * are initialized to all zeroes, so only update if an input is in the ON
+           * state.
+           */
+          if (inputValue != TBX_OFF)
+          {
+            inputData[byteIdx] |= (1U << bitIdx);
+          }
+          /* Update the bit index. */
+          bitIdx++;
+          /* Time to move to the next byte? */
+          if (bitIdx == 8U)
+          {
+            /* Reset the bit index, increment the byte index and initialize the byte to
+             * all zero (input OFF) bits.
+             */
+            bitIdx = 0U;
+            byteIdx++;
+            inputData[byteIdx] = 0U;
+          }
+        }
+        /* Exception detected. */
+        else
+        {
+          /* Prepare exception response. */
+          txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+          if (srvResult == TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR)
+          {
+            txPacket->pdu.data[0] = TBX_MB_EC02_ILLEGAL_DATA_ADDRESS;
+          }
+          else
+          {
+            txPacket->pdu.data[0] = TBX_MB_EC04_SERVER_DEVICE_FAILURE;
+          }
+          txPacket->dataLen = 1U;
+          /* Stop looping. */
+          break;
+        }
+      }
+    }
+  }
+} /*** end of TbxMbServerFC02ReadInputs ***/
 
 
 /************************************************************************************//**
