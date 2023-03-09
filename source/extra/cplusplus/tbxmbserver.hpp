@@ -48,6 +48,8 @@ private:
   virtual tTbxMbServerResult readInputReg(uint16_t addr, uint16_t& value);
   virtual tTbxMbServerResult readHoldingReg(uint16_t addr, uint16_t& value);
   virtual tTbxMbServerResult writeHoldingReg(uint16_t addr, uint16_t value);
+  virtual bool               customFunction(uint8_t const rxPdu[], uint8_t txPdu[], 
+                                            uint8_t& len);
 
 protected:
   /* Types. */
@@ -70,6 +72,9 @@ protected:
                                                    uint16_t * value);
   static tTbxMbServerResult callbackWriteHoldingReg(tTbxMbServer channel, uint16_t addr, 
                                                     uint16_t value);
+  static  uint8_t           calbackCustomFunction(tTbxMbServer channel,
+                                                  uint8_t const * rxPdu, uint8_t * txPdu,
+                                                  uint8_t * len);
 };
 
 

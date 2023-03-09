@@ -165,6 +165,29 @@ tTbxMbServerResult TbxMbServer::writeHoldingReg(uint16_t addr,
 
 
 /************************************************************************************//**
+** \brief     Implements custom function code handling for supporting Modbus function
+**            codes that are either currently not supported or user defined extensions.
+** \details   The "rxPdu" and "txPdu" parameters are byte arrays of the PDU. The first
+**            byte (i.e. rxPdu[0]) contains the function code, followed by its data
+**            bytes. Upon calling the callback, the "len" parameter contains the length
+**            of "rxPdu". When preparing the response, you can write the length of the
+**            "txPdu" response to "len" as well.
+** \param     rxPdu Byte array for reading the received PDU.
+** \param     txPdu Byte array for writing the response PDU.
+** \param     len Reference to the PDU length, including the function code.
+** \return    True if the callback function handled the received function code and 
+**            prepared a response PDU, false otherwise.
+**
+****************************************************************************************/
+bool TbxMbServer::customFunction(uint8_t  const rxPdu[], 
+                                 uint8_t        txPdu[],
+                                 uint8_t&       len)
+{
+  return false;
+} /*** end of customFunction ***/
+
+
+/************************************************************************************//**
 ** \brief     Wrapper to connect this callback to the readInput() method of a class
 **            instance.
 ** \param     channel Handle to the Modbus server channel object that triggered the 
@@ -426,6 +449,51 @@ tTbxMbServerResult TbxMbServer::callbackWriteHoldingReg(tTbxMbServer channel,
 } /*** end of callbackWriteHoldingReg ***/
 
 
+/************************************************************************************//**
+** \brief     Wrapper to connect this callback to the customFunction() method of a class
+**            instance.
+** \param     channel Handle to the Modbus server channel object that triggered the 
+**            callback.
+** \param     rxPdu Pointer to a byte array for reading the received PDU.
+** \param     txPdu Pointer to a byte array for writing the response PDU.
+** \param     len Pointer to the PDU length, including the function code.
+** \return    TBX_TRUE if the callback function handled the received function code and 
+**            prepared a response PDU. TBX_FALSE otherwise.
+**
+****************************************************************************************/
+uint8_t TbxMbServer::calbackCustomFunction(tTbxMbServer         channel, 
+                                           uint8_t      const * rxPdu,
+                                           uint8_t            * txPdu,
+                                           uint8_t            * len)
+{
+  uint8_t result = TBX_FALSE;
+
+  /* Only continue with a valid opaque channel pointer and PDU and len pointers. */
+  if ( (channel != nullptr) && (rxPdu != nullptr) && (txPdu != nullptr) && 
+       (len != nullptr)) 
+  {
+    /* Convert the opaque pointer to the channel context structure pointer. */
+    ChannelCtx * channelCtx = reinterpret_cast<ChannelCtx *>(channel);
+    /* Only continue with a valid instance pointer. */
+    if (channelCtx->instancePtr != nullptr)
+    {
+      /* The channel's instance pointer points to an instance of this class. Cast it as
+       * such.
+       */
+      TbxMbServer * serverPtr = static_cast<TbxMbServer *>(channelCtx->instancePtr);
+      /* Call the related instance method. */
+      if (serverPtr->customFunction(rxPdu, txPdu, *len))
+      {
+        /* Update the result. */
+        result = TBX_TRUE;
+      }
+    }
+  }
+  /* Give the result back to the caller. */
+  return result;
+} /*** end of calbackCustomFunction ***/
+
+
 /****************************************************************************************
 *                            T B X M B S E R V E R R T U
 ****************************************************************************************/
@@ -477,6 +545,7 @@ TbxMbServerRtu::TbxMbServerRtu(uint8_t            nodeAddr,
       TbxMbServerSetCallbackReadInputReg(m_Channel, callbackReadInputReg);
       TbxMbServerSetCallbackReadHoldingReg(m_Channel, callbackReadHoldingReg);
       TbxMbServerSetCallbackWriteHoldingReg(m_Channel, callbackWriteHoldingReg);
+      TbxMbServerSetCallbackCustomFunction(m_Channel, calbackCustomFunction);
     }
   }
 } /*** end of TbxMbServerRtu ***/
