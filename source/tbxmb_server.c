@@ -47,31 +47,39 @@
 /****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
-static void TbxMbServerProcessEvent         (tTbxMbEvent           * event);
+static void TbxMbServerProcessEvent          (tTbxMbEvent           * event);
 
-static void TbxMbServerFC01ReadCoils        (tTbxMbServerCtx       * context,
-                                             tTbxMbTpPacket  const * rxPacket,
-                                             tTbxMbTpPacket        * txPacket);
+static void TbxMbServerFC01ReadCoils         (tTbxMbServerCtx       * context,
+                                              tTbxMbTpPacket  const * rxPacket,
+                                              tTbxMbTpPacket        * txPacket);
 
-static void TbxMbServerFC02ReadInputs       (tTbxMbServerCtx       * context,
-                                             tTbxMbTpPacket  const * rxPacket,
-                                             tTbxMbTpPacket        * txPacket);
+static void TbxMbServerFC02ReadInputs        (tTbxMbServerCtx       * context,
+                                              tTbxMbTpPacket  const * rxPacket,
+                                              tTbxMbTpPacket        * txPacket);
 
-static void TbxMbServerFC03ReadHoldingRegs  (tTbxMbServerCtx       * context,
-                                             tTbxMbTpPacket  const * rxPacket,
-                                             tTbxMbTpPacket        * txPacket);
+static void TbxMbServerFC03ReadHoldingRegs   (tTbxMbServerCtx       * context,
+                                              tTbxMbTpPacket  const * rxPacket,
+                                              tTbxMbTpPacket        * txPacket);
 
-static void TbxMbServerFC04ReadInputRegs    (tTbxMbServerCtx       * context,
-                                             tTbxMbTpPacket  const * rxPacket,
-                                             tTbxMbTpPacket        * txPacket);
+static void TbxMbServerFC04ReadInputRegs     (tTbxMbServerCtx       * context,
+                                              tTbxMbTpPacket  const * rxPacket,
+                                              tTbxMbTpPacket        * txPacket);
 
-static void TbxMbServerFC06WriteSingleReg   (tTbxMbServerCtx       * context,
-                                             tTbxMbTpPacket  const * rxPacket,
-                                             tTbxMbTpPacket        * txPacket);
+static void TbxMbServerFC05WriteSingleCoil   (tTbxMbServerCtx       * context,
+                                              tTbxMbTpPacket  const * rxPacket,
+                                              tTbxMbTpPacket        * txPacket);
 
-static void TbxMbServerFC16WriteMultipleRegs(tTbxMbServerCtx       * context,
-                                             tTbxMbTpPacket  const * rxPacket,
-                                             tTbxMbTpPacket        * txPacket);
+static void TbxMbServerFC06WriteSingleReg    (tTbxMbServerCtx       * context,
+                                              tTbxMbTpPacket  const * rxPacket,
+                                              tTbxMbTpPacket        * txPacket);
+
+static void TbxMbServerFC15WriteMultipleCoils(tTbxMbServerCtx       * context,
+                                              tTbxMbTpPacket  const * rxPacket,
+                                              tTbxMbTpPacket        * txPacket);
+
+static void TbxMbServerFC16WriteMultipleRegs (tTbxMbServerCtx       * context,
+                                              tTbxMbTpPacket  const * rxPacket,
+                                              tTbxMbTpPacket        * txPacket);
 
 
 /************************************************************************************//**
@@ -457,6 +465,13 @@ static void TbxMbServerProcessEvent(tTbxMbEvent * event)
               }
               break;
 
+              /* ---------------- FC05 - Write Single Coil --------------------------- */
+              case TBX_MB_FC05_WRITE_SINGLE_COIL:
+              {
+                TbxMbServerFC05WriteSingleCoil(serverCtx, rxPacket, txPacket);
+              }
+              break;
+
               /* ---------------- FC06 - Write Single Register ----------------------- */
               case TBX_MB_FC06_WRITE_SINGLE_REGISTER:
               {
@@ -464,7 +479,14 @@ static void TbxMbServerProcessEvent(tTbxMbEvent * event)
               }
               break;
 
-              /* ---------------- FC16 - Write Multiple Register --------------------- */
+              /* ---------------- FC15 - Write Multiple Coils ------------------------ */
+              case TBX_MB_FC15_WRITE_MULTIPLE_COILS:
+              {
+                TbxMbServerFC15WriteMultipleCoils(serverCtx, rxPacket, txPacket);
+              }
+              break;
+
+              /* ---------------- FC16 - Write Multiple Registers -------------------- */
               case TBX_MB_FC16_WRITE_MULTIPLE_REGISTERS:
               {
                 TbxMbServerFC16WriteMultipleRegs(serverCtx, rxPacket, txPacket);
@@ -654,7 +676,7 @@ static void TbxMbServerFC02ReadInputs(tTbxMbServerCtx       * context,
     uint16_t numInputs = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[2]);
 
     /* Check if a callback function was registered. */
-    if (context->readCoilFcn == NULL)
+    if (context->readInputFcn == NULL)
     {
       /* Prepare exception response. */
       txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
@@ -908,6 +930,78 @@ static void TbxMbServerFC04ReadInputRegs(tTbxMbServerCtx       * context,
 
 
 /************************************************************************************//**
+** \brief     Handles a newly received PDU for function code 5 - Write Single Coil.
+** \details   Note that this function is called at a time that txPacket->code is already
+**            prepared. Also note that txPacket->node should not be touched here.
+** \param     context Pointer to the Modbus server channel context.
+** \param     rxPacket Received PDU packet with MUX access.
+** \param     txPacket Storage for the PDU response packet with MUX access.
+**
+****************************************************************************************/
+static void TbxMbServerFC05WriteSingleCoil(tTbxMbServerCtx       * context,
+                                           tTbxMbTpPacket  const * rxPacket,
+                                           tTbxMbTpPacket        * txPacket)
+{
+  /* Verify parameters. */
+  TBX_ASSERT((context != NULL) && (rxPacket != NULL) && (txPacket != NULL));
+
+  /* Only continue with valid parameters. */
+  if ((context != NULL) && (rxPacket != NULL) && (txPacket != NULL))
+  {
+    /* Read out request packet parameters. */
+    uint16_t startAddr   = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[0]);
+    uint16_t outputValue = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[2]);
+
+    /* Check if a callback function was registered. */
+    if (context->writeCoilFcn == NULL)
+    {
+      /* Prepare exception response. */
+      txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+      txPacket->pdu.data[0] = TBX_MB_EC01_ILLEGAL_FUNCTION;
+      txPacket->dataLen = 1U;
+    }
+    /* Check if the output value is invalid. */
+    else if ((outputValue != 0x0000U) && (outputValue != 0xFF00U))
+    {
+      /* Prepare exception response. */
+      txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+      txPacket->pdu.data[0] = TBX_MB_EC03_ILLEGAL_DATA_VALUE;
+      txPacket->dataLen = 1U;
+    }
+    /* All is good for further processing. */
+    else
+    {
+      /* Prepare the response and its data length. It's the same as the request. */
+      txPacket->pdu.data[0U] = rxPacket->pdu.data[0U];
+      txPacket->pdu.data[1U] = rxPacket->pdu.data[1U];
+      txPacket->pdu.data[2U] = rxPacket->pdu.data[2U];
+      txPacket->pdu.data[3U] = rxPacket->pdu.data[3U];
+      txPacket->dataLen = 4U;
+      /* Write the coil value. */
+      tTbxMbServerResult srvResult;
+      uint8_t            coilValue = (outputValue == 0x0000U) ? TBX_OFF : TBX_ON;
+      srvResult = context->writeCoilFcn(context, startAddr, coilValue);
+      /* Exception reported? */
+      if (srvResult != TBX_MB_SERVER_OK)
+      {
+        /* Prepare exception response. */
+        txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+        if (srvResult == TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR)
+        {
+          txPacket->pdu.data[0] = TBX_MB_EC02_ILLEGAL_DATA_ADDRESS;
+        }
+        else
+        {
+          txPacket->pdu.data[0] = TBX_MB_EC04_SERVER_DEVICE_FAILURE;
+        }
+        txPacket->dataLen = 1U;
+      }
+    }
+  }
+} /*** end of TbxMbServerFC05WriteSingleCoil ***/
+
+
+/************************************************************************************//**
 ** \brief     Handles a newly received PDU for function code 6 - Write Single Register.
 ** \details   Note that this function is called at a time that txPacket->code is already
 **            prepared. Also note that txPacket->node should not be touched here.
@@ -971,6 +1065,119 @@ static void TbxMbServerFC06WriteSingleReg(tTbxMbServerCtx       * context,
 
 
 /************************************************************************************//**
+** \brief     Handles a newly received PDU for function code 15 - Write Multiple Coils.
+** \details   Note that this function is called at a time that txPacket->code is already
+**            prepared. Also note that txPacket->node should not be touched here.
+** \param     context Pointer to the Modbus server channel context.
+** \param     rxPacket Received PDU packet with MUX access.
+** \param     txPacket Storage for the PDU response packet with MUX access.
+**
+****************************************************************************************/
+static void TbxMbServerFC15WriteMultipleCoils(tTbxMbServerCtx       * context,
+                                              tTbxMbTpPacket  const * rxPacket,
+                                              tTbxMbTpPacket        * txPacket)
+{
+  /* Verify parameters. */
+  TBX_ASSERT((context != NULL) && (rxPacket != NULL) && (txPacket != NULL));
+
+  /* Only continue with valid parameters. */
+  if ((context != NULL) && (rxPacket != NULL) && (txPacket != NULL))
+  {
+    /* Read out request packet parameters. */
+    uint16_t startAddr = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[0]);
+    uint16_t numCoils  = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[2]);
+    uint8_t  byteCnt   = rxPacket->pdu.data[4];
+    /* Determine the number of bytes needed to hold all the coil bits. Make it U16 
+     * because the range validity of numCoils is not yet checked.
+     */
+    uint16_t numBytes = (uint8_t)(numCoils / 8U);
+    if ((numCoils % 8U) != 0U)
+    {
+      numBytes++;
+    }
+    /* Check if a callback function was registered. */
+    if (context->writeCoilFcn == NULL)
+    {
+      /* Prepare exception response. */
+      txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+      txPacket->pdu.data[0] = TBX_MB_EC01_ILLEGAL_FUNCTION;
+      txPacket->dataLen = 1U;
+    }
+    /* Check if the quantity of coils is invalid. */
+    else if (((numCoils < 1U) || (numCoils > 1968U)))
+    {
+      /* Prepare exception response. */
+      txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+      txPacket->pdu.data[0] = TBX_MB_EC03_ILLEGAL_DATA_VALUE;
+      txPacket->dataLen = 1U;
+    }
+    /* Check if the quantity of bytes is invalid. */
+    else if (numBytes != byteCnt)
+    {
+      /* Prepare exception response. */
+      txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+      txPacket->pdu.data[0] = TBX_MB_EC03_ILLEGAL_DATA_VALUE;
+      txPacket->dataLen = 1U;
+    }
+    /* All is good for further processing. */
+    else
+    {
+      /* Prepare the response and its data length. It's mostly the same as the request.*/
+      txPacket->pdu.data[0U] = rxPacket->pdu.data[0U];
+      txPacket->pdu.data[1U] = rxPacket->pdu.data[1U];
+      txPacket->pdu.data[2U] = rxPacket->pdu.data[2U];
+      txPacket->pdu.data[3U] = rxPacket->pdu.data[3U];
+      txPacket->dataLen = 4U;
+      /* Prepare loop indices that aid with writing the coil bits. */
+      uint8_t         bitIdx  = 0U;
+      uint8_t         byteIdx = 0U;
+      /* Initialize byte array pointer for reading the coil bits from the request. */
+      uint8_t const * coilData = &rxPacket->pdu.data[5];
+      /* Loop through all the coils. */
+      for (uint16_t idx = 0U; idx < numCoils; idx++)
+      {
+        uint8_t            coilValue = TBX_OFF;
+        tTbxMbServerResult srvResult;
+        /* Extract the requested coil value. */
+        if ((coilData[byteIdx] & (1U << bitIdx)) != 0U)
+        {
+          coilValue = TBX_ON;
+        }
+        /* Write the coil value. */
+        srvResult = context->writeCoilFcn(context, startAddr + idx, coilValue);
+        /* Exception reported? */
+        if (srvResult != TBX_MB_SERVER_OK)
+        {
+          /* Prepare exception response. */
+          txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+          if (srvResult == TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR)
+          {
+            txPacket->pdu.data[0] = TBX_MB_EC02_ILLEGAL_DATA_ADDRESS;
+          }
+          else
+          {
+            txPacket->pdu.data[0] = TBX_MB_EC04_SERVER_DEVICE_FAILURE;
+          }
+          txPacket->dataLen = 1U;
+          /* Stop looping. */
+          break;
+        }
+        /* Update the bit index. */
+        bitIdx++;
+        /* Time to move to the next byte? */
+        if (bitIdx == 8U)
+        {
+          /* Reset the bit index and increment the byte index. */
+          bitIdx = 0U;
+          byteIdx++;
+        }
+      }
+    }
+  }
+} /*** end of TbxMbServerFC15WriteMultipleCoils ***/
+
+
+/************************************************************************************//**
 ** \brief     Handles a newly received PDU for function code 16 - Write Multiple
 **            Registers.
 ** \details   Note that this function is called at a time that txPacket->code is already
@@ -996,7 +1203,7 @@ static void TbxMbServerFC16WriteMultipleRegs(tTbxMbServerCtx       * context,
     uint8_t  byteCnt   = rxPacket->pdu.data[4];
 
     /* Check if a callback function was registered. */
-    if (context->readHoldingRegFcn == NULL)
+    if (context->writeHoldingRegFcn == NULL)
     {
       /* Prepare exception response. */
       txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
@@ -1025,7 +1232,7 @@ static void TbxMbServerFC16WriteMultipleRegs(tTbxMbServerCtx       * context,
       {
         uint16_t           regValue;
         tTbxMbServerResult srvResult;
-        /* Read out the current register value. */
+        /* Extract the requested register value. */
         regValue = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[5U + (idx * 2U)]);
         /* Write the register value. */
         srvResult = context->writeHoldingRegFcn(context, startAddr + idx, regValue);

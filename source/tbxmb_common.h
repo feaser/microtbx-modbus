@@ -47,8 +47,14 @@ extern "C" {
 /** \brief Modbus function code 04 - Read Input Registers. */
 #define TBX_MB_FC04_READ_INPUT_REGISTERS              (4U)
 
+/** \brief Modbus function code 05 - Write Single Coil. */
+#define TBX_MB_FC05_WRITE_SINGLE_COIL                 (5U)
+
 /** \brief Modbus function code 06 - Write Single Register. */
 #define TBX_MB_FC06_WRITE_SINGLE_REGISTER             (6U)
+
+/** \brief Modbus function code 15 - Write Multiple Coils. */
+#define TBX_MB_FC15_WRITE_MULTIPLE_COILS              (15U)
 
 /** \brief Modbus function code 16 - Write Multiple Registers. */
 #define TBX_MB_FC16_WRITE_MULTIPLE_REGISTERS          (16U)
