@@ -77,7 +77,7 @@ extern "C" {
 #define TBX_MB_EC04_SERVER_DEVICE_FAILURE             (4U)
 
 
-/* ------------------------- Diagnostics sub codes ----------------------------------- */
+/* ------------------------- Diagnostics sub-function codes -------------------------- */
 /** \brief Diagnostics sub-function code - Return Query Data. */
 #define TBX_MB_DIAG_SC_QUERY_DATA                     (0U)
 

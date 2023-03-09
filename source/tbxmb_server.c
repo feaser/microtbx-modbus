@@ -139,6 +139,7 @@ tTbxMbServer TbxMbServerCreate(tTbxMbTp transport)
       newServerCtx->readInputRegFcn = NULL;
       newServerCtx->readHoldingRegFcn = NULL;
       newServerCtx->writeHoldingRegFcn = NULL;
+      newServerCtx->customFunctionFcn = NULL;
       newServerCtx->tpCtx = tpCtx;
       newServerCtx->tpCtx->channelCtx = newServerCtx;
       newServerCtx->tpCtx->isClient = TBX_FALSE;
@@ -353,6 +354,36 @@ void TbxMbServerSetCallbackWriteHoldingReg(tTbxMbServer                channel,
 
 
 /************************************************************************************//**
+** \brief     Registers the callback function that this server calls, whenever is
+**            received a PDU containing a function code not currently supported. With the
+**            aid of this callback function the user can implement support for new
+**            function codes.
+** \param     channel Handle to the Modbus server channel object.
+** \param     callback Pointer to the callback function.
+**
+****************************************************************************************/
+void TbxMbServerSetCallbackCustomFunction(tTbxMbServer               channel,
+                                          tTbxMbServerCustomFunction callback)
+{
+  /* Verify parameters. */
+  TBX_ASSERT((channel != NULL) && (callback != NULL));
+
+  /* Only continue with valid parameters. */
+  if ((channel != NULL) && (callback != NULL))
+  {
+    /* Convert the server channel pointer to the context structure. */
+    tTbxMbServerCtx * serverCtx = (tTbxMbServerCtx *)channel;
+    /* Sanity check on the context type. */
+    TBX_ASSERT(serverCtx->type == TBX_MB_SERVER_CONTEXT_TYPE);
+    /* Store the callback function pointer. */
+    TbxCriticalSectionEnter();
+    serverCtx->customFunctionFcn = callback;
+    TbxCriticalSectionExit();
+  }
+} /*** end of TbxMbServerSetCallbackCustomFunction ***/
+
+
+/************************************************************************************//**
 ** \brief     Helper function to extract an unsigned 16-bit value from the data of a 
 **            Modbus packet. Note that unsigned 16-bit values are always store in the
 **            big endian format, e.g. 0x1234 is stored as:
@@ -507,10 +538,33 @@ static void TbxMbServerProcessEvent(tTbxMbEvent * event)
               /* ---------------- Unsupported function code -------------------------- */
               default:
               {
-                /* This function code is currently not supported. */
-                txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
-                txPacket->pdu.data[0] = TBX_MB_EC01_ILLEGAL_FUNCTION;
-                txPacket->dataLen = 1U;
+                uint8_t handled = TBX_FALSE;
+
+                /* Is a custom function code callback configured? */
+                if (serverCtx->customFunctionFcn != NULL)
+                {
+                  /* Prepare callback parameters. */
+                  uint8_t const * rxPdu  = &rxPacket->pdu.code;
+                  uint8_t       * txPdu  = &txPacket->pdu.code;
+                  uint8_t         pduLen = rxPacket->dataLen + 1U;
+                  /* Call the custom function code callback. */
+                  handled = serverCtx->customFunctionFcn(serverCtx, rxPdu, txPdu, 
+                                                         &pduLen);
+                  /* Did the callback process the PDU and prepare a response? */
+                  if (handled == TBX_TRUE)
+                  {
+                    /* Set the response data length. */
+                    txPacket->dataLen = pduLen - 1U;
+                  }
+                }
+                /* Did the custom function code callback not handle the PDU? */
+                if (handled == TBX_FALSE)
+                {
+                  /* This function code is currently not supported. */
+                  txPacket->pdu.code |= TBX_MB_FC_EXCEPTION_MASK;
+                  txPacket->pdu.data[0] = TBX_MB_EC01_ILLEGAL_FUNCTION;
+                  txPacket->dataLen = 1U;
+                }
               }
               break;
             }

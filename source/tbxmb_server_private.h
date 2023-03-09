@@ -65,6 +65,7 @@ typedef struct
   tTbxMbServerReadInputReg      readInputRegFcn;    /**< Read input register callback. */
   tTbxMbServerReadHoldingReg    readHoldingRegFcn;  /**< Read holding register cb.     */
   tTbxMbServerWriteHoldingReg   writeHoldingRegFcn; /**< Write holding register cb.    */
+  tTbxMbServerCustomFunction    customFunctionFcn;  /**< Custom function code callback.*/  
 } tTbxMbServerCtx;
 
 
