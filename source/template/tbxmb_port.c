@@ -1,6 +1,6 @@
 /************************************************************************************//**
 * \file         tbxmb_port.c
-* \brief        Modbus hardware specific port header file.
+* \brief        Modbus hardware specific port source file.
 * \internal
 *----------------------------------------------------------------------------------------
 *                          C O P Y R I G H T
