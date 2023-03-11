@@ -297,7 +297,7 @@ void TbxMbRtuFree(tTbxMbTp transport)
 
 /************************************************************************************//**
 ** \brief     Event polling function that is automatically called during each call of
-**            TbxMbEventTask(), if activate. Use the TBX_MB_EVENT_ID_START_POLLING and
+**            TbxMbEventTask(), if activated. Use the TBX_MB_EVENT_ID_START_POLLING and
 **            TBX_MB_EVENT_ID_STOP_POLLING events to activate and deactivate.
 ** \param     transport Handle to RTU transport layer object.
 **
