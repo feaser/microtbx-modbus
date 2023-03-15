@@ -101,7 +101,7 @@ void TbxMbEventTask(void)
    * applies in case an RTOS is configured for the OSAL. Otherwise (TBX_MB_OPT_OSAL_NONE)
    * this function returns immediately.
    */
-  if (TbxMbOsalWaitEvent(&newEvent, waitTimeoutMS) == TBX_TRUE)
+  if (TbxMbOsalEventWait(&newEvent, waitTimeoutMS) == TBX_TRUE)
   {
     /* Check the opaque context pointer. */
     TBX_ASSERT(newEvent.context != NULL);

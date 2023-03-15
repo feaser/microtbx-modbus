@@ -134,11 +134,11 @@ tTbxMbTp TbxMbRtuCreate(uint8_t            nodeAddr,
 {
   tTbxMbTp result = NULL;
 
-  /* Make sure the OSAL module is initialized. The application will always first create
-   * a transport layer object before a channel object. Consequently, this is the best
-   * place to do the OSAL module initialization.
+  /* Make sure the OSAL event module is initialized. The application will always first
+   * create a transport layer object before a channel object. Consequently, this is the
+   * best place to do the OSAL module initialization.
    */
-  TbxMbOsalInit();
+  TbxMbOsalEventInit();
 
   /* Verify parameters. */
   TBX_ASSERT((nodeAddr <= TBX_MB_TP_NODE_ADDR_MAX) &&
@@ -244,7 +244,7 @@ tTbxMbTp TbxMbRtuCreate(uint8_t            nodeAddr,
        * when it's time to transition from INIT to IDLE.
        */
       tTbxMbEvent newEvent = {.context = newTpCtx, .id = TBX_MB_EVENT_ID_START_POLLING};
-      TbxMbOsalPostEvent(&newEvent, TBX_FALSE);
+      TbxMbOsalEventPost(&newEvent, TBX_FALSE);
       /* Update the result. */
       result = newTpCtx;
     }
@@ -328,7 +328,7 @@ static void TbxMbRtuPoll(tTbxMbTp transport)
           tTbxMbEvent newEvent;
           newEvent.context = tpCtx;
           newEvent.id = TBX_MB_EVENT_ID_STOP_POLLING;
-          TbxMbOsalPostEvent(&newEvent, TBX_FALSE);
+          TbxMbOsalEventPost(&newEvent, TBX_FALSE);
           /* Is the newly received frame still in the OK state? */
           TbxCriticalSectionEnter();
           uint8_t rxAduOkayCpy = tpCtx->rxAduOkay;
@@ -374,7 +374,7 @@ static void TbxMbRtuPoll(tTbxMbTp transport)
               tTbxMbEvent pduRxEvent;
               pduRxEvent.context = tpCtx->channelCtx;
               pduRxEvent.id = TBX_MB_EVENT_ID_PDU_RECEIVED;
-              TbxMbOsalPostEvent(&pduRxEvent, TBX_FALSE);
+              TbxMbOsalEventPost(&pduRxEvent, TBX_FALSE);
             }
           }
           /* Frame was marked as not okay (NOK) during its reception. Most likely a
@@ -412,13 +412,13 @@ static void TbxMbRtuPoll(tTbxMbTp transport)
           tTbxMbEvent newEvent;
           newEvent.context = tpCtx;
           newEvent.id = TBX_MB_EVENT_ID_STOP_POLLING;
-          TbxMbOsalPostEvent(&newEvent, TBX_FALSE);
+          TbxMbOsalEventPost(&newEvent, TBX_FALSE);
           /* Post an event to the linked channel for inform them that the PDU
            * transmission completed. Note that it's okay to reuse the event local.
            */
           newEvent.context = tpCtx->channelCtx;
           newEvent.id = TBX_MB_EVENT_ID_PDU_TRANSMITTED;
-          TbxMbOsalPostEvent(&newEvent, TBX_FALSE);
+          TbxMbOsalEventPost(&newEvent, TBX_FALSE);
         }
       }
       break;
@@ -444,7 +444,7 @@ static void TbxMbRtuPoll(tTbxMbTp transport)
           tTbxMbEvent newEvent;
           newEvent.context = tpCtx;
           newEvent.id = TBX_MB_EVENT_ID_STOP_POLLING;
-          TbxMbOsalPostEvent(&newEvent, TBX_FALSE);
+          TbxMbOsalEventPost(&newEvent, TBX_FALSE);
         }
       }
       break;
@@ -539,7 +539,7 @@ static uint8_t TbxMbRtuTransmit(tTbxMbTp transport)
           tTbxMbEvent newEvent;
           newEvent.context = tpCtx;
           newEvent.id = TBX_MB_EVENT_ID_STOP_POLLING;
-          TbxMbOsalPostEvent(&newEvent, TBX_FALSE);
+          TbxMbOsalEventPost(&newEvent, TBX_FALSE);
         }
         /* Not yet in the IDLE state. */
         else
@@ -917,7 +917,7 @@ static void TbxMbRtuTransmitComplete(tTbxMbUartPort port)
         tTbxMbEvent newEvent;
         newEvent.context = (void *)tpCtx;
         newEvent.id = TBX_MB_EVENT_ID_START_POLLING;
-        TbxMbOsalPostEvent(&newEvent, TBX_TRUE);
+        TbxMbOsalEventPost(&newEvent, TBX_TRUE);
       }
     }
   }
@@ -1053,7 +1053,7 @@ static void TbxMbRtuDataReceived(tTbxMbUartPort         port,
         tTbxMbEvent newEvent;
         newEvent.context = (void *)tpCtx;
         newEvent.id = TBX_MB_EVENT_ID_START_POLLING;
-        TbxMbOsalPostEvent(&newEvent, TBX_TRUE);
+        TbxMbOsalEventPost(&newEvent, TBX_TRUE);
       }
       else
       {

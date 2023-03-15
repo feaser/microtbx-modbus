@@ -40,6 +40,7 @@
 #include <FreeRTOS.h>
 #include <task.h>
 #include <queue.h>
+#include <semphr.h>
 #endif
 
 
@@ -79,7 +80,7 @@ static struct
 ** \attention This function has a built-in protection to make sure it only runs once.
 **
 ****************************************************************************************/
-void TbxMbOsalInit(void)
+void TbxMbOsalEventInit(void)
 {
   static uint8_t osalInitialized = TBX_FALSE;
 
@@ -92,7 +93,7 @@ void TbxMbOsalInit(void)
     eventQueue.readIdx = 0U;
     eventQueue.writeIdx = 0U;
   }
-} /*** end of TbxMbOsalInit ***/
+} /*** end of TbxMbOsalEventInit ***/
 
 
 /************************************************************************************//**
@@ -102,7 +103,7 @@ void TbxMbOsalInit(void)
 **            routine, TBX_FALSE otherwise.
 **
 ****************************************************************************************/
-void TbxMbOsalPostEvent(tTbxMbEvent const * event, 
+void TbxMbOsalEventPost(tTbxMbEvent const * event, 
                         uint8_t             fromIsr)
 {
   TBX_UNUSED_ARG(fromIsr);
@@ -137,7 +138,7 @@ void TbxMbOsalPostEvent(tTbxMbEvent const * event,
     }
     TbxCriticalSectionExit();
   }
-} /*** end of TbxMbOsalPostEvent ***/
+} /*** end of TbxMbOsalEventPost ***/
 
 
 /************************************************************************************//**
@@ -148,7 +149,7 @@ void TbxMbOsalPostEvent(tTbxMbEvent const * event,
 ** \return    TBX_TRUE if an event occurred, TBX_FALSE otherwise (typically a timeout).
 **
 ****************************************************************************************/
-uint8_t TbxMbOsalWaitEvent(tTbxMbEvent * event,
+uint8_t TbxMbOsalEventWait(tTbxMbEvent * event,
                            uint16_t      timeoutMs)
 {
   uint8_t result = TBX_FALSE;
@@ -183,7 +184,61 @@ uint8_t TbxMbOsalWaitEvent(tTbxMbEvent * event,
   }
   /* Give the result back to the caller. */
   return result;
-} /*** end of TbxMbOsalWaitEvent ***/
+} /*** end of TbxMbOsalEventWait ***/
+
+
+/************************************************************************************//**
+** \brief     Initialization function for the OSAL client module. 
+** \attention This function has a built-in protection to make sure it only runs once.
+**
+****************************************************************************************/
+void TbxMbOsalClientInit(void)
+{
+  static uint8_t osalClientInitialized = TBX_FALSE;
+
+  /* Only run this function once, */
+  if (osalClientInitialized == TBX_FALSE)
+  {
+    osalClientInitialized = TBX_TRUE;
+    /* TODO Implement TbxMbOsalClientInit(). */
+  }
+} /*** end of TbxMbOsalClientInit ***/
+
+
+/************************************************************************************//**
+** \brief     Give the semaphore.
+** \param     fromIsr TBX_TRUE when calling this function from an interrupt service
+**            routine, TBX_FALSE otherwise.
+**
+****************************************************************************************/
+void TbxMbOsalClientSemGive(uint8_t fromIsr)
+{
+  TBX_UNUSED_ARG(fromIsr);
+
+  /* TODO Implement TbxMbOsalClientSemGive(). */
+} /*** end of TbxMbOsalClientSemGive ***/
+
+
+/************************************************************************************//**
+** \brief     Take the semaphore when available or wait a finite amount of time for it to
+**            become available.
+** \param     timeoutMs Maximum time in milliseconds to block while waiting for the 
+**            semaphore to become available.
+** \return    TBX_TRUE if the semaphore could be takem, TBX_FALSE otherwise (typically a
+**            timeout).
+**
+****************************************************************************************/
+uint8_t TbxMbOsalClientSemTake(uint16_t timeoutMs)
+{
+  uint8_t result = TBX_FALSE;
+
+  TBX_UNUSED_ARG(timeoutMs);
+
+  /* TODO Implement TbxMbOsalClientSemTake(). */
+
+  /* Give the result back to the caller. */
+  return result;
+} /*** end of TbxMbOsalClientSemTake ***/
 #endif /* (TBX_CONF_OSAL == 0U) */
 
 
@@ -195,15 +250,18 @@ uint8_t TbxMbOsalWaitEvent(tTbxMbEvent * event,
 * Local data declarations
 ****************************************************************************************/
 /** \brief Queue handle for storing events. */
-static QueueHandle_t eventQueue;
+static QueueHandle_t     eventQueue;
+
+/** \brief Semaphore handle for the client. */
+static SemaphoreHandle_t clientSem;
 
 
 /************************************************************************************//**
-** \brief     Initialization function for the OSAL module. 
+** \brief     Initialization function for the OSAL event module. 
 ** \attention This function has a built-in protection to make sure it only runs once.
 **
 ****************************************************************************************/
-void TbxMbOsalInit(void)
+void TbxMbOsalEventInit(void)
 {
   static uint8_t osalInitialized = TBX_FALSE;
 
@@ -218,7 +276,7 @@ void TbxMbOsalInit(void)
      */
     TBX_ASSERT(eventQueue != NULL);
   }
-} /*** end of TbxMbOsalInit ***/
+} /*** end of TbxMbOsalEventInit ***/
 
 
 /************************************************************************************//**
@@ -228,7 +286,7 @@ void TbxMbOsalInit(void)
 **            routine, TBX_FALSE otherwise.
 **
 ****************************************************************************************/
-void TbxMbOsalPostEvent(tTbxMbEvent const * event, 
+void TbxMbOsalEventPost(tTbxMbEvent const * event, 
                         uint8_t             fromIsr)
 {
   /* Verify parameters. */
@@ -276,7 +334,7 @@ void TbxMbOsalPostEvent(tTbxMbEvent const * event,
       }
     }
   }
-} /*** end of TbxMbOsalPostEvent ***/
+} /*** end of TbxMbOsalEventPost ***/
 
 
 /************************************************************************************//**
@@ -287,7 +345,7 @@ void TbxMbOsalPostEvent(tTbxMbEvent const * event,
 ** \return    TBX_TRUE if an event occurred, TBX_FALSE otherwise (typically a timeout).
 **
 ****************************************************************************************/
-uint8_t TbxMbOsalWaitEvent(tTbxMbEvent * event,
+uint8_t TbxMbOsalEventWait(tTbxMbEvent * event,
                            uint16_t      timeoutMs)
 {
   uint8_t result = TBX_FALSE;
@@ -306,7 +364,93 @@ uint8_t TbxMbOsalWaitEvent(tTbxMbEvent * event,
   }
   /* Give the result back to the caller. */
   return result;
-} /*** end of TbxMbOsalWaitEvent ***/
+} /*** end of TbxMbOsalEventWait ***/
+
+
+/************************************************************************************//**
+** \brief     Initialization function for the OSAL client module. 
+** \attention This function has a built-in protection to make sure it only runs once.
+**
+****************************************************************************************/
+void TbxMbOsalClientInit(void)
+{
+  static uint8_t osalClientInitialized = TBX_FALSE;
+
+  /* Only run this function once, */
+  if (osalClientInitialized == TBX_FALSE)
+  {
+    osalClientInitialized = TBX_TRUE;
+    /* Create the client binary semaphore, which is initially taken (count = 0). */
+    clientSem = xSemaphoreCreateBinary();
+    /* Check that the semaphore creation was successful. If this assertion fails,
+     * increase the FreeRTOS heap size.
+     */
+    TBX_ASSERT(clientSem != NULL);
+  }
+} /*** end of TbxMbOsalClientInit ***/
+
+
+/************************************************************************************//**
+** \brief     Give the semaphore.
+** \param     fromIsr TBX_TRUE when calling this function from an interrupt service
+**            routine, TBX_FALSE otherwise.
+**
+****************************************************************************************/
+void TbxMbOsalClientSemGive(uint8_t fromIsr)
+{
+  /* Not calling from an ISR? */
+  if (fromIsr == TBX_FALSE)
+  {
+    /* Give the semaphore, which increments its count. The return value can be ignored.
+     * If only fails if the semaphore was already in the given state, which is fine
+     * because then this function still achieved what it was meant to do.
+     */
+    (void)xSemaphoreGive(clientSem);
+  }
+  /* Calling from an ISR. */
+  else
+  {
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+    /* Give the semaphore, which increments its count. The return value can be ignored.
+     * If only fails if the semaphore was already in the given state, which is fine
+     * because then this function still achieved what it was meant to do.
+     */
+    (void)xSemaphoreGiveFromISR(clientSem, &xHigherPriorityTaskWoken);
+    /* Request scheduler to switch to the higher priority task, if is was woken. Note
+     * that this part is FreeRTOS port specific. The following works on all Cortex-M
+     * ports. Might need to add conditional compilation switches to support other
+     * ports in the future.
+     */
+    if (xHigherPriorityTaskWoken != pdFALSE)
+    {
+      portYIELD();
+    }
+  }
+} /*** end of TbxMbOsalClientSemGive ***/
+
+
+/************************************************************************************//**
+** \brief     Take the semaphore when available or wait a finite amount of time for it to
+**            become available.
+** \param     timeoutMs Maximum time in milliseconds to block while waiting for the 
+**            semaphore to become available.
+** \return    TBX_TRUE if the semaphore could be takem, TBX_FALSE otherwise (typically a
+**            timeout).
+**
+****************************************************************************************/
+uint8_t TbxMbOsalClientSemTake(uint16_t timeoutMs)
+{
+  uint8_t result = TBX_FALSE;
+
+  /* Wait for the semaphore to become available. */
+  if (xSemaphoreTake(clientSem, pdMS_TO_TICKS(timeoutMs)) == pdTRUE)
+  {
+    result = TBX_TRUE;
+  }
+  /* Give the result back to the caller. */
+  return result;
+} /*** end of TbxMbOsalClientSemTake ***/
 #endif /* (TBX_CONF_OSAL == 1U) */
 
 

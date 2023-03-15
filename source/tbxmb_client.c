@@ -72,6 +72,9 @@ tTbxMbClient TbxMbClientCreate(tTbxMbTp transport,
 {
   tTbxMbClient result = NULL;
 
+  /* Make sure the OSAL client module is initialized. */
+  TbxMbOsalClientInit();
+
   /* Verify parameters. */
   TBX_ASSERT(transport != NULL);
 
