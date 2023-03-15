@@ -46,9 +46,47 @@ typedef void * tTbxMbClient;
 /****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
-tTbxMbClient TbxMbClientCreate(tTbxMbTp     transport);
+tTbxMbClient TbxMbClientCreate          (tTbxMbTp             transport,
+                                         uint16_t             responseTimeout,
+                                         uint16_t             turnaroundDelay);
 
-void         TbxMbClientFree  (tTbxMbClient channel);
+void         TbxMbClientFree            (tTbxMbClient         channel);
+
+uint8_t      TbxMbClientReadCoils       (tTbxMbClient         channel,
+                                         uint8_t              node,
+                                         uint16_t             addr,
+                                         uint16_t             num,
+                                         uint8_t            * coils);
+
+uint8_t      TbxMbClientReadInputs      (tTbxMbClient         channel,
+                                         uint8_t              node,
+                                         uint16_t             addr,
+                                         uint16_t             num,
+                                         uint8_t            * inputs);
+
+uint8_t      TbxMbClientReadInputRegs   (tTbxMbClient         channel,
+                                         uint8_t              node,
+                                         uint16_t             addr,
+                                         uint8_t              num,
+                                         uint16_t           * inputRegs);
+
+uint8_t      TbxMbClientReadHoldingRegs (tTbxMbClient         channel,
+                                         uint8_t              node,
+                                         uint16_t             addr,
+                                         uint8_t              num,
+                                         uint16_t           * holdingRegs);
+
+uint8_t      TbxMbClientWriteCoils      (tTbxMbClient         channel,
+                                         uint8_t              node,
+                                         uint16_t             addr,
+                                         uint16_t             num,
+                                         uint8_t      const * coils);
+
+uint8_t      TbxMbClientWriteHoldingRegs(tTbxMbClient         channel,
+                                         uint8_t              node,
+                                         uint16_t             addr,
+                                         uint8_t              num,
+                                         uint8_t      const * holdingRegs);
 
 
 #ifdef __cplusplus

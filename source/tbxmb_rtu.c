@@ -61,15 +61,6 @@
 /** \brief Unique context type to identify a context as being an RTU transport layer. */
 #define TBX_MB_RTU_CONTEXT_TYPE             (84U)
 
-/** \brief Node address value for broadcast purposes. */
-#define TBX_MB_RTU_NODE_ADDR_BROADCAST      (0U)
-
-/** \brief Minimum value of a valid node address. */
-#define TBX_MB_RTU_NODE_ADDR_MIN            (1U)
-
-/** \brief Maximum value of a valid node address. */
-#define TBX_MB_RTU_NODE_ADDR_MAX            (247U)
-
 /** \brief Initial state. */
 #define TBX_MB_RTU_STATE_INIT               (0U)
 
@@ -150,14 +141,14 @@ tTbxMbTp TbxMbRtuCreate(uint8_t            nodeAddr,
   TbxMbOsalInit();
 
   /* Verify parameters. */
-  TBX_ASSERT((nodeAddr <= TBX_MB_RTU_NODE_ADDR_MAX) &&
+  TBX_ASSERT((nodeAddr <= TBX_MB_TP_NODE_ADDR_MAX) &&
              (port < TBX_MB_UART_NUM_PORT) && 
              (baudrate < TBX_MB_UART_NUM_BAUDRATE) &&
              (stopbits < TBX_MB_UART_NUM_STOPBITS) &&
              (parity < TBX_MB_UART_NUM_PARITY));
 
   /* Only continue with valid parameters. */
-  if ((nodeAddr <= TBX_MB_RTU_NODE_ADDR_MAX) &&
+  if ((nodeAddr <= TBX_MB_TP_NODE_ADDR_MAX) &&
       (port < TBX_MB_UART_NUM_PORT) && 
       (baudrate < TBX_MB_UART_NUM_BAUDRATE) &&
       (stopbits < TBX_MB_UART_NUM_STOPBITS) &&
@@ -505,11 +496,11 @@ static uint8_t TbxMbRtuTransmit(tTbxMbTp transport)
     {
       /* Should a response actually be transmitted? If we are a server, then upon
        * reception packet validation, txPacket.node was already set to 
-       * TBX_MB_RTU_NODE_ADDR_BROADCAST for us, in case of a broadcast request, which
+       * TBX_MB_TP_NODE_ADDR_BROADCAST for us, in case of a broadcast request, which
        * does not require a response.
        */
       if ( (tpCtx->isClient == TBX_FALSE) && 
-           (tpCtx->txPacket.node == TBX_MB_RTU_NODE_ADDR_BROADCAST) )
+           (tpCtx->txPacket.node == TBX_MB_TP_NODE_ADDR_BROADCAST) )
       {
         /* To bypass the actual response transmission, simply update the result to
          * indicate success and keep the okayToTransmit set to its default TBX_FALSE.
@@ -770,7 +761,7 @@ static uint8_t TbxMbRtuValidate(tTbxMbTp transport)
         {
           /* Only process frames that are addressed to us (unicast or broadcast). */
           if ((tpCtx->rxPacket.node == tpCtx->nodeAddr) ||
-              (tpCtx->rxPacket.node == TBX_MB_RTU_NODE_ADDR_BROADCAST))
+              (tpCtx->rxPacket.node == TBX_MB_TP_NODE_ADDR_BROADCAST))
           {
             /* Increment the total number of received packets with a correct CRC, that
              * were addressed to us. Either via unicast of broadcast.
@@ -778,7 +769,7 @@ static uint8_t TbxMbRtuValidate(tTbxMbTp transport)
             tpCtx->diagInfo.srvMsgCnt++;
             /* Set the node address in the txPacket node element. It is used during
              * transmission to decided if the actual sending of the response should be
-             * suppressed, which is the case for TBX_MB_RTU_NODE_ADDR_BROADCAST. No need
+             * suppressed, which is the case for TBX_MB_TP_NODE_ADDR_BROADCAST. No need
              * for a critical section, because we are guaranteed not in the IDLE or
              * TRANSMISSION states.
              */
@@ -791,8 +782,8 @@ static uint8_t TbxMbRtuValidate(tTbxMbTp transport)
         else
         {
           /* Only process frames that are send from a valid server. */
-          if ( (tpCtx->rxPacket.node >= TBX_MB_RTU_NODE_ADDR_MIN) ||
-               (tpCtx->rxPacket.node <= TBX_MB_RTU_NODE_ADDR_MAX) )
+          if ( (tpCtx->rxPacket.node >= TBX_MB_TP_NODE_ADDR_MIN) ||
+               (tpCtx->rxPacket.node <= TBX_MB_TP_NODE_ADDR_MAX) )
           {
             /* Packet is valid. Update the result accordingly. */
             result = TBX_OK;

@@ -35,6 +35,20 @@ extern "C" {
 #endif
 
 /****************************************************************************************
+* Macro definitions
+****************************************************************************************/
+/** \brief Node address value for broadcast purposes. */
+#define TBX_MB_TP_NODE_ADDR_BROADCAST       (0U)
+
+/** \brief Minimum value of a valid node address. */
+#define TBX_MB_TP_NODE_ADDR_MIN             (1U)
+
+/** \brief Maximum value of a valid node address. */
+#define TBX_MB_TP_NODE_ADDR_MAX             (247U)
+
+
+
+/****************************************************************************************
 * Type definitions
 ****************************************************************************************/
 /** \brief Handle to a Modbus transport layer object, in the format of an opaque

@@ -58,11 +58,17 @@ static void TbxMbClientProcessEvent(tTbxMbEvent * event);
 **            transport layer to the channel for packet transmission and reception.
 ** \param     transport Handle to a previously created Modbus transport layer object to
 **            assign to the channel.
+** \param     responseTimeout Maximum time in milliseconds to wait for a response from
+**            the Modbus server, after sending a PDU.
+** \param     turnaroundDelay Delay time in milliseconds after sending a broadcast PDU
+**            to give all recipients sufficient time to process the PDU.
 ** \return    Handle to the newly created Modbus client channel object if successful,
 **            NULL otherwise.
 **
 ****************************************************************************************/
-tTbxMbClient TbxMbClientCreate(tTbxMbTp transport)
+tTbxMbClient TbxMbClientCreate(tTbxMbTp transport,
+                               uint16_t responseTimeout,
+                               uint16_t turnaroundDelay)
 {
   tTbxMbClient result = NULL;
 
@@ -95,6 +101,8 @@ tTbxMbClient TbxMbClientCreate(tTbxMbTp transport)
       newClientCtx->instancePtr = NULL;
       newClientCtx->pollFcn = NULL;
       newClientCtx->processFcn = TbxMbClientProcessEvent;
+      newClientCtx->responseTimeout = responseTimeout;
+      newClientCtx->turnaroundDelay = turnaroundDelay;
       newClientCtx->tpCtx = tpCtx;
       newClientCtx->tpCtx->channelCtx = newClientCtx;
       newClientCtx->tpCtx->isClient = TBX_TRUE;
@@ -171,6 +179,276 @@ static void TbxMbClientProcessEvent(tTbxMbEvent * event)
     }
   }
 } /*** end of TbxMbClientProcessEvent ***/
+
+
+/************************************************************************************//**
+** \brief     Reads the coil(s) from the server with the specified node address.
+** \param     channel Handle to the Modbus client channel for the requested operation.
+** \param     node The address of the server. This parameter is transport layer
+**            dependent. It is needed on RTU/ASCII, yet don't care for TCP unless it is
+**            a gateway to an RTU network.
+** \param     addr Starting element address (0..65535) in the Modbus data table for the
+**            coil read operation.
+** \param     num Number to elements to read from the coils data table. Range can be
+**            1..2000
+** \param     coils Pointer to array with TBX_ON / TBX_OFF values where the coil state
+**            will be written to.
+** \return    TBX_OK if successful, TBX_ERROR otherwise.
+**
+****************************************************************************************/
+uint8_t TbxMbClientReadCoils(tTbxMbClient   channel,
+                             uint8_t        node,
+                             uint16_t       addr,
+                             uint16_t       num,
+                             uint8_t      * coils)
+{
+  uint8_t result = TBX_ERROR;
+
+  TBX_UNUSED_ARG(addr);
+
+  /* Verify the parameters. */
+  TBX_ASSERT((channel != NULL) && (node <= TBX_MB_TP_NODE_ADDR_MAX) && (num >= 1U) &&
+             (num <= 2000U) && (coils != NULL));
+
+  /* Only continue with valid parameters. */
+  if ((channel != NULL) && (node <= TBX_MB_TP_NODE_ADDR_MAX) && (num >= 1U) &&
+      (num <= 2000U) && (coils != NULL))
+  {
+    /* Convert the client channel pointer to the context structure. */
+    tTbxMbClientCtx * clientCtx = (tTbxMbClientCtx *)channel;
+    /* Sanity check on the context type. */
+    TBX_ASSERT(clientCtx->type == TBX_MB_CLIENT_CONTEXT_TYPE);
+    /* TODO Implement TbxMbClientReadCoils(). */
+    coils[0] = TBX_OFF; /* Dummy for now. */
+  }      
+  /* Give the result back to the caller. */
+  return result;
+} /*** end of TbxMbClientReadCoils ***/
+
+
+/************************************************************************************//**
+** \brief     Reads the discrete input(s) from the server with the specified node
+**            address.
+** \param     channel Handle to the Modbus client channel for the requested operation.
+** \param     node The address of the server. This parameter is transport layer
+**            dependent. It is needed on RTU/ASCII, yet don't care for TCP unless it is
+**            a gateway to an RTU network.
+** \param     addr Starting element address (0..65535) in the Modbus data table for the
+**            discrete input read operation.
+** \param     num Number to elements to read from the discrete inputs data table. Range
+**            can be 1..2000
+** \param     inputs Pointer to array with TBX_ON / TBX_OFF values where the discrete
+**            input state will be written to.
+** \return    TBX_OK if successful, TBX_ERROR otherwise.
+**
+****************************************************************************************/
+uint8_t TbxMbClientReadInputs(tTbxMbClient   channel,
+                              uint8_t        node,
+                              uint16_t       addr,
+                              uint16_t       num,
+                              uint8_t      * inputs)
+{
+  uint8_t result = TBX_ERROR;
+
+  TBX_UNUSED_ARG(addr);
+
+  /* Verify the parameters. */
+  TBX_ASSERT((channel != NULL) && (node <= TBX_MB_TP_NODE_ADDR_MAX) && (num >= 1U) &&
+             (num <= 2000U) && (inputs != NULL));
+
+  /* Only continue with valid parameters. */
+  if ((channel != NULL) && (node <= TBX_MB_TP_NODE_ADDR_MAX) && (num >= 1U) &&
+      (num <= 2000U) && (inputs != NULL))
+  {
+    /* Convert the client channel pointer to the context structure. */
+    tTbxMbClientCtx * clientCtx = (tTbxMbClientCtx *)channel;
+    /* Sanity check on the context type. */
+    TBX_ASSERT(clientCtx->type == TBX_MB_CLIENT_CONTEXT_TYPE);
+    /* TODO Implement TbxMbClientReadInputs(). */
+    inputs[0] = TBX_OFF; /* Dummy for now. */
+  }      
+  /* Give the result back to the caller. */
+  return result;
+} /*** end of TbxMbClientReadInputs ***/
+
+
+/************************************************************************************//**
+** \brief     Reads the input register(s) from the server with the specified node
+**            address.
+** \param     channel Handle to the Modbus client channel for the requested operation.
+** \param     node The address of the server. This parameter is transport layer
+**            dependent. It is needed on RTU/ASCII, yet don't care for TCP unless it is
+**            a gateway to an RTU network.
+** \param     addr Starting element address (0..65535) in the Modbus data table for the
+**            input register read operation.
+** \param     num Number to elements to read from the input registers data table. Range
+**            can be 1..125
+** \param     inputRegs Pointer to array where the input register values will be written
+**            to.
+** \return    TBX_OK if successful, TBX_ERROR otherwise.
+**
+****************************************************************************************/
+uint8_t TbxMbClientReadInputRegs(tTbxMbClient   channel,
+                                 uint8_t        node,
+                                 uint16_t       addr,
+                                 uint8_t        num,
+                                 uint16_t     * inputRegs)
+{
+  uint8_t result = TBX_ERROR;
+
+  TBX_UNUSED_ARG(addr);
+
+  /* Verify the parameters. */
+  TBX_ASSERT((channel != NULL) && (node <= TBX_MB_TP_NODE_ADDR_MAX) && (num >= 1U) &&
+             (num <= 125U) && (inputRegs != NULL));
+
+  /* Only continue with valid parameters. */
+  if ((channel != NULL) && (node <= TBX_MB_TP_NODE_ADDR_MAX) && (num >= 1U) &&
+      (num <= 125U) && (inputRegs != NULL))
+  {
+    /* Convert the client channel pointer to the context structure. */
+    tTbxMbClientCtx * clientCtx = (tTbxMbClientCtx *)channel;
+    /* Sanity check on the context type. */
+    TBX_ASSERT(clientCtx->type == TBX_MB_CLIENT_CONTEXT_TYPE);
+    /* TODO Implement TbxMbClientReadInputRegs(). */
+    inputRegs[0] = 0U; /* Dummy for now. */
+  }      
+  /* Give the result back to the caller. */
+  return result;
+} /*** end of TbxMbClientReadInputRegs ***/
+
+
+/************************************************************************************//**
+** \brief     Reads the holding register(s) from the server with the specified node
+**            address.
+** \param     channel Handle to the Modbus client channel for the requested operation.
+** \param     node The address of the server. This parameter is transport layer
+**            dependent. It is needed on RTU/ASCII, yet don't care for TCP unless it is
+**            a gateway to an RTU network.
+** \param     addr Starting element address (0..65535) in the Modbus data table for the
+**            holding register read operation.
+** \param     num Number to elements to read from the holding registers data table. Range
+**            can be 1..125
+** \param     holdingRegs Pointer to array where the holding register values will be
+**            written to.
+** \return    TBX_OK if successful, TBX_ERROR otherwise.
+**
+****************************************************************************************/
+uint8_t TbxMbClientReadHoldingRegs(tTbxMbClient   channel,
+                                   uint8_t        node,
+                                   uint16_t       addr,
+                                   uint8_t        num,
+                                   uint16_t     * holdingRegs)
+{
+  uint8_t result = TBX_ERROR;
+
+  TBX_UNUSED_ARG(addr);
+
+  /* Verify the parameters. */
+  TBX_ASSERT((channel != NULL) && (node <= TBX_MB_TP_NODE_ADDR_MAX) && (num >= 1U) &&
+             (num <= 125U) && (holdingRegs != NULL));
+
+  /* Only continue with valid parameters. */
+  if ((channel != NULL) && (node <= TBX_MB_TP_NODE_ADDR_MAX) && (num >= 1U) &&
+      (num <= 125U) && (holdingRegs != NULL))
+  {
+    /* Convert the client channel pointer to the context structure. */
+    tTbxMbClientCtx * clientCtx = (tTbxMbClientCtx *)channel;
+    /* Sanity check on the context type. */
+    TBX_ASSERT(clientCtx->type == TBX_MB_CLIENT_CONTEXT_TYPE);
+    /* TODO Implement TbxMbClientReadHoldingRegs(). */
+    holdingRegs[0] = 0U; /* Dummy for now. */
+  }      
+  /* Give the result back to the caller. */
+  return result;
+} /*** end of TbxMbClientReadHoldingRegs ***/
+
+
+/************************************************************************************//**
+** \brief     Writes the coil(s) to the server with the specified node address.
+** \param     channel Handle to the Modbus client channel for the requested operation.
+** \param     node The address of the server. This parameter is transport layer
+**            dependent. It is needed on RTU/ASCII, yet don't care for TCP unless it is
+**            a gateway to an RTU network.
+** \param     addr Starting element address (0..65535) in the Modbus data table for the
+**            coil write operation.
+** \param     num Number to elements to write to the coils data table. Range can be
+**            1..1968
+** \param     coils Pointer to array with the desired TBX_ON / TBX_OFF coils values.
+** \return    TBX_OK if successful, TBX_ERROR otherwise.
+**
+****************************************************************************************/
+uint8_t TbxMbClientWriteCoils(tTbxMbClient         channel,
+                              uint8_t              node,
+                              uint16_t             addr,
+                              uint16_t             num,
+                              uint8_t      const * coils)
+{
+  uint8_t result = TBX_ERROR;
+
+  TBX_UNUSED_ARG(addr);
+
+  /* Verify the parameters. */
+  TBX_ASSERT((channel != NULL) && (node <= TBX_MB_TP_NODE_ADDR_MAX) && (num >= 1U) &&
+             (num <= 1968U) && (coils != NULL));
+
+  /* Only continue with valid parameters. */
+  if ((channel != NULL) && (node <= TBX_MB_TP_NODE_ADDR_MAX) && (num >= 1U) &&
+      (num <= 1968U) && (coils != NULL))
+  {
+    /* Convert the client channel pointer to the context structure. */
+    tTbxMbClientCtx * clientCtx = (tTbxMbClientCtx *)channel;
+    /* Sanity check on the context type. */
+    TBX_ASSERT(clientCtx->type == TBX_MB_CLIENT_CONTEXT_TYPE);
+    /* TODO Implement TbxMbClientWriteCoils(). */
+  }      
+  /* Give the result back to the caller. */
+  return result;
+} /*** end of TbxMbClientWriteCoils ***/
+
+
+/************************************************************************************//**
+** \brief     Writes the holding register(s) to the server with the specified node
+**            address.
+** \param     channel Handle to the Modbus client channel for the requested operation.
+** \param     node The address of the server. This parameter is transport layer
+**            dependent. It is needed on RTU/ASCII, yet don't care for TCP unless it is
+**            a gateway to an RTU network.
+** \param     addr Starting element address (0..65535) in the Modbus data table for the
+**            holding register write operation.
+** \param     num Number to elements to write to the holding registers data table. Range
+**            can be 1..123
+** \param     holdingRegs Pointer to array with the desired holding register values.
+** \return    TBX_OK if successful, TBX_ERROR otherwise.
+**
+****************************************************************************************/
+uint8_t TbxMbClientWriteHoldingRegs(tTbxMbClient         channel,
+                                    uint8_t              node,
+                                    uint16_t             addr,
+                                    uint8_t              num,
+                                    uint8_t      const * holdingRegs)
+{
+  uint8_t result = TBX_ERROR;
+
+  TBX_UNUSED_ARG(addr);
+
+  /* Verify the parameters. */
+  TBX_ASSERT((channel != NULL) && (node <= TBX_MB_TP_NODE_ADDR_MAX) && (num >= 1U) &&
+             (num <= 123U) && (holdingRegs != NULL));
+
+  /* Only continue with valid parameters. */
+  if ((channel != NULL) && (node <= TBX_MB_TP_NODE_ADDR_MAX) && (num >= 1U) &&
+      (num <= 123U) && (holdingRegs != NULL))
+  {
+    /* Convert the client channel pointer to the context structure. */
+    tTbxMbClientCtx * clientCtx = (tTbxMbClientCtx *)channel;
+    /* Sanity check on the context type. */
+    TBX_ASSERT(clientCtx->type == TBX_MB_CLIENT_CONTEXT_TYPE);
+    /* TODO Implement TbxMbClientWriteHoldingRegs(). */
+  }      
+  /* Give the result back to the caller. */
+  return result;
+} /*** end of TbxMbClientWriteHoldingRegs ***/
 
 
 /*********************************** end of tbxmb_client.c *****************************/

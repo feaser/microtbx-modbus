@@ -62,6 +62,8 @@ typedef struct
   /* Private members. */
   uint8_t              type;                     /**< Context type.                    */
   tTbxMbTpCtx        * tpCtx;                    /**< Assigned transport layer context.*/
+  uint16_t             responseTimeout;          /**< Maximum response wait time (ms). */
+  uint16_t             turnaroundDelay;          /**< Delay (ms) after broadcast PDU.  */
 } tTbxMbClientCtx;
 
 
