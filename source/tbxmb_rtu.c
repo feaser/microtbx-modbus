@@ -489,9 +489,77 @@ static uint8_t TbxMbRtuTransmit(tTbxMbTp transport)
       /* Increment the total number of exception responses. */
       tpCtx->diagInfo.busExcpErrCnt++;
     }
+    TbxCriticalSectionEnter();
+    /* Still in the INIT state and configured as a client? */
+    if ( (tpCtx->state == TBX_MB_RTU_STATE_INIT) && (tpCtx->isClient == TBX_TRUE) )
+    {
+      /* A client could start transmitting right after system initialization, when
+       * this instance is still in the INIT state. It's not user friendly to then make
+       * the transmit() fail right way, meaning that the user would always have to
+       * build in a wait loop hoping that this instance reached the IDLE state.
+       *
+       * For this reason, perform this waiting for the IDLE state right here. But with
+       * a timeout mechanism. The IDLE state is reached after the reception of the last
+       * byte of an ADU that a server might be transmitting, plus the t3_5 time to
+       * signal the end-of-frame.
+       *
+       * The largest ADU to receive is 256 bytes. Adding the t3_5 end-of-frame time, 
+       * means the longest time to wait for a transition to the IDLE state is:
+       * 256 + 3.5 = 259.5 characters. This is ceil(259.5/3.5) = 75 times the t3_5
+       * timer interval. Use this to calculate the timeout in ticks of the RTU timer.
+       */
+      uint16_t waitStartTicks = TbxMbPortRtuTimerCount();
+      uint16_t waitTimeoutTicks = tpCtx->t3_5Ticks * 75U;
+      uint8_t  stopWaiting = TBX_FALSE;
+      /* Start the wait loop. */
+      while (stopWaiting == TBX_FALSE)
+      {
+        uint16_t rxTimeCopy = tpCtx->rxTime;
+        /* Leave the critical section during the loop to keep the interrupt latency low
+         * and because new characters might be received, which would need its ISR to run,
+         * which in turn updates tpCtx->rxTime.
+         */
+        TbxCriticalSectionExit();
+        uint16_t currentTime = TbxMbPortRtuTimerCount();
+        /* Calculate the number of time ticks that elapsed since entering the INIT state
+         * or the reception of the last byte, whichever one comes last. Note that this
+         * calculation works, even if the RTU timer counter overflowed.
+         */
+        uint16_t deltaTicks = currentTime - rxTimeCopy;
+        /* After t3_5 it's time to transition to the IDLE state. */
+        if (deltaTicks >= tpCtx->t3_5Ticks)
+        {
+          /* Transition to the IDLE state. */
+          TbxCriticalSectionEnter();
+          tpCtx->state = TBX_MB_RTU_STATE_IDLE;
+          TbxCriticalSectionExit();
+          /* Stop the wait loop, since we're done. */
+          stopWaiting = TBX_TRUE;
+          /* Instruct the event task to stop calling our polling function. */
+          tTbxMbEvent newEvent;
+          newEvent.context = tpCtx;
+          newEvent.id = TBX_MB_EVENT_ID_STOP_POLLING;
+          TbxMbOsalPostEvent(&newEvent, TBX_FALSE);
+        }
+        /* Not yet in the IDLE state. */
+        else
+        {
+          /* Did the maximum wait timeout expire? Note that this calculation works, even
+           * if the RTU timer counter overflowed.
+           */
+          deltaTicks = currentTime - waitStartTicks;
+          if (deltaTicks > waitTimeoutTicks)
+          {
+            /* Stop the wait loop, since the timeout occurred, so we need to give up. */
+            stopWaiting = TBX_TRUE;
+          }
+        }
+        /* Re-enter the critical section. */
+        TbxCriticalSectionEnter();
+      }
+    }
     /* New transmissions are only possible from the IDLE state. */
     uint8_t okayToTransmit = TBX_FALSE;
-    TbxCriticalSectionEnter();
     if (tpCtx->state == TBX_MB_RTU_STATE_IDLE)
     {
       /* Should a response actually be transmitted? If we are a server, then upon
