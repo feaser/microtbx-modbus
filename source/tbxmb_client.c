@@ -108,6 +108,7 @@ tTbxMbClient TbxMbClientCreate(tTbxMbTp transport,
       newClientCtx->processFcn = TbxMbClientProcessEvent;
       newClientCtx->responseTimeout = responseTimeout;
       newClientCtx->turnaroundDelay = turnaroundDelay;
+      newClientCtx->responseSem = TbxMbOsalSemCreate();
       newClientCtx->tpCtx = tpCtx;
       newClientCtx->tpCtx->channelCtx = newClientCtx;
       newClientCtx->tpCtx->isClient = TBX_TRUE;
@@ -138,6 +139,8 @@ void TbxMbClientFree(tTbxMbClient channel)
     tTbxMbClientCtx * clientCtx = (tTbxMbClientCtx *)channel;
     /* Sanity check on the context type. */
     TBX_ASSERT(clientCtx->type == TBX_MB_CLIENT_CONTEXT_TYPE);
+    /* Release the semaphore used for syncing to PDU reception events. */
+    TbxMbOsalSemFree(clientCtx->responseSem);
     /* Remove crosslink between the channel and the transport layer. */
     TbxCriticalSectionEnter();
     clientCtx->tpCtx->channelCtx = NULL;
@@ -146,6 +149,7 @@ void TbxMbClientFree(tTbxMbClient channel)
     clientCtx->type = 0U;
     clientCtx->pollFcn = NULL;
     clientCtx->processFcn = NULL;
+    clientCtx->responseSem = NULL;
     TbxCriticalSectionExit();
     /* Give the channel context back to the memory pool. */
     TbxMemPoolRelease(clientCtx);
