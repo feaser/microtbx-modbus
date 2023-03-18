@@ -35,21 +35,36 @@ extern "C" {
 #endif
 
 /****************************************************************************************
+* Type definitions
+****************************************************************************************/
+/** \brief Handle to a Modbus OSAL semaphore object, in the format of an opaque
+ *         pointer.
+ */
+typedef void * tTbxMbOsalSem;
+
+
+/****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
-void    TbxMbOsalEventInit    (void);
+/* Modbus OSAL event queue API. */
+void          TbxMbOsalEventInit(void);
 
-void    TbxMbOsalEventPost    (tTbxMbEvent const * event, 
-                               uint8_t             fromIsr);
+void          TbxMbOsalEventPost(tTbxMbEvent const * event, 
+                                 uint8_t             fromIsr);
 
-uint8_t TbxMbOsalEventWait    (tTbxMbEvent       * event, 
-                               uint16_t            timeoutMs);
+uint8_t       TbxMbOsalEventWait(tTbxMbEvent       * event, 
+                                 uint16_t            timeoutMs);
 
-void    TbxMbOsalClientInit   (void);
+/* Modbus OSAL semaphore API. */
+tTbxMbOsalSem TbxMbOsalSemCreate(void);
 
-void    TbxMbOsalClientSemGive(uint8_t             fromIsr);
+void          TbxMbOsalSemFree  (tTbxMbOsalSem       sem);
 
-uint8_t TbxMbOsalClientSemTake(uint16_t            timeoutMs);
+void          TbxMbOsalSemGive  (tTbxMbOsalSem       sem,
+                                 uint8_t             fromIsr);
+
+uint8_t       TbxMbOsalSemTake  (tTbxMbOsalSem       sem,
+                                 uint16_t            timeoutMs);
 
 
 #ifdef __cplusplus

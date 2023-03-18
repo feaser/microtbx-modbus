@@ -187,58 +187,7 @@ uint8_t TbxMbOsalEventWait(tTbxMbEvent * event,
 } /*** end of TbxMbOsalEventWait ***/
 
 
-/************************************************************************************//**
-** \brief     Initialization function for the OSAL client module. 
-** \attention This function has a built-in protection to make sure it only runs once.
-**
-****************************************************************************************/
-void TbxMbOsalClientInit(void)
-{
-  static uint8_t osalClientInitialized = TBX_FALSE;
-
-  /* Only run this function once, */
-  if (osalClientInitialized == TBX_FALSE)
-  {
-    osalClientInitialized = TBX_TRUE;
-    /* TODO Implement TbxMbOsalClientInit(). */
-  }
-} /*** end of TbxMbOsalClientInit ***/
-
-
-/************************************************************************************//**
-** \brief     Give the semaphore.
-** \param     fromIsr TBX_TRUE when calling this function from an interrupt service
-**            routine, TBX_FALSE otherwise.
-**
-****************************************************************************************/
-void TbxMbOsalClientSemGive(uint8_t fromIsr)
-{
-  TBX_UNUSED_ARG(fromIsr);
-
-  /* TODO Implement TbxMbOsalClientSemGive(). */
-} /*** end of TbxMbOsalClientSemGive ***/
-
-
-/************************************************************************************//**
-** \brief     Take the semaphore when available or wait a finite amount of time for it to
-**            become available.
-** \param     timeoutMs Maximum time in milliseconds to block while waiting for the 
-**            semaphore to become available.
-** \return    TBX_TRUE if the semaphore could be takem, TBX_FALSE otherwise (typically a
-**            timeout).
-**
-****************************************************************************************/
-uint8_t TbxMbOsalClientSemTake(uint16_t timeoutMs)
-{
-  uint8_t result = TBX_FALSE;
-
-  TBX_UNUSED_ARG(timeoutMs);
-
-  /* TODO Implement TbxMbOsalClientSemTake(). */
-
-  /* Give the result back to the caller. */
-  return result;
-} /*** end of TbxMbOsalClientSemTake ***/
+/* TODO Implement the Modbus OSAL semaphore API functions. */
 #endif /* (TBX_CONF_OSAL == 0U) */
 
 
@@ -251,9 +200,6 @@ uint8_t TbxMbOsalClientSemTake(uint16_t timeoutMs)
 ****************************************************************************************/
 /** \brief Queue handle for storing events. */
 static QueueHandle_t     eventQueue;
-
-/** \brief Semaphore handle for the client. */
-static SemaphoreHandle_t clientSem;
 
 
 /************************************************************************************//**
@@ -368,89 +314,126 @@ uint8_t TbxMbOsalEventWait(tTbxMbEvent * event,
 
 
 /************************************************************************************//**
-** \brief     Initialization function for the OSAL client module. 
-** \attention This function has a built-in protection to make sure it only runs once.
+** \brief     Creates a new binary semaphore object with an initial count of 0, meaning
+**            that it's taken.
+** \return    Handle to the newly created binary semaphore object if successful, NULL
+**            otherwise.
 **
 ****************************************************************************************/
-void TbxMbOsalClientInit(void)
+tTbxMbOsalSem TbxMbOsalSemCreate(void)
 {
-  static uint8_t osalClientInitialized = TBX_FALSE;
+  tTbxMbOsalSem result;
 
-  /* Only run this function once, */
-  if (osalClientInitialized == TBX_FALSE)
-  {
-    osalClientInitialized = TBX_TRUE;
-    /* Create the client binary semaphore, which is initially taken (count = 0). */
-    clientSem = xSemaphoreCreateBinary();
-    /* Check that the semaphore creation was successful. If this assertion fails,
-     * increase the FreeRTOS heap size.
-     */
-    TBX_ASSERT(clientSem != NULL);
-  }
-} /*** end of TbxMbOsalClientInit ***/
+  /* Create the binary semaphore, which is initially taken (count = 0). */
+  result = xSemaphoreCreateBinary();
+  /* Check that the semaphore creation was successful. If this assertion fails, increase
+   * the FreeRTOS heap size.
+   */
+  TBX_ASSERT(result != NULL);
+  /* Give the result back to the caller. */
+  return result;
+} /*** end of TbxMbOsalSemCreate ***/
 
 
 /************************************************************************************//**
-** \brief     Give the semaphore.
+** \brief     Releases a binary semaphore object, previously created with
+**            TbxMbOsalSemCreate().
+** \param     sem Handle to the binary semaphore object to release.
+**
+****************************************************************************************/
+void TbxMbOsalSemFree(tTbxMbOsalSem sem)
+{
+  /* Verify parameters. */
+  TBX_ASSERT(sem != NULL);
+
+  /* Only continue with valid parameters. */
+  if (sem != NULL)
+  {
+    /* Delete the binary semaphore. */
+    vSemaphoreDelete(sem);
+  }
+} /*** end of TbxMbOsalSemFree ***/
+
+
+/************************************************************************************//**
+** \brief     Give the semaphore, setting its count to 1, meaning that it's available.
+** \param     sem Handle to the binary semaphore object.
 ** \param     fromIsr TBX_TRUE when calling this function from an interrupt service
 **            routine, TBX_FALSE otherwise.
 **
 ****************************************************************************************/
-void TbxMbOsalClientSemGive(uint8_t fromIsr)
+void TbxMbOsalSemGive(tTbxMbOsalSem sem,
+                      uint8_t       fromIsr)
 {
-  /* Not calling from an ISR? */
-  if (fromIsr == TBX_FALSE)
-  {
-    /* Give the semaphore, which increments its count. The return value can be ignored.
-     * If only fails if the semaphore was already in the given state, which is fine
-     * because then this function still achieved what it was meant to do.
-     */
-    (void)xSemaphoreGive(clientSem);
-  }
-  /* Calling from an ISR. */
-  else
-  {
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  /* Verify parameters. */
+  TBX_ASSERT(sem != NULL);
 
-    /* Give the semaphore, which increments its count. The return value can be ignored.
-     * If only fails if the semaphore was already in the given state, which is fine
-     * because then this function still achieved what it was meant to do.
-     */
-    (void)xSemaphoreGiveFromISR(clientSem, &xHigherPriorityTaskWoken);
-    /* Request scheduler to switch to the higher priority task, if is was woken. Note
-     * that this part is FreeRTOS port specific. The following works on all Cortex-M
-     * ports. Might need to add conditional compilation switches to support other
-     * ports in the future.
-     */
-    if (xHigherPriorityTaskWoken != pdFALSE)
+  /* Only continue with valid parameters. */
+  if (sem != NULL)
+  {
+    /* Not calling from an ISR? */
+    if (fromIsr == TBX_FALSE)
     {
-      portYIELD();
+      /* Give the semaphore, which increments its count. The return value can be ignored.
+       * It only fails if the semaphore was already in the given state, which is fine
+       * because then this function still achieved what it was meant to do.
+       */
+      (void)xSemaphoreGive(sem);
+    }
+    /* Calling from an ISR. */
+    else
+    {
+      BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+      /* Give the semaphore, which increments its count. The return value can be ignored.
+       * It only fails if the semaphore was already in the given state, which is fine
+       * because then this function still achieved what it was meant to do.
+       */
+      (void)xSemaphoreGiveFromISR(sem, &xHigherPriorityTaskWoken);
+      /* Request scheduler to switch to the higher priority task, if is was woken. Note
+       * that this part is FreeRTOS port specific. The following works on all Cortex-M
+       * ports. Might need to add conditional compilation switches to support other
+       * ports in the future.
+       */
+      if (xHigherPriorityTaskWoken != pdFALSE)
+      {
+        portYIELD();
+      }
     }
   }
-} /*** end of TbxMbOsalClientSemGive ***/
+} /*** end of TbxMbOsalSemGive ***/
 
 
 /************************************************************************************//**
-** \brief     Take the semaphore when available or wait a finite amount of time for it to
-**            become available.
+** \brief     Take the semaphore when available (count > 0) or wait a finite amount of
+**            time for it to become available. The take operation decrements to count.
+** \param     sem Handle to the binary semaphore object.
 ** \param     timeoutMs Maximum time in milliseconds to block while waiting for the 
 **            semaphore to become available.
-** \return    TBX_TRUE if the semaphore could be takem, TBX_FALSE otherwise (typically a
+** \return    TBX_TRUE if the semaphore could be taken, TBX_FALSE otherwise (typically a
 **            timeout).
 **
 ****************************************************************************************/
-uint8_t TbxMbOsalClientSemTake(uint16_t timeoutMs)
+uint8_t TbxMbOsalSemTake(tTbxMbOsalSem sem,
+                         uint16_t      timeoutMs)
 {
   uint8_t result = TBX_FALSE;
 
-  /* Wait for the semaphore to become available. */
-  if (xSemaphoreTake(clientSem, pdMS_TO_TICKS(timeoutMs)) == pdTRUE)
+  /* Verify parameters. */
+  TBX_ASSERT(sem != NULL);
+
+  /* Only continue with valid parameters. */
+  if (sem != NULL)
   {
-    result = TBX_TRUE;
+    /* Wait for the semaphore to become available. */
+    if (xSemaphoreTake(sem, pdMS_TO_TICKS(timeoutMs)) == pdTRUE)
+    {
+      result = TBX_TRUE;
+    }
   }
   /* Give the result back to the caller. */
   return result;
-} /*** end of TbxMbOsalClientSemTake ***/
+} /*** end of TbxMbOsalSemTake ****/
 #endif /* (TBX_CONF_OSAL == 1U) */
 
 

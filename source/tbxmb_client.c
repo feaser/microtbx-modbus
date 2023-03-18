@@ -72,9 +72,6 @@ tTbxMbClient TbxMbClientCreate(tTbxMbTp transport,
 {
   tTbxMbClient result = NULL;
 
-  /* Make sure the OSAL client module is initialized. */
-  TbxMbOsalClientInit();
-
   /* Verify parameters. */
   TBX_ASSERT(transport != NULL);
 
@@ -99,6 +96,11 @@ tTbxMbClient TbxMbClientCreate(tTbxMbTp transport,
     {
       /* Convert the TP channel pointer to the context structure. */
       tTbxMbTpCtx * tpCtx = (tTbxMbTpCtx *)transport;
+      /* Sanity check on the transport layer's interface function. That way there is 
+       * no need to do it later on, making it more run-time efficient. 
+       */
+      TBX_ASSERT((tpCtx->transmitFcn != NULL) && (tpCtx->receptionDoneFcn != NULL) &&
+                 (tpCtx->getRxPacketFcn != NULL) && (tpCtx->getTxPacketFcn != NULL));
       /* Initialize the channel context. Start by crosslinking the transport layer. */
       newClientCtx->type = TBX_MB_CLIENT_CONTEXT_TYPE;
       newClientCtx->instancePtr = NULL;
@@ -182,6 +184,42 @@ static void TbxMbClientProcessEvent(tTbxMbEvent * event)
     }
   }
 } /*** end of TbxMbClientProcessEvent ***/
+
+
+/************************************************************************************//**
+** \brief     Helper function to extract an unsigned 16-bit value from the data of a 
+**            Modbus packet. Note that unsigned 16-bit values are always store in the
+**            big endian format, e.g. 0x1234 is stored as:
+**            - data[0] = 0x12
+**            - data[1] = 0x34
+** \param     data Pointer to the byte array that holds the two bytes to extract, stored
+**            in the big endian format.
+** \return    The 16-bit unsigned integer value.
+**
+****************************************************************************************/
+static inline uint16_t TbxMbClientExtractUInt16BE(uint8_t const * data)
+{
+  return ((uint16_t)data[0] << 8U) | data[1];
+} /*** end of TbxMbServerExtractUInt16BE ***/
+
+
+/************************************************************************************//**
+** \brief     Helper function to store an unsigned 16-bit value in the data of a Modbus
+**            packet. Note that unsigned 16-bit values are always stored in the
+**            big endian format, e.g. 0x1234 is stored as:
+**            - data[0] = 0x12
+**            - data[1] = 0x34
+** \param     value The unsigned 16-bit value to store.
+** \param     data Pointer to the byte array where to store the value in the big endian
+**            format.
+**
+****************************************************************************************/
+static inline void TbxMbClientStoreUInt16BE(uint16_t   value,
+                                            uint8_t  * data)
+{
+  data[0] = (uint8_t)(value >> 8U);
+  data[1] = (uint8_t)value;
+} /*** end of TbxMbServerExtractUInt16BE ***/
 
 
 /************************************************************************************//**
@@ -299,8 +337,6 @@ uint8_t TbxMbClientReadInputRegs(tTbxMbClient   channel,
 {
   uint8_t result = TBX_ERROR;
 
-  TBX_UNUSED_ARG(addr);
-
   /* Verify the parameters. */
   TBX_ASSERT((channel != NULL) && (node <= TBX_MB_TP_NODE_ADDR_MAX) && (num >= 1U) &&
              (num <= 125U) && (inputRegs != NULL));
@@ -313,8 +349,42 @@ uint8_t TbxMbClientReadInputRegs(tTbxMbClient   channel,
     tTbxMbClientCtx * clientCtx = (tTbxMbClientCtx *)channel;
     /* Sanity check on the context type. */
     TBX_ASSERT(clientCtx->type == TBX_MB_CLIENT_CONTEXT_TYPE);
-    /* TODO Implement TbxMbClientReadInputRegs(). */
-    inputRegs[0] = 0U; /* Dummy for now. */
+
+    /* Obtain write access to the request packet. */
+    tTbxMbTpPacket * txPacket = clientCtx->tpCtx->getTxPacketFcn(clientCtx->tpCtx);
+    /* Should always work, unless this function is being called recursively. Only
+     * continue with access for preparing the request packet.
+     */
+    if (txPacket != NULL)
+    {
+      /* Prepare the request packet. */
+      txPacket->node = node;
+      txPacket->pdu.code = TBX_MB_FC04_READ_INPUT_REGISTERS;
+      txPacket->dataLen = 4U;
+      /* Starting address. */
+      TbxMbClientStoreUInt16BE(addr, &txPacket->pdu.data[0]);
+      /* Number of registers. */
+      TbxMbClientStoreUInt16BE(num, &txPacket->pdu.data[2]);
+      /* Request the transport layer to transmit the request packet and update the
+       * result accordingly.
+       */
+      result = clientCtx->tpCtx->transmitFcn(clientCtx->tpCtx);
+      /* TODO How to handle turnaround delay? */
+      /* Only continue with response reception, if this was not a broadcast request and
+       * the request was successfully submitted for transmission.
+       */
+      if ((result == TBX_OK) && (node != TBX_MB_TP_NODE_ADDR_BROADCAST))
+      {
+        /* TODO Continue by waiting for the response to come in, using a semaphore. Note
+         * that the OSAL semaphore first needs to be refactored for this, such that it
+         * can be created per channel, so also stored in the client's context.
+         */
+
+
+        /* TODO Implement TbxMbClientReadInputRegs(). */
+        inputRegs[0] = 0U; /* Dummy for now. */
+      }
+    }
   }      
   /* Give the result back to the caller. */
   return result;
