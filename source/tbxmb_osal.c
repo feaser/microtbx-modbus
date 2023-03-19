@@ -187,7 +187,90 @@ uint8_t TbxMbOsalEventWait(tTbxMbEvent * event,
 } /*** end of TbxMbOsalEventWait ***/
 
 
-/* TODO Implement the Modbus OSAL semaphore API functions. */
+/************************************************************************************//**
+** \brief     Creates a new binary semaphore object with an initial count of 0, meaning
+**            that it's taken.
+** \return    Handle to the newly created binary semaphore object if successful, NULL
+**            otherwise.
+**
+****************************************************************************************/
+tTbxMbOsalSem TbxMbOsalSemCreate(void)
+{
+  tTbxMbOsalSem result = NULL;
+
+  /* TODO Implement TbxMbOsalSemCreate(). */
+
+  /* Give the result back to the caller. */
+  return result;
+} /*** end of TbxMbOsalSemCreate ***/
+
+
+/************************************************************************************//**
+** \brief     Releases a binary semaphore object, previously created with
+**            TbxMbOsalSemCreate().
+** \param     sem Handle to the binary semaphore object to release.
+**
+****************************************************************************************/
+void TbxMbOsalSemFree(tTbxMbOsalSem sem)
+{
+  /* Verify parameters. */
+  TBX_ASSERT(sem != NULL);
+
+  /* Only continue with valid parameters. */
+  if (sem != NULL)
+  {
+    /* TODO Implement TbxMbOsalSemFree(). */
+  }
+} /*** end of TbxMbOsalSemFree ***/
+
+
+/************************************************************************************//**
+** \brief     Give the semaphore, setting its count to 1, meaning that it's available.
+** \param     sem Handle to the binary semaphore object.
+** \param     fromIsr TBX_TRUE when calling this function from an interrupt service
+**            routine, TBX_FALSE otherwise.
+**
+****************************************************************************************/
+void TbxMbOsalSemGive(tTbxMbOsalSem sem,
+                      uint8_t       fromIsr)
+{
+  /* Verify parameters. */
+  TBX_ASSERT(sem != NULL);
+
+  /* Only continue with valid parameters. */
+  if (sem != NULL)
+  {
+    /* TODO Implement TbxMbOsalSemGive(). */
+  }
+} /*** end of TbxMbOsalSemGive ***/
+
+
+/************************************************************************************//**
+** \brief     Take the semaphore when available (count > 0) or wait a finite amount of
+**            time for it to become available. The take operation decrements to count.
+** \param     sem Handle to the binary semaphore object.
+** \param     timeoutMs Maximum time in milliseconds to block while waiting for the 
+**            semaphore to become available.
+** \return    TBX_TRUE if the semaphore could be taken, TBX_FALSE otherwise (typically a
+**            timeout).
+**
+****************************************************************************************/
+uint8_t TbxMbOsalSemTake(tTbxMbOsalSem sem,
+                         uint16_t      timeoutMs)
+{
+  uint8_t result = TBX_FALSE;
+
+  /* Verify parameters. */
+  TBX_ASSERT(sem != NULL);
+
+  /* Only continue with valid parameters. */
+  if (sem != NULL)
+  {
+    /* TODO Implement TbxMbOsalSemTake(). */
+  }
+  /* Give the result back to the caller. */
+  return result;
+} /*** end of TbxMbOsalSemTake ****/
 #endif /* (TBX_CONF_OSAL == 0U) */
 
 
