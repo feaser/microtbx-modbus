@@ -263,7 +263,7 @@ void TbxMbPortUartRxInterrupt(tTbxMbUartPort port)
    */
 
   /* In case of a parity, framing or noise error, ignore the received data because it
-   * will be invalid. Nothing that can be done to safe or correct the data. It is
+   * will be invalid. Nothing that can be done to save or correct the data. It is
    * assumed that a higher module will be able to detect that data went missing. For
    * example due to a data stream being shorter than expected or an incorrect checksum.
    * In case of an overrun error, the data is still valid. Only the data in the
