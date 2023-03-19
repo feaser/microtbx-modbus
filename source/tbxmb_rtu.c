@@ -35,9 +35,9 @@
 #include "microtbxmodbus.h"                      /* MicroTBX-Modbus module             */
 #include "tbxmb_checks.h"                        /* MicroTBX-Modbus config checks      */
 #include "tbxmb_event_private.h"                 /* MicroTBX-Modbus event private      */
+#include "tbxmb_osal_private.h"                  /* MicroTBX-Modbus OSAL private       */
 #include "tbxmb_tp_private.h"                    /* MicroTBX-Modbus TP private         */
 #include "tbxmb_uart_private.h"                  /* MicroTBX-Modbus UART private       */
-#include "tbxmb_osal_private.h"                  /* MicroTBX-Modbus OSAL private       */
 
 
 /****************************************************************************************
@@ -183,6 +183,7 @@ tTbxMbTp TbxMbRtuCreate(uint8_t            nodeAddr,
       newTpCtx->port = port;
       newTpCtx->state = TBX_MB_RTU_STATE_INIT;
       newTpCtx->rxTime = TbxMbPortRtuTimerCount();
+      newTpCtx->initStateExitSem = TbxMbOsalSemCreate();
       newTpCtx->diagInfo.busMsgCnt = 0U;
       newTpCtx->diagInfo.busCommErrCnt = 0U;
       newTpCtx->diagInfo.busExcpErrCnt = 0U;
@@ -272,6 +273,8 @@ void TbxMbRtuFree(tTbxMbTp transport)
     tTbxMbTpCtx * tpCtx = (tTbxMbTpCtx *)transport;
     /* Sanity check on the context type. */
     TBX_ASSERT(tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE);
+    /* Release the semaphore used for syncing to the INIT to IDLE state transition. */
+    TbxMbOsalSemFree(tpCtx->initStateExitSem);
     TbxCriticalSectionEnter();
     /* Remove the channel from the lookup table. */
     tbxMbRtuCtx[tpCtx->port] = NULL;
@@ -445,6 +448,11 @@ static void TbxMbRtuPoll(tTbxMbTp transport)
           newEvent.context = tpCtx;
           newEvent.id = TBX_MB_EVENT_ID_STOP_POLLING;
           TbxMbOsalEventPost(&newEvent, TBX_FALSE);
+          /* Give the semaphore to sync the transmit function to this event. This is 
+           * needed for an RTU client, when transmit it called before being in the INIt
+           * state.
+           */
+          TbxMbOsalSemGive(tpCtx->initStateExitSem, TBX_FALSE);
         }
       }
       break;
@@ -508,55 +516,17 @@ static uint8_t TbxMbRtuTransmit(tTbxMbTp transport)
        * 256 + 3.5 = 259.5 characters. This is ceil(259.5/3.5) = 75 times the t3_5
        * timer interval. Use this to calculate the timeout in ticks of the RTU timer.
        */
-      uint16_t waitStartTicks = TbxMbPortRtuTimerCount();
       uint16_t waitTimeoutTicks = tpCtx->t3_5Ticks * 75U;
-      uint8_t  stopWaiting = TBX_FALSE;
-      /* Start the wait loop. */
-      while (stopWaiting == TBX_FALSE)
-      {
-        uint16_t rxTimeCopy = tpCtx->rxTime;
-        /* Leave the critical section during the loop to keep the interrupt latency low
-         * and because new characters might be received, which would need its ISR to run,
-         * which in turn updates tpCtx->rxTime.
-         */
-        TbxCriticalSectionExit();
-        uint16_t currentTime = TbxMbPortRtuTimerCount();
-        /* Calculate the number of time ticks that elapsed since entering the INIT state
-         * or the reception of the last byte, whichever one comes last. Note that this
-         * calculation works, even if the RTU timer counter overflowed.
-         */
-        uint16_t deltaTicks = currentTime - rxTimeCopy;
-        /* After t3_5 it's time to transition to the IDLE state. */
-        if (deltaTicks >= tpCtx->t3_5Ticks)
-        {
-          /* Transition to the IDLE state. */
-          TbxCriticalSectionEnter();
-          tpCtx->state = TBX_MB_RTU_STATE_IDLE;
-          TbxCriticalSectionExit();
-          /* Stop the wait loop, since we're done. */
-          stopWaiting = TBX_TRUE;
-          /* Instruct the event task to stop calling our polling function. */
-          tTbxMbEvent newEvent;
-          newEvent.context = tpCtx;
-          newEvent.id = TBX_MB_EVENT_ID_STOP_POLLING;
-          TbxMbOsalEventPost(&newEvent, TBX_FALSE);
-        }
-        /* Not yet in the IDLE state. */
-        else
-        {
-          /* Did the maximum wait timeout expire? Note that this calculation works, even
-           * if the RTU timer counter overflowed.
-           */
-          deltaTicks = currentTime - waitStartTicks;
-          if (deltaTicks > waitTimeoutTicks)
-          {
-            /* Stop the wait loop, since the timeout occurred, so we need to give up. */
-            stopWaiting = TBX_TRUE;
-          }
-        }
-        /* Re-enter the critical section. */
-        TbxCriticalSectionEnter();
-      }
+      /* Convert it to milliseconds. Knowing that the RTU timer always runs at 20 kHz,
+       * divide by 20. Just make sure to do integer roundup (A + (B-1)) / B.
+       */
+      uint16_t waitTimeoutMs = (waitTimeoutTicks + 19U) / 20U;
+      /* Wait for the transition from INIT to IDLE with the calculated timeout. Note
+       * that there is not need to check the return value. This would just mean that
+       * no transition to IDLE took place before the timeout. The IDLE state check if
+       * done later on in this function, so that error situation is already handled.
+       */
+      TbxMbOsalSemTake(tpCtx->initStateExitSem, waitTimeoutMs);
     }
     /* New transmissions are only possible from the IDLE state. */
     uint8_t okayToTransmit = TBX_FALSE;

@@ -35,8 +35,8 @@
 #include "microtbxmodbus.h"                      /* MicroTBX-Modbus module             */
 #include "tbxmb_checks.h"                        /* MicroTBX-Modbus config checks      */
 #include "tbxmb_event_private.h"                 /* MicroTBX-Modbus event private      */
-#include "tbxmb_tp_private.h"                    /* MicroTBX-Modbus TP private         */
 #include "tbxmb_osal_private.h"                  /* MicroTBX-Modbus OSAL private       */
+#include "tbxmb_tp_private.h"                    /* MicroTBX-Modbus TP private         */
 #include "tbxmb_client_private.h"                /* MicroTBX-Modbus client private     */
 
 
@@ -373,16 +373,15 @@ uint8_t TbxMbClientReadInputRegs(tTbxMbClient   channel,
        * result accordingly.
        */
       result = clientCtx->tpCtx->transmitFcn(clientCtx->tpCtx);
-      /* TODO How to handle turnaround delay? */
+      /* TODO How to handle turnaround delay? Could use a dummy semaphore and (ab)use its
+       * timeout for this purpose.
+       */
       /* Only continue with response reception, if this was not a broadcast request and
        * the request was successfully submitted for transmission.
        */
       if ((result == TBX_OK) && (node != TBX_MB_TP_NODE_ADDR_BROADCAST))
       {
-        /* TODO Continue by waiting for the response to come in, using a semaphore. Note
-         * that the OSAL semaphore first needs to be refactored for this, such that it
-         * can be created per channel, so also stored in the client's context.
-         */
+        /* TODO Continue by waiting for the response to come in, using a semaphore.  */
 
 
         /* TODO Implement TbxMbClientReadInputRegs(). */

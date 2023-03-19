@@ -179,6 +179,7 @@ typedef struct
   uint16_t                t3_5Ticks;             /**< 3.5 character time in 50us ticks.*/
   uint8_t                 state;                 /**< Communication state.             */
   uint8_t                 isClient;              /**< Info about the channel context.  */
+  tTbxMbOsalSem           initStateExitSem;      /**< Exit INIT state semaphore.       */
   /* Public methods and members. */
   void                  * channelCtx;            /**< Assigned channel context.        */
   tTbxMbTpDiagInfo        diagInfo;              /**< Diagnostics information.         */ 
