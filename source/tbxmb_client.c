@@ -251,6 +251,56 @@ static inline void TbxMbClientStoreUInt16BE(uint16_t   value,
 } /*** end of TbxMbServerExtractUInt16BE ***/
 
 
+
+/************************************************************************************//**
+** \brief     Helper function to both transmit a request packet and receive the reponse
+**            packet, if applicable (unicast).
+** \param     clientCtx Pointer to the Modbus client channel for the requested operation.
+** \param     isBroadcast TBX_TRUE for sending a broadcast request, TBX_FALSE for
+**            unicast.
+** \return    TBX_OK if the request packet could be transmitted and (a) a response for
+**            the unicast request was received or (b) the turnaround timeout passed after
+**            sending the broadcast request. TBX_ERROR otherwise.
+**
+****************************************************************************************/
+static uint8_t TbxMbClientTransceive(tTbxMbClientCtx * clientCtx,
+                                     uint8_t           isBroadcast)
+{
+  uint8_t  result      = TBX_ERROR;
+  uint16_t waitTimeout = clientCtx->responseTimeout;
+
+  /* Update the wait time in case it is a broadcast request. */
+  if (isBroadcast == TBX_TRUE)
+  {
+    waitTimeout = clientCtx->turnaroundDelay;
+  }
+
+  /* Request the transport layer to transmit the request packet and update the
+   * result accordingly.
+   */
+  result = clientCtx->tpCtx->transmitFcn(clientCtx->tpCtx);
+  /* Only continue if the request was successfully submitted for transmission. */
+  if (result == TBX_OK)
+  {
+    /* Wait for the reception of the response from the server, with a timeout. */
+    if (TbxMbOsalSemTake(clientCtx->responseSem, waitTimeout) == TBX_FALSE)
+    {
+      /* Semaphore timeout occured. Either because no response was received, which
+       * is an error. Or because the turnaround time after the broadcast request
+       * passed, which is okay.
+       */
+      if (isBroadcast == TBX_FALSE)
+      {
+        /* Flag the error. */
+        result = TBX_ERROR;
+      }
+    }
+  }
+  /* Give the result back to the caller. */
+  return result;
+} /*** end of TbxMbClientTransceive ***/
+
+
 /************************************************************************************//**
 ** \brief     Reads the coil(s) from the server with the specified node address.
 ** \param     channel Handle to the Modbus client channel for the requested operation.
@@ -379,8 +429,6 @@ uint8_t TbxMbClientReadInputRegs(tTbxMbClient   channel,
     /* Sanity check on the context type. */
     TBX_ASSERT(clientCtx->type == TBX_MB_CLIENT_CONTEXT_TYPE);
 
-    /* Initialize flag that keeps track of the response reception. */
-    uint8_t responseRxed = TBX_FALSE;
     /* Obtain write access to the request packet. */
     tTbxMbTpPacket * txPacket = clientCtx->tpCtx->getTxPacketFcn(clientCtx->tpCtx);
     /* Should always work, unless this function is being called recursively. Only
@@ -396,77 +444,68 @@ uint8_t TbxMbClientReadInputRegs(tTbxMbClient   channel,
       TbxMbClientStoreUInt16BE(addr, &txPacket->pdu.data[0]);
       /* Number of registers. */
       TbxMbClientStoreUInt16BE(num, &txPacket->pdu.data[2]);
-      /* Request the transport layer to transmit the request packet and update the
-       * result accordingly.
-       */
-      result = clientCtx->tpCtx->transmitFcn(clientCtx->tpCtx);
-      /* TODO How to handle turnaround delay? Could use a dummy semaphore and (ab)use its
-       * timeout for this purpose.
-       */
-      /* Only continue with response reception, if this was not a broadcast request and
-       * the request was successfully submitted for transmission.
-       */
-      if ((result == TBX_OK) && (node != TBX_MB_TP_NODE_ADDR_BROADCAST))
-      {
-        /* Wait for the reception of the response from the server. */
-        if (TbxMbOsalSemTake(clientCtx->responseSem, 
-                             clientCtx->responseTimeout) == TBX_TRUE)
-        {
-          /* Set flag that a response was received. */
-          responseRxed = TBX_TRUE;
-        }                             
-      }
-    }
 
-    /* Was a response received and ready for further processing? Note that at this point
-     * the result is already set to TBX_OK. Only negate upon error detection.
-     */
-    if (responseRxed == TBX_TRUE)
-    {
-      /* Obtain read access to the response packet. */
-      tTbxMbTpPacket * rxPacket = clientCtx->tpCtx->getRxPacketFcn(clientCtx->tpCtx);
-      /* Since we just received a response packet, the packet access should always 
-       * succeed. Sanity check anyways, just in case.
-       */
-      TBX_ASSERT(rxPacket != NULL);
-      /* Only continue with packet access. */
-      if (rxPacket != NULL)
+      /* Determine the request type (broadcast / unicast). */
+      uint8_t isBroadcast = TBX_FALSE;
+      if (node == TBX_MB_TP_NODE_ADDR_BROADCAST)
       {
-        /* Check that the response came from the expected node, that it's not an
-         * exception response and that the data length and the byte count are as
-         * expected.
+        isBroadcast = TBX_TRUE;
+      }
+      /* Transmit the request and wait for the response to a unicast request to come in
+       * or the turnaround time to pass for a broadcast request.
+       */
+      result = TbxMbClientTransceive(clientCtx, isBroadcast);
+
+      /* Only continue with processing the response if all is okay so far and the request
+       * was unicast.
+       */
+      if ((result == TBX_OK) && (isBroadcast == TBX_FALSE))
+      {
+        /* Obtain read access to the response packet. */
+        tTbxMbTpPacket * rxPacket = clientCtx->tpCtx->getRxPacketFcn(clientCtx->tpCtx);
+        /* Since we just received a response packet, the packet access should always 
+         * succeed. Sanity check anyways, just in case.
          */
-        uint8_t byteCount = rxPacket->pdu.data[0];
-        if ((rxPacket->node != node) && 
-            ((rxPacket->pdu.code & TBX_MB_FC_EXCEPTION_MASK) != 0U) &&
-            (byteCount != (num * 2U)) && 
-            (rxPacket->dataLen != (byteCount + 1U)) )
+        TBX_ASSERT(rxPacket != NULL);
+        /* Only continue with packet access. */
+        if (rxPacket != NULL)
+        {
+          /* Check that the response came from the expected node, that it's not an
+           * exception response and that the data length and the byte count are as
+           * expected.
+           */
+          uint8_t byteCount = rxPacket->pdu.data[0];
+          if ((rxPacket->node != node) ||
+              ((rxPacket->pdu.code & TBX_MB_FC_EXCEPTION_MASK) != 0U) ||
+              (byteCount != (num * 2U)) ||
+              (rxPacket->dataLen != (byteCount + 1U)) )
+          {
+            result = TBX_ERROR;
+          }
+          /* Response content valid. Process its data. */
+          else
+          {
+            /* Set pointer to where the input registers start in the response. */
+            uint8_t const * regValPtr = &rxPacket->pdu.data[1];
+            /* Read out and store the input register values. */
+            for (uint8_t idx = 0U; idx < num; idx++)
+            {
+              inputRegs[idx] = TbxMbClientExtractUInt16BE(&regValPtr[idx * 2U]);
+            }
+          }
+        }
+        /* Could not access the response packet. */
+        else
         {
           result = TBX_ERROR;
         }
-        /* Response content valid. Process its data. */
-        else
-        {
-          /* Set pointer to where the input registers start in the response. */
-          uint8_t const * regValPtr = &rxPacket->pdu.data[1];
-          /* Read out and store the input register values. */
-          for (uint8_t idx = 0U; idx < num; idx++)
-          {
-            inputRegs[idx] = TbxMbClientExtractUInt16BE(&regValPtr[idx * 2U]);
-          }
-        }
+        /* Inform the transport layer that were done with the rx packet and no longer
+         * need access to it.
+         */
+        clientCtx->tpCtx->receptionDoneFcn(clientCtx->tpCtx);
       }
-      /* Could not access the response packet. */
-      else
-      {
-        result = TBX_ERROR;
-      }
-      /* Inform the transport layer that were done with the rx packet and no longer
-       * need access to it.
-        */
-      clientCtx->tpCtx->receptionDoneFcn(clientCtx->tpCtx);
     }
-  }      
+  }
   /* Give the result back to the caller. */
   return result;
 } /*** end of TbxMbClientReadInputRegs ***/
