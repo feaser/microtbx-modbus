@@ -53,6 +53,11 @@ typedef void (* tTbxMbUartDataReceived)    (tTbxMbUartPort         port,
 /****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
+/* cppcheck-suppress [misra-c2012-8.2,unmatchedSuppression] 
+ * MISRA false positive: Function types shall be in prototype form with named parameters.
+ * This is the case for function TbxMbUartInit(). The cppcheck message can therefore be
+ * ignored.
+ */
 void    TbxMbUartInit    (tTbxMbUartPort                     port, 
                           tTbxMbUartBaudrate                 baudrate,
                           tTbxMbUartDatabits                 databits, 
