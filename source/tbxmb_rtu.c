@@ -671,7 +671,7 @@ static tTbxMbTpPacket * TbxMbRtuGetRxPacket(tTbxMbTp transport)
     TBX_ASSERT(tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE);
     /* Access to the reception packet by a channel is only allowed in the VALIDATION
      * state. In this state the reception path is locked until a transition back to IDLE
-     * state is made. This happens once the channel  called receptionDoneFcn().
+     * state is made. This happens once the channel called receptionDoneFcn().
      */
     TbxCriticalSectionEnter();
     uint8_t currentState = tpCtx->state;
