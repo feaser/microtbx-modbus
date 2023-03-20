@@ -526,7 +526,7 @@ static uint8_t TbxMbRtuTransmit(tTbxMbTp transport)
        * no transition to IDLE took place before the timeout. The IDLE state check if
        * done later on in this function, so that error situation is already handled.
        */
-      TbxMbOsalSemTake(tpCtx->initStateExitSem, waitTimeoutMs);
+      (void)TbxMbOsalSemTake(tpCtx->initStateExitSem, waitTimeoutMs);
     }
     /* New transmissions are only possible from the IDLE state. */
     uint8_t okayToTransmit = TBX_FALSE;
