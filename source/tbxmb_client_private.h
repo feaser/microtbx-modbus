@@ -64,7 +64,7 @@ typedef struct
   tTbxMbTpCtx        * tpCtx;                    /**< Assigned transport layer context.*/
   uint16_t             responseTimeout;          /**< Maximum response wait time (ms). */
   uint16_t             turnaroundDelay;          /**< Delay (ms) after broadcast PDU.  */
-  tTbxMbOsalSem        responseSem;              /**< PDU response semaphore.          */
+  tTbxMbOsalSem        transceiveSem;            /**< PDU transmit/receive semaphore.  */
 } tTbxMbClientCtx;
 
 

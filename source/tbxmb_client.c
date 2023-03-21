@@ -108,7 +108,7 @@ tTbxMbClient TbxMbClientCreate(tTbxMbTp transport,
       newClientCtx->processFcn = TbxMbClientProcessEvent;
       newClientCtx->responseTimeout = responseTimeout;
       newClientCtx->turnaroundDelay = turnaroundDelay;
-      newClientCtx->responseSem = TbxMbOsalSemCreate();
+      newClientCtx->transceiveSem = TbxMbOsalSemCreate();
       newClientCtx->tpCtx = tpCtx;
       newClientCtx->tpCtx->channelCtx = newClientCtx;
       newClientCtx->tpCtx->isClient = TBX_TRUE;
@@ -139,8 +139,8 @@ void TbxMbClientFree(tTbxMbClient channel)
     tTbxMbClientCtx * clientCtx = (tTbxMbClientCtx *)channel;
     /* Sanity check on the context type. */
     TBX_ASSERT(clientCtx->type == TBX_MB_CLIENT_CONTEXT_TYPE);
-    /* Release the semaphore used for syncing to PDU reception events. */
-    TbxMbOsalSemFree(clientCtx->responseSem);
+    /* Release the semaphore used for syncing to PDU transmit and reception events. */
+    TbxMbOsalSemFree(clientCtx->transceiveSem);
     /* Remove crosslink between the channel and the transport layer. */
     TbxCriticalSectionEnter();
     clientCtx->tpCtx->channelCtx = NULL;
@@ -149,7 +149,7 @@ void TbxMbClientFree(tTbxMbClient channel)
     clientCtx->type = 0U;
     clientCtx->pollFcn = NULL;
     clientCtx->processFcn = NULL;
-    clientCtx->responseSem = NULL;
+    clientCtx->transceiveSem = NULL;
     TbxCriticalSectionExit();
     /* Give the channel context back to the memory pool. */
     TbxMemPoolRelease(clientCtx);
@@ -191,15 +191,16 @@ static void TbxMbClientProcessEvent(tTbxMbEvent * event)
           /* Give the PDU received semaphore to synchronize whatever task is waiting
            * for this event.
            */
-          TbxMbOsalSemGive(clientCtx->responseSem, TBX_FALSE);
+          TbxMbOsalSemGive(clientCtx->transceiveSem, TBX_FALSE);
         }
         break;
 
         case TBX_MB_EVENT_ID_PDU_TRANSMITTED:
         {
-          /* At this point no additional event handling is needed on this channel upon
-           * PDU transmission completion.
+          /* Give the PDU transmitted semaphore to synchronize whatever task is waiting
+           * for this event.
            */
+          TbxMbOsalSemGive(clientCtx->transceiveSem, TBX_FALSE);
         }
         break;
 
@@ -282,17 +283,34 @@ static uint8_t TbxMbClientTransceive(tTbxMbClientCtx * clientCtx,
   /* Only continue if the request was successfully submitted for transmission. */
   if (result == TBX_OK)
   {
-    /* Wait for the reception of the response from the server, with a timeout. */
-    if (TbxMbOsalSemTake(clientCtx->responseSem, waitTimeout) == TBX_FALSE)
+    /* Wait for the request packet transmit completion. The packet response reception
+     * timeout can be re-used for this because a packet transmission won't take longer
+     * than a packet reception, since it uses the same communication interface.
+     */
+    if (TbxMbOsalSemTake(clientCtx->transceiveSem, clientCtx->responseTimeout)
+        == TBX_FALSE)
     {
-      /* Semaphore timeout occured. Either because no response was received, which
-       * is an error. Or because the turnaround time after the broadcast request
-       * passed, which is okay.
+      /* For some reason the packet transmission did not complete within the expected
+       * time.
+       * Flag the error.
        */
-      if (isBroadcast == TBX_FALSE)
+      result = TBX_ERROR;
+    }
+    /* Only continue if the request successfully completed transmission. */
+    if (result == TBX_OK)
+    {
+      /* Wait for the reception of the response from the server, with a timeout. */
+      if (TbxMbOsalSemTake(clientCtx->transceiveSem, waitTimeout) == TBX_FALSE)
       {
-        /* Flag the error. */
-        result = TBX_ERROR;
+        /* Semaphore timeout occured. Either because no response was received, which
+         * is an error. Or because the turnaround time after the broadcast request
+         * passed, which is okay.
+         */
+        if (isBroadcast == TBX_FALSE)
+        {
+          /* Flag the error. */
+          result = TBX_ERROR;
+        }
       }
     }
   }
