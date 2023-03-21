@@ -872,8 +872,6 @@ uint8_t TbxMbClientWriteCoils(tTbxMbClient         channel,
 {
   uint8_t result = TBX_ERROR;
 
-  TBX_UNUSED_ARG(addr);
-
   /* Verify the parameters. */
   TBX_ASSERT((channel != NULL) && (node <= TBX_MB_TP_NODE_ADDR_MAX) && (num >= 1U) &&
              (num <= 1968U) && (coils != NULL));
@@ -886,8 +884,152 @@ uint8_t TbxMbClientWriteCoils(tTbxMbClient         channel,
     tTbxMbClientCtx * clientCtx = (tTbxMbClientCtx *)channel;
     /* Sanity check on the context type. */
     TBX_ASSERT(clientCtx->type == TBX_MB_CLIENT_CONTEXT_TYPE);
-    /* TODO Implement TbxMbClientWriteCoils(). */
-  }      
+
+    /* Obtain write access to the request packet. */
+    tTbxMbTpPacket * txPacket = clientCtx->tpCtx->getTxPacketFcn(clientCtx->tpCtx);
+    /* Should always work, unless this function is being called recursively. Only
+     * continue with access for preparing the request packet.
+     */
+    if (txPacket != NULL)
+    {
+      /* Writing just a single coil? */
+      if (num == 1U)
+      {
+        /* Prepare the request packet. */
+        txPacket->node = node;
+        txPacket->pdu.code = TBX_MB_FC05_WRITE_SINGLE_COIL;
+        txPacket->dataLen = 4U;
+        /* Coil address. */
+        TbxMbClientStoreUInt16BE(addr, &txPacket->pdu.data[0]);
+        /* Coil value. */
+        uint16_t coilValue = (coils[0] == TBX_OFF) ? 0x0000U : 0xFF00U;
+        TbxMbClientStoreUInt16BE(coilValue, &txPacket->pdu.data[2]);
+      }
+      /* Writing multiple coils. */
+      else
+      {
+        /* Determine the number of bytes needed to hold all the coil bits. The cast to
+         * U8 is okay, because we know that num is <= 1968.
+         */
+        uint8_t numBytes = (uint8_t)(num / 8U);
+        if ((num % 8U) != 0U)
+        {
+          numBytes++;
+        }
+        /* Prepare the request packet. */
+        txPacket->node = node;
+        txPacket->pdu.code = TBX_MB_FC15_WRITE_MULTIPLE_COILS;
+        txPacket->dataLen = numBytes + 5U;
+        /* Start address. */
+        TbxMbClientStoreUInt16BE(addr, &txPacket->pdu.data[0]);
+        /* Number of holding registers. */
+        TbxMbClientStoreUInt16BE(num, &txPacket->pdu.data[2]);
+        /* Byte count. */
+        txPacket->pdu.data[4] = numBytes;
+        /* Prepare loop indices that aid with reading the input bits. */
+        uint8_t   bitIdx  = 0U;
+        uint8_t   byteIdx = 0U;
+        /* Set pointer to where the coils start in the request and already initialize the
+         * first byte to all zero (coil OFF) bits.
+        */
+        uint8_t * coilData = &txPacket->pdu.data[5];
+        coilData[0] = 0U;
+        /* Store the coil values. */
+        for (uint16_t idx = 0U; idx < num; idx++)
+        {
+          /* Should the coil be ON? */
+          if (coils[idx] != TBX_OFF)
+          {
+            coilData[byteIdx] |= (1U << bitIdx);
+          }
+          /* Update the bit index. */
+          bitIdx++;
+          /* Time to move to the next byte? */
+          if (bitIdx == 8U)
+          {
+            /* Reset the bit index, increment the byte index and initialize the byte to
+             * all zero (coil OFF) bits.
+             */
+            bitIdx = 0U;
+            byteIdx++;
+            coilData[byteIdx] = 0U;
+          }
+        }
+      }
+      /* Determine the request type (broadcast / unicast). */
+      uint8_t isBroadcast = TBX_FALSE;
+      if (node == TBX_MB_TP_NODE_ADDR_BROADCAST)
+      {
+        isBroadcast = TBX_TRUE;
+      }
+      /* Transmit the request and wait for the response to a unicast request to come in
+       * or the turnaround time to pass for a broadcast request.
+       */
+      result = TbxMbClientTransceive(clientCtx, isBroadcast);
+
+      /* Only continue with processing the response if all is okay so far and the request
+       * was unicast.
+       */
+      if ((result == TBX_OK) && (isBroadcast == TBX_FALSE))
+      {
+        /* Obtain read access to the response packet. */
+        tTbxMbTpPacket * rxPacket = clientCtx->tpCtx->getRxPacketFcn(clientCtx->tpCtx);
+        /* Since we just received a response packet, the packet access should always 
+         * succeed. Sanity check anyways, just in case.
+         */
+        TBX_ASSERT(rxPacket != NULL);
+        /* Only continue with packet access. */
+        if (rxPacket != NULL)
+        {
+          /* Wrote just a single coil? */
+          if (num == 1U)
+          {
+            /* Coil value. */
+            uint16_t coilValue = (coils[0] == TBX_OFF) ? 0x0000U : 0xFF00U;
+            /* Check that the response came from the expected node, that it's a response
+             * with the same function code (not an exception response), that the coil
+             * address and value are as expected and that the data length is as
+             * expected.
+             */
+            if ((rxPacket->node != node) ||
+                (rxPacket->pdu.code != TBX_MB_FC05_WRITE_SINGLE_COIL) ||
+                (TbxMbClientExtractUInt16BE(&rxPacket->pdu.data[0]) != addr) ||
+                (TbxMbClientExtractUInt16BE(&rxPacket->pdu.data[2]) != coilValue) ||
+                (rxPacket->dataLen != 4U))
+            {
+              result = TBX_ERROR;
+            }
+          }
+          /* Wrote multiple holding registers. */
+          else
+          {
+            /* Check that the response came from the expected node, that it's a response
+             * with the same function code (not an exception response), that the coil
+             * start address and quantity are as expected and that the data length is as
+             * expected.
+             */
+            if ((rxPacket->node != node) ||
+                (rxPacket->pdu.code != TBX_MB_FC15_WRITE_MULTIPLE_COILS) ||
+                (TbxMbClientExtractUInt16BE(&rxPacket->pdu.data[0]) != addr) ||
+                (TbxMbClientExtractUInt16BE(&rxPacket->pdu.data[2]) != num) ||
+                (rxPacket->dataLen != 4U))
+            {
+              result = TBX_ERROR;
+            }
+          }
+        }
+        /* Could not access the response packet. */
+        else
+        {
+          result = TBX_ERROR;
+        }
+        /* Inform the transport layer that were done with the rx packet and no longer
+         * need access to it.
+         */
+        clientCtx->tpCtx->receptionDoneFcn(clientCtx->tpCtx);
+      }
+    }
+  }  
   /* Give the result back to the caller. */
   return result;
 } /*** end of TbxMbClientWriteCoils ***/
@@ -915,8 +1057,6 @@ uint8_t TbxMbClientWriteHoldingRegs(tTbxMbClient         channel,
                                     uint16_t     const * holdingRegs)
 {
   uint8_t result = TBX_ERROR;
-
-  TBX_UNUSED_ARG(addr);
 
   /* Verify the parameters. */
   TBX_ASSERT((channel != NULL) && (node <= TBX_MB_TP_NODE_ADDR_MAX) && (num >= 1U) &&
