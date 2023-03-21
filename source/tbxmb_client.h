@@ -86,7 +86,7 @@ uint8_t      TbxMbClientWriteHoldingRegs(tTbxMbClient         channel,
                                          uint8_t              node,
                                          uint16_t             addr,
                                          uint8_t              num,
-                                         uint8_t      const * holdingRegs);
+                                         uint16_t     const * holdingRegs);
 
 
 #ifdef __cplusplus

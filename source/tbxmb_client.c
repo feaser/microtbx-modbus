@@ -912,7 +912,7 @@ uint8_t TbxMbClientWriteHoldingRegs(tTbxMbClient         channel,
                                     uint8_t              node,
                                     uint16_t             addr,
                                     uint8_t              num,
-                                    uint8_t      const * holdingRegs)
+                                    uint16_t     const * holdingRegs)
 {
   uint8_t result = TBX_ERROR;
 
@@ -930,7 +930,121 @@ uint8_t TbxMbClientWriteHoldingRegs(tTbxMbClient         channel,
     tTbxMbClientCtx * clientCtx = (tTbxMbClientCtx *)channel;
     /* Sanity check on the context type. */
     TBX_ASSERT(clientCtx->type == TBX_MB_CLIENT_CONTEXT_TYPE);
-    /* TODO Implement TbxMbClientWriteHoldingRegs(). */
+
+    /* Obtain write access to the request packet. */
+    tTbxMbTpPacket * txPacket = clientCtx->tpCtx->getTxPacketFcn(clientCtx->tpCtx);
+    /* Should always work, unless this function is being called recursively. Only
+     * continue with access for preparing the request packet.
+     */
+    if (txPacket != NULL)
+    {
+      /* Writing just a single holding register? */
+      if (num == 1U)
+      {
+        /* Prepare the request packet. */
+        txPacket->node = node;
+        txPacket->pdu.code = TBX_MB_FC06_WRITE_SINGLE_REGISTER;
+        txPacket->dataLen = 4U;
+        /* Holding register address. */
+        TbxMbClientStoreUInt16BE(addr, &txPacket->pdu.data[0]);
+        /* Holding register value. */
+        TbxMbClientStoreUInt16BE(holdingRegs[0], &txPacket->pdu.data[2]);
+      }
+      /* Writing multiple holding registers. */
+      else
+      {
+        /* Determine byte count needed for storing the holding register values. */
+        uint8_t byteCount = num * 2U;
+        /* Prepare the request packet. */
+        txPacket->node = node;
+        txPacket->pdu.code = TBX_MB_FC16_WRITE_MULTIPLE_REGISTERS;
+        txPacket->dataLen = byteCount + 5U;
+        /* Start address. */
+        TbxMbClientStoreUInt16BE(addr, &txPacket->pdu.data[0]);
+        /* Number of holding registers. */
+        TbxMbClientStoreUInt16BE(num, &txPacket->pdu.data[2]);
+        /* Byte count. */
+        txPacket->pdu.data[4] = byteCount;
+        /* Set pointer to where the holding registers start in the request. */
+        uint8_t * regValPtr = &txPacket->pdu.data[5];
+        /* Store the holding register values. */
+        for (uint8_t idx = 0U; idx < num; idx++)
+        {
+          TbxMbClientStoreUInt16BE(holdingRegs[idx], &regValPtr[idx * 2U]);
+        }
+      }
+      /* Determine the request type (broadcast / unicast). */
+      uint8_t isBroadcast = TBX_FALSE;
+      if (node == TBX_MB_TP_NODE_ADDR_BROADCAST)
+      {
+        isBroadcast = TBX_TRUE;
+      }
+      /* Transmit the request and wait for the response to a unicast request to come in
+       * or the turnaround time to pass for a broadcast request.
+       */
+      result = TbxMbClientTransceive(clientCtx, isBroadcast);
+
+      /* Only continue with processing the response if all is okay so far and the request
+       * was unicast.
+       */
+      if ((result == TBX_OK) && (isBroadcast == TBX_FALSE))
+      {
+        /* Obtain read access to the response packet. */
+        tTbxMbTpPacket * rxPacket = clientCtx->tpCtx->getRxPacketFcn(clientCtx->tpCtx);
+        /* Since we just received a response packet, the packet access should always 
+         * succeed. Sanity check anyways, just in case.
+         */
+        TBX_ASSERT(rxPacket != NULL);
+        /* Only continue with packet access. */
+        if (rxPacket != NULL)
+        {
+          /* Wrote just a single holding register? */
+          if (num == 1U)
+          {
+            /* Check that the response came from the expected node, that it's a response
+             * with the same function code (not an exception response), that the register
+             * address and values are as expected and that the data length is as
+             * expected.
+             */
+            if ((rxPacket->node != node) ||
+                (rxPacket->pdu.code != TBX_MB_FC06_WRITE_SINGLE_REGISTER) ||
+                (TbxMbClientExtractUInt16BE(&rxPacket->pdu.data[0]) != addr) ||
+                (TbxMbClientExtractUInt16BE(&rxPacket->pdu.data[2]) != holdingRegs[0]) ||
+                (rxPacket->dataLen != 4U))
+            {
+              result = TBX_ERROR;
+            }
+          }
+          /* Wrote multiple holding registers. */
+          else
+          {
+            /* Check that the response came from the expected node, that it's a response
+             * with the same function code (not an exception response), that the register
+             * start address and quantity are as expected and that the data length is as
+             * expected.
+             */
+            if ((rxPacket->node != node) ||
+                (rxPacket->pdu.code != TBX_MB_FC16_WRITE_MULTIPLE_REGISTERS) ||
+                (TbxMbClientExtractUInt16BE(&rxPacket->pdu.data[0]) != addr) ||
+                (TbxMbClientExtractUInt16BE(&rxPacket->pdu.data[2]) != num) ||
+                (rxPacket->dataLen != 4U))
+            {
+              result = TBX_ERROR;
+            }
+          }
+        }
+        /* Could not access the response packet. */
+        else
+        {
+          result = TBX_ERROR;
+        }
+        /* Inform the transport layer that were done with the rx packet and no longer
+         * need access to it.
+         */
+        clientCtx->tpCtx->receptionDoneFcn(clientCtx->tpCtx);
+      }
+    }
+
   }      
   /* Give the result back to the caller. */
   return result;
