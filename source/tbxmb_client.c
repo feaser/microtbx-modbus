@@ -1266,6 +1266,17 @@ uint8_t TbxMbClientDiagnostics(tTbxMbClient   channel,
         }
         txPacket->dataLen = ((sizeof(queryData) / sizeof(queryData[0])) * 2U) + 2U;
       }
+      else if (subcode == TBX_MB_DIAG_SC_CLEAR_COUNTERS)
+      {
+        /* Store the data field as per the protocol. */
+        TbxMbClientStoreUInt16BE(0x0000U, &txPacket->pdu.data[2U]);
+        txPacket->dataLen = 4U;
+      }
+      /* subcode for reading a count. */
+      else
+      {
+        /* TODO */
+      }
 
       /* Determine the request type (broadcast / unicast). */
       uint8_t isBroadcast = TBX_FALSE;
@@ -1330,6 +1341,30 @@ uint8_t TbxMbClientDiagnostics(tTbxMbClient   channel,
                   }
                 }
               }
+            }
+            else if (subcode == TBX_MB_DIAG_SC_CLEAR_COUNTERS)
+            {
+              /* Check the data length. */
+              if (rxPacket->dataLen != 4U)
+              {
+                result = TBX_ERROR;
+              }
+              /* Data length okay, continue with checking its content. */
+              else
+              {
+                uint8_t const * dataValPtr = &rxPacket->pdu.data[2];
+                uint16_t dataVal = TbxMbClientExtractUInt16BE(dataValPtr);
+                /* Check that the value is as expected. */
+                if (dataVal != 0x0000U)
+                {
+                  result = TBX_ERROR;
+                }
+              }
+            }
+            /* subcode for reading a count. */
+            else
+            {
+              /* TODO */
             }
           }
         }
