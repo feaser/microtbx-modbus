@@ -93,6 +93,12 @@ uint8_t      TbxMbClientDiagnostics     (tTbxMbClient         channel,
                                          uint16_t             subcode,
                                          uint16_t           * count);
 
+uint8_t      TbxMbClientCustomFunction  (tTbxMbClient         channel,
+                                         uint8_t              node,
+                                         uint8_t      const * txPdu,
+                                         uint8_t            * rxPdu,
+                                         uint8_t            * len);
+
 
 #ifdef __cplusplus
 }

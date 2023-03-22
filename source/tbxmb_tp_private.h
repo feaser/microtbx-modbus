@@ -37,16 +37,6 @@ extern "C" {
 /****************************************************************************************
 * Macro definitions
 ****************************************************************************************/
-/** \brief Maximum size of the "Function code" at the start of a PDU. */
-#define TBX_MB_TP_PDU_CODE_LEN_MAX     (1U)
-
-/** \brief Maximum number of data bytes inside a PDU. This excludes the function code. */
-#define TBX_MB_TP_PDU_DATA_LEN_MAX     (252U)
-
-/** \brief Maximum length of an "Protocol Data Unit". */
-#define TBX_MB_TP_PDU_MAX_LEN          (TBX_MB_TP_PDU_CODE_LEN_MAX + \
-                                        TBX_MB_TP_PDU_DATA_LEN_MAX) 
-
 /** \brief Maximum ADU overhead bytes before the actual PDU, Called "Additional address"
  *         in the Modbus protocol.
  */

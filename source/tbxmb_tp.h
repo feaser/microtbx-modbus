@@ -46,6 +46,15 @@ extern "C" {
 /** \brief Maximum value of a valid node address. */
 #define TBX_MB_TP_NODE_ADDR_MAX             (247U)
 
+/** \brief Maximum size of the "Function code" at the start of a PDU. */
+#define TBX_MB_TP_PDU_CODE_LEN_MAX          (1U)
+
+/** \brief Maximum number of data bytes inside a PDU. This excludes the function code. */
+#define TBX_MB_TP_PDU_DATA_LEN_MAX          (252U)
+
+/** \brief Maximum length of an "Protocol Data Unit". */
+#define TBX_MB_TP_PDU_MAX_LEN               (TBX_MB_TP_PDU_CODE_LEN_MAX + \
+                                             TBX_MB_TP_PDU_DATA_LEN_MAX) 
 
 
 /****************************************************************************************

@@ -1404,4 +1404,150 @@ uint8_t TbxMbClientDiagnostics(tTbxMbClient   channel,
 } /*** end of TbxMbClientDiagnostics ***/
 
 
+/************************************************************************************//**
+** \brief     Send a custom function code PDU to the server and receive its response PDU.
+**            Thanks to this functionality, the user can support Modbus function codes
+**            that are either currently not supported or user defined extensions.
+** \details   The "txPdu" and "rxPdu" parameters are pointers to the byte array of the
+**            PDU. The first byte (i.e. txPdu[0]) contains the function code, followed by
+**            its data bytes. When calling this function, set the "len" parameter to the
+**            length of the "txPdu". This function updates the "len" parameter with the
+**            length of the received PDU, which it stores in "rxPdu".
+** \example   Example of manually sending the "Write Single Register 0x06" function code
+**            to a node with address 10 (0x0A) for setting the holding register at
+**            address 40000 to a value of 127:
+**
+**              uint8_t  requestPdu[TBX_MB_TP_PDU_MAX_LEN];
+**              uint8_t  responsePdu[TBX_MB_TP_PDU_MAX_LEN];
+**              uint8_t  pduLen;
+**              uint16_t holdingRegAddr = 40000U;
+**              uint16_t holdingRegValue = 127U;
+**
+**              requestPdu[0] = TBX_MB_FC06_WRITE_SINGLE_REGISTER;
+**              requestPdu[1] = (uint8_t)(holdingRegAddr >> 8U);
+**              requestPdu[2] = (uint8_t) holdingRegAddr;
+**              requestPdu[3] = (uint8_t)(holdingRegValue >> 8U);
+**              requestPdu[4] = (uint8_t) holdingRegValue;
+**              pduLen = 5U;
+**
+**              TbxMbClientCustomFunction(modbusClient, 0x0A, requestPdu, responsePdu, 
+**                                        &pduLen);
+**
+** \param     channel Handle to the Modbus client channel for the requested operation.
+** \param     node The address of the server. This parameter is transport layer
+**            dependent. It is needed on RTU/ASCII, yet don't care for TCP unless it is
+**            a gateway to an RTU network. If it's don't care, set it to a value of 1.
+** \param     txPdu Pointer to a byte array with the PDU to transmit.
+** \param     rxPdu Pointer to a byte array with the received response PDU.
+** \param     len Pointer to the PDU length, including the function code.
+** \return    TBX_OK if successful, TBX_ERROR otherwise.
+**
+****************************************************************************************/
+uint8_t TbxMbClientCustomFunction (tTbxMbClient         channel,
+                                   uint8_t              node,
+                                   uint8_t      const * txPdu,
+                                   uint8_t            * rxPdu,
+                                   uint8_t            * len)
+{
+  uint8_t result = TBX_ERROR;
+
+  /* Verify the parameters. */
+  TBX_ASSERT((channel != NULL) && (node <= TBX_MB_TP_NODE_ADDR_MAX) && (txPdu != NULL) &&
+             (rxPdu != NULL) && (len != NULL));
+
+  /* Only continue with valid parameters. */
+  if ((channel != NULL) && (node <= TBX_MB_TP_NODE_ADDR_MAX) && (txPdu != NULL) &&
+      (rxPdu != NULL) && (len != NULL))
+  {
+    /* Convert the client channel pointer to the context structure. */
+    tTbxMbClientCtx * clientCtx = (tTbxMbClientCtx *)channel;
+    /* Sanity check on the context type. */
+    TBX_ASSERT(clientCtx->type == TBX_MB_CLIENT_CONTEXT_TYPE);
+
+    /* Obtain write access to the request packet. */
+    tTbxMbTpPacket * txPacket = clientCtx->tpCtx->getTxPacketFcn(clientCtx->tpCtx);
+    /* Should always work, unless this function is being called recursively. Only
+     * continue with access for preparing the request packet and with a valid packet
+     * length. It should at least have a PDU function code.
+     */
+    if ((txPacket != NULL) && (*len > 0U))
+    {
+      /* Prepare the request packet. */
+      txPacket->node = node;
+      txPacket->pdu.code = txPdu[0];
+      txPacket->dataLen = *len - 1U;
+      for (uint8_t idx = 0U; idx < txPacket->dataLen; idx++)
+      {
+        txPacket->pdu.data[idx] = txPdu[idx + 1U];
+      }
+
+      /* Determine the request type (broadcast / unicast). */
+      uint8_t isBroadcast = TBX_FALSE;
+      if (node == TBX_MB_TP_NODE_ADDR_BROADCAST)
+      {
+        isBroadcast = TBX_TRUE;
+      }
+      
+      /* Transmit the request and wait for the response to a unicast request to come in
+       * or the turnaround time to pass for a broadcast request.
+       */
+      result = TbxMbClientTransceive(clientCtx, isBroadcast);
+
+      /* Initialize the length of the response PDU to zero. This default indicates that
+       * no response was received. This is the case in the request was a broadcast one or
+       * it the response was not valid. If will be updated later on, if a valid response
+       * was received.
+       */
+      *len = 0U;
+
+      /* Only continue with processing the response if all is okay so far and the request
+       * was unicast.
+       */
+      if ((result == TBX_OK) && (isBroadcast == TBX_FALSE))
+      {
+        /* Obtain read access to the response packet. */
+        tTbxMbTpPacket * rxPacket = clientCtx->tpCtx->getRxPacketFcn(clientCtx->tpCtx);
+        /* Since we just received a response packet, the packet access should always 
+         * succeed. Sanity check anyways, just in case.
+         */
+        TBX_ASSERT(rxPacket != NULL);
+        /* Only continue with packet access. */
+        if (rxPacket != NULL)
+        {
+          /* Check that the response came from the expected node. */
+          if (rxPacket->node != node)
+          {
+            result = TBX_ERROR;
+          }
+          /* Response content valid. Copy its data. */
+          else
+          {
+            /* Set the length, including the function code. */
+            *len = rxPacket->dataLen + 1U;
+            /* Set the function code. */
+            rxPdu[0] = rxPacket->pdu.code;
+            /* Copy the packet data. */
+            for (uint8_t idx = 0U; idx < rxPacket->dataLen; idx++)
+            {
+              rxPdu[idx + 1U] = rxPacket->pdu.data[idx];
+            }
+          }
+        }
+        /* Could not access the response packet. */
+        else
+        {
+          result = TBX_ERROR;
+        }
+        /* Inform the transport layer that were done with the rx packet and no longer
+         * need access to it.
+         */
+        clientCtx->tpCtx->receptionDoneFcn(clientCtx->tpCtx);
+      }
+    }
+  }
+  /* Give the result back to the caller. */
+  return result;
+} /*** end of TbxMbClientCustomFunction ***/
+
+
 /*********************************** end of tbxmb_client.c *****************************/
