@@ -88,6 +88,11 @@ uint8_t      TbxMbClientWriteHoldingRegs(tTbxMbClient         channel,
                                          uint8_t              num,
                                          uint16_t     const * holdingRegs);
 
+uint8_t      TbxMbClientDiagnostics     (tTbxMbClient         channel,
+                                         uint8_t              node,
+                                         uint16_t             subcode,
+                                         uint16_t           * count);
+
 
 #ifdef __cplusplus
 }

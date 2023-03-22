@@ -324,10 +324,10 @@ static uint8_t TbxMbClientTransceive(tTbxMbClientCtx * clientCtx,
 ** \param     channel Handle to the Modbus client channel for the requested operation.
 ** \param     node The address of the server. This parameter is transport layer
 **            dependent. It is needed on RTU/ASCII, yet don't care for TCP unless it is
-**            a gateway to an RTU network.
+**            a gateway to an RTU network. If it's don't care, set it to a value of 1.
 ** \param     addr Starting element address (0..65535) in the Modbus data table for the
 **            coil read operation.
-** \param     num Number to elements to read from the coils data table. Range can be
+** \param     num Number of elements to read from the coils data table. Range can be
 **            1..2000
 ** \param     coils Pointer to array with TBX_ON / TBX_OFF values where the coil state
 **            will be written to.
@@ -471,10 +471,10 @@ uint8_t TbxMbClientReadCoils(tTbxMbClient   channel,
 ** \param     channel Handle to the Modbus client channel for the requested operation.
 ** \param     node The address of the server. This parameter is transport layer
 **            dependent. It is needed on RTU/ASCII, yet don't care for TCP unless it is
-**            a gateway to an RTU network.
+**            a gateway to an RTU network. If it's don't care, set it to a value of 1.
 ** \param     addr Starting element address (0..65535) in the Modbus data table for the
 **            discrete input read operation.
-** \param     num Number to elements to read from the discrete inputs data table. Range
+** \param     num Number of elements to read from the discrete inputs data table. Range
 **            can be 1..2000
 ** \param     inputs Pointer to array with TBX_ON / TBX_OFF values where the discrete
 **            input state will be written to.
@@ -618,10 +618,10 @@ uint8_t TbxMbClientReadInputs(tTbxMbClient   channel,
 ** \param     channel Handle to the Modbus client channel for the requested operation.
 ** \param     node The address of the server. This parameter is transport layer
 **            dependent. It is needed on RTU/ASCII, yet don't care for TCP unless it is
-**            a gateway to an RTU network.
+**            a gateway to an RTU network. If it's don't care, set it to a value of 1.
 ** \param     addr Starting element address (0..65535) in the Modbus data table for the
 **            input register read operation.
-** \param     num Number to elements to read from the input registers data table. Range
+** \param     num Number of elements to read from the input registers data table. Range
 **            can be 1..125
 ** \param     inputRegs Pointer to array where the input register values will be written
 **            to.
@@ -737,10 +737,10 @@ uint8_t TbxMbClientReadInputRegs(tTbxMbClient   channel,
 ** \param     channel Handle to the Modbus client channel for the requested operation.
 ** \param     node The address of the server. This parameter is transport layer
 **            dependent. It is needed on RTU/ASCII, yet don't care for TCP unless it is
-**            a gateway to an RTU network.
+**            a gateway to an RTU network. If it's don't care, set it to a value of 1.
 ** \param     addr Starting element address (0..65535) in the Modbus data table for the
 **            holding register read operation.
-** \param     num Number to elements to read from the holding registers data table. Range
+** \param     num Number of elements to read from the holding registers data table. Range
 **            can be 1..125
 ** \param     holdingRegs Pointer to array where the holding register values will be
 **            written to.
@@ -855,10 +855,10 @@ uint8_t TbxMbClientReadHoldingRegs(tTbxMbClient   channel,
 ** \param     channel Handle to the Modbus client channel for the requested operation.
 ** \param     node The address of the server. This parameter is transport layer
 **            dependent. It is needed on RTU/ASCII, yet don't care for TCP unless it is
-**            a gateway to an RTU network.
+**            a gateway to an RTU network. If it's don't care, set it to a value of 1.
 ** \param     addr Starting element address (0..65535) in the Modbus data table for the
 **            coil write operation.
-** \param     num Number to elements to write to the coils data table. Range can be
+** \param     num Number of elements to write to the coils data table. Range can be
 **            1..1968
 ** \param     coils Pointer to array with the desired TBX_ON / TBX_OFF coils values.
 ** \return    TBX_OK if successful, TBX_ERROR otherwise.
@@ -1041,10 +1041,10 @@ uint8_t TbxMbClientWriteCoils(tTbxMbClient         channel,
 ** \param     channel Handle to the Modbus client channel for the requested operation.
 ** \param     node The address of the server. This parameter is transport layer
 **            dependent. It is needed on RTU/ASCII, yet don't care for TCP unless it is
-**            a gateway to an RTU network.
+**            a gateway to an RTU network. If it's don't care, set it to a value of 1.
 ** \param     addr Starting element address (0..65535) in the Modbus data table for the
 **            holding register write operation.
-** \param     num Number to elements to write to the holding registers data table. Range
+** \param     num Number of elements to write to the holding registers data table. Range
 **            can be 1..123
 ** \param     holdingRegs Pointer to array with the desired holding register values.
 ** \return    TBX_OK if successful, TBX_ERROR otherwise.
@@ -1189,6 +1189,165 @@ uint8_t TbxMbClientWriteHoldingRegs(tTbxMbClient         channel,
   /* Give the result back to the caller. */
   return result;
 } /*** end of TbxMbClientWriteHoldingRegs ***/
+
+
+/************************************************************************************//**
+** \brief     Perform diagnostic operation on the server for checking the communication
+**            system.
+** \param     channel Handle to the Modbus client channel for the requested operation.
+** \param     node The address of the server. This parameter is transport layer
+**            dependent. It is needed on RTU/ASCII, yet don't care for TCP unless it is
+**            a gateway to an RTU network. If it's don't care, set it to a value of 1.
+** \param     subcode Sub-function code for specifying the diagnostic operation to
+**            perform. Currently supported values:
+**              - TBX_MB_DIAG_SC_QUERY_DATA
+**              - TBX_MB_DIAG_SC_CLEAR_COUNTERS
+**              - TBX_MB_DIAG_SC_BUS_MESSAGE_COUNT
+**              - TBX_MB_DIAG_SC_BUS_COMM_ERROR_COUNT
+**              - TBX_MB_DIAG_SC_BUS_EXCEPTION_ERROR_COUNT
+**              - TBX_MB_DIAG_SC_SERVER_MESSAGE_COUNT
+**              - TBX_MB_DIAG_SC_SERVER_NO_RESPONSE_COUNT
+** \param     count Location where the retrieved count value will be written to. Only
+**            applicable for the subcodes that end with _COUNT.
+** \return    TBX_OK if successful, TBX_ERROR otherwise.
+**
+****************************************************************************************/
+uint8_t TbxMbClientDiagnostics(tTbxMbClient   channel,
+                               uint8_t        node,
+                               uint16_t       subcode,
+                               uint16_t     * count)
+{
+  uint8_t        result      = TBX_ERROR;
+  uint16_t const queryData[] = { 0xFFFFU, 0x0000U, 0xAA55U, 0x55AAU, 0x3723U };
+
+  /* Verify the parameters. */
+  TBX_ASSERT((channel != NULL) && (node <= TBX_MB_TP_NODE_ADDR_MAX) && 
+             ((subcode == TBX_MB_DIAG_SC_QUERY_DATA) || 
+              (subcode == TBX_MB_DIAG_SC_CLEAR_COUNTERS) ||
+              (subcode == TBX_MB_DIAG_SC_BUS_MESSAGE_COUNT) ||
+              (subcode == TBX_MB_DIAG_SC_BUS_COMM_ERROR_COUNT) ||
+              (subcode == TBX_MB_DIAG_SC_BUS_EXCEPTION_ERROR_COUNT) ||
+              (subcode == TBX_MB_DIAG_SC_SERVER_MESSAGE_COUNT) ||
+              (subcode == TBX_MB_DIAG_SC_SERVER_NO_RESPONSE_COUNT)));
+
+  /* Only continue with valid parameters. */
+  if ((channel != NULL) && (node <= TBX_MB_TP_NODE_ADDR_MAX) && 
+      ((subcode == TBX_MB_DIAG_SC_QUERY_DATA) || 
+       (subcode == TBX_MB_DIAG_SC_CLEAR_COUNTERS) ||
+       (subcode == TBX_MB_DIAG_SC_BUS_MESSAGE_COUNT) ||
+       (subcode == TBX_MB_DIAG_SC_BUS_COMM_ERROR_COUNT) ||
+       (subcode == TBX_MB_DIAG_SC_BUS_EXCEPTION_ERROR_COUNT) ||
+       (subcode == TBX_MB_DIAG_SC_SERVER_MESSAGE_COUNT) ||
+       (subcode == TBX_MB_DIAG_SC_SERVER_NO_RESPONSE_COUNT)))
+  {
+    /* Convert the client channel pointer to the context structure. */
+    tTbxMbClientCtx * clientCtx = (tTbxMbClientCtx *)channel;
+    /* Sanity check on the context type. */
+    TBX_ASSERT(clientCtx->type == TBX_MB_CLIENT_CONTEXT_TYPE);
+
+    /* Obtain write access to the request packet. */
+    tTbxMbTpPacket * txPacket = clientCtx->tpCtx->getTxPacketFcn(clientCtx->tpCtx);
+    /* Should always work, unless this function is being called recursively. Only
+     * continue with access for preparing the request packet.
+     */
+    if (txPacket != NULL)
+    {
+      /* Prepare the request packet. */
+      txPacket->node = node;
+      txPacket->pdu.code = TBX_MB_FC08_DIAGNOSTICS;
+      TbxMbClientStoreUInt16BE(subcode, &txPacket->pdu.data[0]);
+      /* Requested to perform a query data diagnostic operation? */
+      if (subcode == TBX_MB_DIAG_SC_QUERY_DATA)
+      {
+        /* Write the query data for loopback testing. */
+        for (uint8_t idx = 0U; idx < (sizeof(queryData)/sizeof(queryData[0])); idx++)
+        {
+          TbxMbClientStoreUInt16BE(queryData[idx], &txPacket->pdu.data[2U + (idx * 2U)]);
+        }
+        txPacket->dataLen = ((sizeof(queryData) / sizeof(queryData[0])) * 2U) + 2U;
+      }
+
+      /* Determine the request type (broadcast / unicast). */
+      uint8_t isBroadcast = TBX_FALSE;
+      if (node == TBX_MB_TP_NODE_ADDR_BROADCAST)
+      {
+        isBroadcast = TBX_TRUE;
+      }
+      /* Transmit the request and wait for the response to a unicast request to come in
+       * or the turnaround time to pass for a broadcast request.
+       */
+      result = TbxMbClientTransceive(clientCtx, isBroadcast);
+
+      /* Only continue with processing the response if all is okay so far and the request
+       * was unicast.
+       */
+      if ((result == TBX_OK) && (isBroadcast == TBX_FALSE))
+      {
+        /* Obtain read access to the response packet. */
+        tTbxMbTpPacket * rxPacket = clientCtx->tpCtx->getRxPacketFcn(clientCtx->tpCtx);
+        /* Since we just received a response packet, the packet access should always 
+         * succeed. Sanity check anyways, just in case.
+         */
+        TBX_ASSERT(rxPacket != NULL);
+        /* Only continue with packet access. */
+        if (rxPacket != NULL)
+        {
+          /* Check that the response came from the expected node, that it's a response
+           * with the same function code (not an exception response) and that it's a
+           * response with the same function sub-code.
+           */
+          if ((rxPacket->node != node) ||
+              (rxPacket->pdu.code != TBX_MB_FC08_DIAGNOSTICS) ||
+              (TbxMbClientExtractUInt16BE(&rxPacket->pdu.data[0]) != subcode))
+          {
+            result = TBX_ERROR;
+          }
+          /* Response looks valid so far. Continue with processing its data.*/
+          else
+          {
+            if (subcode == TBX_MB_DIAG_SC_QUERY_DATA)
+            {
+              const uint8_t queryDataLen = sizeof(queryData) / sizeof(queryData[0]);
+              /* Check the data length. */
+              if (rxPacket->dataLen != ((queryDataLen * 2U) + 2U))
+              {
+                result = TBX_ERROR;
+              }
+              /* Data length okay, continue with checking its content. */
+              else
+              {
+                /* Loop through the received query data. */
+                for (uint8_t idx = 0U; idx < queryDataLen; idx++)
+                {
+                  uint8_t const * entryPtr = &rxPacket->pdu.data[2];
+                  uint16_t entry = TbxMbClientExtractUInt16BE(&entryPtr[idx * 2U]);
+                  /* Check that its value is the same as what was sent in the request. */
+                  if (entry != queryData[idx])
+                  {
+                    /* Flag the error and stop the loop. */
+                    result = TBX_ERROR;
+                    break;
+                  }
+                }
+              }
+            }
+          }
+        }
+        /* Could not access the response packet. */
+        else
+        {
+          result = TBX_ERROR;
+        }
+        /* Inform the transport layer that were done with the rx packet and no longer
+         * need access to it.
+         */
+        clientCtx->tpCtx->receptionDoneFcn(clientCtx->tpCtx);
+      }
+    }
+  }
+  /* Give the result back to the caller. */
+  return result;
+} /*** end of TbxMbClientDiagnostics ***/
 
 
 /*********************************** end of tbxmb_client.c *****************************/
