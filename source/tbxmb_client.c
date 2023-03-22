@@ -1266,16 +1266,12 @@ uint8_t TbxMbClientDiagnostics(tTbxMbClient   channel,
         }
         txPacket->dataLen = ((sizeof(queryData) / sizeof(queryData[0])) * 2U) + 2U;
       }
-      else if (subcode == TBX_MB_DIAG_SC_CLEAR_COUNTERS)
+      /* All other supported subcodes require a 16-bit zero value data field. */
+      else
       {
         /* Store the data field as per the protocol. */
         TbxMbClientStoreUInt16BE(0x0000U, &txPacket->pdu.data[2U]);
         txPacket->dataLen = 4U;
-      }
-      /* subcode for reading a count. */
-      else
-      {
-        /* TODO */
       }
 
       /* Determine the request type (broadcast / unicast). */
@@ -1364,7 +1360,30 @@ uint8_t TbxMbClientDiagnostics(tTbxMbClient   channel,
             /* subcode for reading a count. */
             else
             {
-              /* TODO */
+              /* Check the data length. */
+              if (rxPacket->dataLen != 4U)
+              {
+                result = TBX_ERROR;
+              }
+              /* Data length okay, continue with extracting the count value. */
+              else
+              {
+                uint8_t const * countValPtr = &rxPacket->pdu.data[2];
+                uint16_t countVal = TbxMbClientExtractUInt16BE(countValPtr);
+                /* Verify that count parameter. */
+                TBX_ASSERT(count != NULL);
+                /* Only continue with a valid count parameter. */
+                if (count != NULL)
+                {
+                  /* Store the count value. */
+                  *count = countVal;
+                }
+                else
+                {
+                  /* The an error due to an invalid count parameter. */
+                  result = TBX_ERROR;
+                }
+              }
             }
           }
         }
