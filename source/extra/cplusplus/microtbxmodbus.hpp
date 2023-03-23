@@ -35,6 +35,7 @@
 ****************************************************************************************/
 #include "microtbxmodbus.h"                      /* MicroTBX-Modbus library            */
 #include "tbxmbserver.hpp"                       /* MicroTBX-Modbus C++ server         */
+#include "tbxmbclient.hpp"                       /* MicroTBX-Modbus C++ client         */
 
 
 #endif /* MICROTBXMODBUS_HPP */

@@ -48,7 +48,7 @@ TbxMbServer::~TbxMbServer()
    * virtual to force the class to be abstract. This was needed because it doesn't
    * contain any pure virtual methods. 
    * Note that the destructor is the only method that, even if it is pure virtual, has to 
-   * have an implementation. Otherwise derivd classes cannot be instantiated.
+   * have an implementation. Otherwise derived classes cannot be instantiated.
    */
 } /*** end of ~TbxMbServer ***/
 
