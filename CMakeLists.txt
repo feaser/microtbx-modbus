@@ -20,6 +20,8 @@ add_library(microtbx-modbus-extra-cpp INTERFACE)
 target_sources(microtbx-modbus-extra-cpp INTERFACE
     "${CMAKE_CURRENT_LIST_DIR}/source/extra/cplusplus/tbxmbserver.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/source/extra/cplusplus/tbxmbclient.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/source/extra/cplusplus/tbxmbport.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/source/extra/cplusplus/tbxmbevent.cpp"
 )
 
 target_include_directories(microtbx-modbus-extra-cpp INTERFACE 

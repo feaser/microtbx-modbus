@@ -36,6 +36,8 @@
 #include "microtbxmodbus.h"                      /* MicroTBX-Modbus library            */
 #include "tbxmbserver.hpp"                       /* MicroTBX-Modbus C++ server         */
 #include "tbxmbclient.hpp"                       /* MicroTBX-Modbus C++ client         */
+#include "tbxmbevent.hpp"                        /* MicroTBX-Modbus C++ event handling */
+#include "tbxmbport.hpp"                         /* MicroTBX-Modbus C++ hardware port  */
 
 
 #endif /* MICROTBXMODBUS_HPP */
