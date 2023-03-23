@@ -406,7 +406,7 @@ uint8_t TbxMbOsalSemTake(tTbxMbOsalSem sem,
 * Local data declarations
 ****************************************************************************************/
 /** \brief Queue handle for storing events. */
-static QueueHandle_t     eventQueue;
+static QueueHandle_t eventQueue;
 
 
 /************************************************************************************//**
