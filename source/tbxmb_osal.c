@@ -63,6 +63,26 @@
 *                             O S A L   N O N E
 ****************************************************************************************/
 /****************************************************************************************
+* Macro definitions
+****************************************************************************************/
+/** \brief Unique context type to identify a context as being a semaphore. */
+#define TBX_MB_OSAL_SEM_CONTEXT_TYPE   (76U)
+
+
+/****************************************************************************************
+* Type definitions
+****************************************************************************************/
+/** \brief Data type that groups semaphore related information. It's what the 
+ *         tTbxMbOsalSem opaque pointer points to.
+ */
+typedef struct
+{
+  uint8_t type;                        /**< Context type.                              */
+  uint8_t count;                       /**< Semaphore count. 0 = taken, 1 = available. */
+} tTbxMbOsalSemCtx;
+
+
+/****************************************************************************************
 * Local data declarations
 ****************************************************************************************/
 /** \brief Ring buffer based First-In-First-Out (FIFO) queue for storing events. */
@@ -198,8 +218,28 @@ tTbxMbOsalSem TbxMbOsalSemCreate(void)
 {
   tTbxMbOsalSem result = NULL;
 
-  /* TODO Implement TbxMbOsalSemCreate(). */
-
+  /* Allocate memory for the new semaphore context. */
+  tTbxMbOsalSemCtx * newSemCtx = TbxMemPoolAllocate(sizeof(tTbxMbOsalSemCtx));
+  /* Automatically increase the memory pool, if it was too small. */
+  if (newSemCtx == NULL)
+  {
+    /* No need to check the return value, because if it failed, the following
+     * allocation fails too, which is verified later on.
+     */
+    (void)TbxMemPoolCreate(1U, sizeof(tTbxMbOsalSemCtx));
+    newSemCtx = TbxMemPoolAllocate(sizeof(tTbxMbOsalSemCtx));      
+  }
+  /* Verify memory allocation of the semaphore context. */
+  TBX_ASSERT(newSemCtx != NULL);
+  /* Only continue if the memory allocation succeeded. */
+  if (newSemCtx != NULL)
+  {
+    /* Initialize the semaphore in a taken state. */
+    newSemCtx->type = TBX_MB_OSAL_SEM_CONTEXT_TYPE;
+    newSemCtx->count = 0U;
+    /* Update the result. */
+    result = newSemCtx;
+  }
   /* Give the result back to the caller. */
   return result;
 } /*** end of TbxMbOsalSemCreate ***/
@@ -219,7 +259,12 @@ void TbxMbOsalSemFree(tTbxMbOsalSem sem)
   /* Only continue with valid parameters. */
   if (sem != NULL)
   {
-    /* TODO Implement TbxMbOsalSemFree(). */
+    /* Convert the semaphore pointer to the context structure. */
+    tTbxMbOsalSemCtx * semCtx = (tTbxMbOsalSemCtx *)sem;
+    /* Sanity check on the context type. */
+    TBX_ASSERT(semCtx->type == TBX_MB_OSAL_SEM_CONTEXT_TYPE);
+    /* Give the semaphore context back to the memory pool. */
+    TbxMemPoolRelease(semCtx);
   }
 } /*** end of TbxMbOsalSemFree ***/
 
@@ -234,13 +279,22 @@ void TbxMbOsalSemFree(tTbxMbOsalSem sem)
 void TbxMbOsalSemGive(tTbxMbOsalSem sem,
                       uint8_t       fromIsr)
 {
+  TBX_UNUSED_ARG(fromIsr);
+
   /* Verify parameters. */
   TBX_ASSERT(sem != NULL);
 
   /* Only continue with valid parameters. */
   if (sem != NULL)
   {
-    /* TODO Implement TbxMbOsalSemGive(). */
+    /* Convert the semaphore pointer to the context structure. */
+    tTbxMbOsalSemCtx * semCtx = (tTbxMbOsalSemCtx *)sem;
+    /* Sanity check on the context type. */
+    TBX_ASSERT(semCtx->type == TBX_MB_OSAL_SEM_CONTEXT_TYPE);
+    /* Give the semaphore by setting its count to 1. */
+    TbxCriticalSectionEnter();
+    semCtx->count = 1U;
+    TbxCriticalSectionExit();
   }
 } /*** end of TbxMbOsalSemGive ***/
 
@@ -266,7 +320,77 @@ uint8_t TbxMbOsalSemTake(tTbxMbOsalSem sem,
   /* Only continue with valid parameters. */
   if (sem != NULL)
   {
-    /* TODO Implement TbxMbOsalSemTake(). */
+    /* Convert the semaphore pointer to the context structure. */
+    tTbxMbOsalSemCtx * semCtx = (tTbxMbOsalSemCtx *)sem;
+    /* Sanity check on the context type. */
+    TBX_ASSERT(semCtx->type == TBX_MB_OSAL_SEM_CONTEXT_TYPE);
+    /* Is the semaphore currently available? */
+    TbxCriticalSectionEnter();
+    if (semCtx->count > 0U)
+    {
+      /* Take the semaphore and update the result for success. */
+      semCtx->count = 0U;
+      result = TBX_TRUE;
+    }
+    /* Semaphore not yet available. Wait for it with the hope that it becomes available
+     * before the specified timeout. 
+     */
+    else
+    {
+      /* Keep track of when the last millisecond was detected. */
+      uint16_t volatile lastMsTickTime = TbxMbPortRtuTimerCount();
+      /* Initialize variable with the actual number of milliseconds to wait. */
+      uint16_t volatile waitTimeMs = timeoutMs;
+      /* Enter wait loop. */
+      while (waitTimeMs > 0U)
+      {
+        /* Temporarily leave the critical section. */
+        TbxCriticalSectionExit();
+        /* Run the event task to make sure that whatever is supposed to give the
+         * semaphore can actually do so.
+         */
+        TbxMbEventTask();
+        /* Get the number of ticks that elapsed since the last millisecond detection. 
+         * Note that this calculation works, even if the 20 kHz timer counter
+         * overflowed.
+         */
+        uint16_t deltaTicks = TbxMbPortRtuTimerCount() - lastMsTickTime;
+        /* Determine how many milliseconds passed since the last one was detected. */
+        uint16_t deltaMs = deltaTicks / 20U;
+        /* Did one or more milliseconds pass? */
+        if (deltaMs > 0U)
+        {
+          /* Update the last millisecond detection tick time. Needed for the detection
+           * of the next millisecond. Note that this calculation works, even if the
+           * lastMsTickTime variable overflows.
+           */
+          lastMsTickTime += (deltaMs * 20U);
+          /* Subtract the elapsed milliseconds from the remaining wait time, with
+           * underflow protection. Note that the wait loop automatically stops when
+           * waitTimeMs becomes zero.
+           */
+          if (waitTimeMs >= deltaMs)
+          {
+            waitTimeMs -= deltaMs;
+          }
+          else
+          {
+            waitTimeMs = 0U;
+          }
+        }
+        /* Re-enter the critical section. */
+        TbxCriticalSectionEnter();
+        /* Did the semaphore become available? */
+        if (semCtx->count > 0U)
+        {
+          /* Take the semaphore, update the result for success, and leave the loop. */
+          semCtx->count = 0U;
+          result = TBX_TRUE;
+          break;
+        }
+      }
+    }
+    TbxCriticalSectionExit();
   }
   /* Give the result back to the caller. */
   return result;
