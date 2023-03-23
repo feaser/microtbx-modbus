@@ -48,8 +48,8 @@ uint8_t  TbxMbPortUartTransmit (tTbxMbUartPort             port,
                                 uint8_t            const * data, 
                                 uint16_t                   len);
 
-/* RTU hardware port functions. */
-uint16_t TbxMbPortRtuTimerCount(void);
+/* Timer hardware port functions. */
+uint16_t TbxMbPortTimerCount(void);
 
 #ifdef __cplusplus
 }

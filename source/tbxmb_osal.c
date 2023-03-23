@@ -338,7 +338,7 @@ uint8_t TbxMbOsalSemTake(tTbxMbOsalSem sem,
     else
     {
       /* Keep track of when the last millisecond was detected. */
-      uint16_t volatile lastMsTickTime = TbxMbPortRtuTimerCount();
+      uint16_t volatile lastMsTickTime = TbxMbPortTimerCount();
       /* Initialize variable with the actual number of milliseconds to wait. */
       uint16_t volatile waitTimeMs = timeoutMs;
       /* Enter wait loop. */
@@ -354,7 +354,7 @@ uint8_t TbxMbOsalSemTake(tTbxMbOsalSem sem,
          * Note that this calculation works, even if the 20 kHz timer counter
          * overflowed.
          */
-        uint16_t deltaTicks = TbxMbPortRtuTimerCount() - lastMsTickTime;
+        uint16_t deltaTicks = TbxMbPortTimerCount() - lastMsTickTime;
         /* Determine how many milliseconds passed since the last one was detected. */
         uint16_t deltaMs = deltaTicks / 20U;
         /* Did one or more milliseconds pass? */

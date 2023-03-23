@@ -182,7 +182,7 @@ tTbxMbTp TbxMbRtuCreate(uint8_t            nodeAddr,
       newTpCtx->nodeAddr = nodeAddr;
       newTpCtx->port = port;
       newTpCtx->state = TBX_MB_RTU_STATE_INIT;
-      newTpCtx->rxTime = TbxMbPortRtuTimerCount();
+      newTpCtx->rxTime = TbxMbPortTimerCount();
       newTpCtx->initStateExitSem = TbxMbOsalSemCreate();
       newTpCtx->diagInfo.busMsgCnt = 0U;
       newTpCtx->diagInfo.busCommErrCnt = 0U;
@@ -320,10 +320,10 @@ static void TbxMbRtuPoll(tTbxMbTp transport)
         uint16_t rxTimeCopy = tpCtx->rxTime;
         TbxCriticalSectionExit();
         /* Calculate the number of time ticks that elapsed since the reception of the
-         * last byte. Note that this calculation works, even if the RTU timer counter
+         * last byte. Note that this calculation works, even if the timer counter
          * overflowed.
          */
-        uint16_t deltaTicks = TbxMbPortRtuTimerCount() - rxTimeCopy;
+        uint16_t deltaTicks = TbxMbPortTimerCount() - rxTimeCopy;
         /* Did 3.5 character times elapse since the last byte reception? */
         if (deltaTicks >= tpCtx->t3_5Ticks)
         {
@@ -400,10 +400,10 @@ static void TbxMbRtuPoll(tTbxMbTp transport)
         uint16_t txDoneTimeCopy = tpCtx->txDoneTime;
         TbxCriticalSectionExit();
         /* Calculate the number of time ticks that elapsed since completing the packet
-         * transmission. Note that this calculation works, even if the RTU timer counter
+         * transmission. Note that this calculation works, even if the timer counter
          * overflowed.
          */
-        uint16_t deltaTicks = TbxMbPortRtuTimerCount() - txDoneTimeCopy;
+        uint16_t deltaTicks = TbxMbPortTimerCount() - txDoneTimeCopy;
         /* After t3_5 it's time to transition to the IDLE state. */
         if (deltaTicks >= tpCtx->t3_5Ticks)
         {
@@ -433,9 +433,9 @@ static void TbxMbRtuPoll(tTbxMbTp transport)
         TbxCriticalSectionExit();
         /* Calculate the number of time ticks that elapsed since entering the INIT state
          * or the reception of the last byte, whichever one comes last. Note that this
-         * calculation works, even if the RTU timer counter overflowed.
+         * calculation works, even if the timer counter overflowed.
          */
-        uint16_t deltaTicks = TbxMbPortRtuTimerCount() - rxTimeCopy;
+        uint16_t deltaTicks = TbxMbPortTimerCount() - rxTimeCopy;
         /* After t3_5 it's time to transition to the IDLE state. */
         if (deltaTicks >= tpCtx->t3_5Ticks)
         {
@@ -878,7 +878,7 @@ static void TbxMbRtuTransmitComplete(tTbxMbUartPort port)
       {
         /* Store the time that the transmission completed. */
         TbxCriticalSectionEnter();
-        tpCtx->txDoneTime = TbxMbPortRtuTimerCount();
+        tpCtx->txDoneTime = TbxMbPortTimerCount();
         TbxCriticalSectionExit();
         /* Instruct the event task to start calling our polling function. Needed to
          * detect the 3.5 character timeout, after which we can transition back to the
@@ -934,7 +934,7 @@ static void TbxMbRtuDataReceived(tTbxMbUartPort         port,
     if (tpCtx != NULL)
     {
       /* Get current time in RTU timer ticks. */
-      uint16_t currentTime = TbxMbPortRtuTimerCount();
+      uint16_t currentTime = TbxMbPortTimerCount();
       TbxCriticalSectionEnter();
       /* Store the reception timestamp but first make a backup of the old timestamp, 
        * which is needed later on to do the 1.5 character timeout detection.

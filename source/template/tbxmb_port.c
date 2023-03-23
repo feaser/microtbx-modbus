@@ -167,7 +167,7 @@ uint8_t TbxMbPortUartTransmit(tTbxMbUartPort         port,
 ** \return    Free running counter value.
 **
 ****************************************************************************************/
-uint16_t TbxMbPortRtuTimerCount(void)
+uint16_t TbxMbPortTimerCount(void)
 {
   /* TODO ##Port 
    * 
@@ -186,7 +186,7 @@ uint16_t TbxMbPortRtuTimerCount(void)
    */
 
   return 0U;
-} /*** end of TbxMbPortRtuTimerCount ***/
+} /*** end of TbxMbPortTimerCount ***/
 
 
 /****************************************************************************************
