@@ -806,7 +806,7 @@ static uint8_t TbxMbRtuValidate(tTbxMbTp transport)
              */
             tpCtx->diagInfo.srvMsgCnt++;
             /* Set the node address in the txPacket node element. It is used during
-             * transmission to decided if the actual sending of the response should be
+             * transmission to decide if the actual sending of the response should be
              * suppressed, which is the case for TBX_MB_TP_NODE_ADDR_BROADCAST. No need
              * for a critical section, because we are guaranteed not in the IDLE or
              * TRANSMISSION states.
