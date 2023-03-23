@@ -204,7 +204,7 @@ bool TbxMbServer::customFunction(uint8_t  const rxPdu[],
 **            TBX_MB_SERVER_ERR_DEVICE_FAILURE otherwise.
 **
 ****************************************************************************************/
-tTbxMbServerResult TbxMbServer::callbackbReadInput(tTbxMbServer   channel, 
+tTbxMbServerResult TbxMbServer::callbackReadInput(tTbxMbServer   channel, 
                                                    uint16_t       addr, 
                                                    uint8_t      * value)
 {
@@ -234,7 +234,7 @@ tTbxMbServerResult TbxMbServer::callbackbReadInput(tTbxMbServer   channel,
   }
   /* Give the result back to the caller. */
   return result;
-} /*** end of callbackbReadInput ***/
+} /*** end of callbackReadInput ***/
 
 
 /************************************************************************************//**
@@ -543,7 +543,7 @@ TbxMbServerRtu::TbxMbServerRtu(uint8_t            nodeAddr,
        */
       channelCtx->instancePtr = this;
       /* Register the callback functions. */
-      TbxMbServerSetCallbackReadInput(m_Channel, callbackbReadInput);
+      TbxMbServerSetCallbackReadInput(m_Channel, callbackReadInput);
       TbxMbServerSetCallbackReadCoil(m_Channel, callbackReadCoil);
       TbxMbServerSetCallbackWriteCoil(m_Channel, callbackWriteCoil);
       TbxMbServerSetCallbackReadInputReg(m_Channel, callbackReadInputReg);

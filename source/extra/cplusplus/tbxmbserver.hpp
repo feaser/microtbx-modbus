@@ -64,7 +64,7 @@ protected:
   /* Members. */
   tTbxMbServer m_Channel;
   /* Callbacks. */
-  static tTbxMbServerResult callbackbReadInput(tTbxMbServer channel, uint16_t addr, 
+  static tTbxMbServerResult callbackReadInput(tTbxMbServer channel, uint16_t addr, 
                                                uint8_t * value);
   static tTbxMbServerResult callbackReadCoil(tTbxMbServer channel, uint16_t addr, 
                                              uint8_t * value);
