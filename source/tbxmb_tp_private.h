@@ -42,7 +42,7 @@ extern "C" {
  */
 #define TBX_MB_TP_ADU_HEAD_LEN_MAX     (7U)
 
-/** \brief Maximum ADU overhead bytes after the actual PDU. Caled "Error check" in the 
+/** \brief Maximum ADU overhead bytes after the actual PDU. Called "Error check" in the 
  *         Modbus protocol.
  */
 #define TBX_MB_TP_ADU_TAIL_LEN_MAX     (2U)
