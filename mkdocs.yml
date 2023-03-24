@@ -1,0 +1,14 @@
+site_name: MicroTBX-Modbus User Manual
+site_description: User Manual for MicroTBX-Modbus, a modern and flexible Modbus communication stack for microcontrollers.
+repo_url: https://github.com/feaser/microtbx-modbus
+theme: readthedocs
+nav:
+  - Home: 'index.md'
+  - Getting started: 'gettingstarted.md'
+  - Dual licensing: 'licensing.md'
+  - MISRA compliance: 'misra.md'
+  - Integration: 'integration.md'
+  - Portation: 'portation.md'
+  - Extras: 'extras.md'
+  - API reference: 'apiref.md'
+  
