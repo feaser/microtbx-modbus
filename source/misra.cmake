@@ -26,9 +26,9 @@ if (CMAKE_CXX_CPPCHECK)
     # Collect MicroTBX-Modbus template sources.
     get_target_property(microtbx_modbus_template_srcs microtbx-modbus-template INTERFACE_SOURCES)
     # Collect MicroTBX-Modbus OSAL superloop sources.
-    get_target_property(microtbx_modbus_superloop_srcs microtbx-modbus-superloop INTERFACE_SOURCES)
+    get_target_property(microtbx_modbus_superloop_srcs microtbx-modbus-osal-superloop INTERFACE_SOURCES)
     # Collect MicroTBX-Modbus OSAL freertos sources.
-    get_target_property(microtbx_modbus_freertos_srcs microtbx-modbus-freertos INTERFACE_SOURCES)
+    get_target_property(microtbx_modbus_freertos_srcs microtbx-modbus-osal-freertos INTERFACE_SOURCES)
 
     # Build list with MicroTBX-Modbus sources to check.
     set(check_srcs)

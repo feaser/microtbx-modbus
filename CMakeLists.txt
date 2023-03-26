@@ -14,16 +14,16 @@ target_include_directories(microtbx-modbus INTERFACE
 )
 
 # Create interface library for MicroTBX-Modbus OSAL superloop sources.
-add_library(microtbx-modbus-superloop INTERFACE)
+add_library(microtbx-modbus-osal-superloop INTERFACE)
 
-target_sources(microtbx-modbus-superloop INTERFACE
+target_sources(microtbx-modbus-osal-superloop INTERFACE
     "${CMAKE_CURRENT_LIST_DIR}/source/osal/tbxmb_superloop.c"
 )
 
 # Create interface library for MicroTBX-Modbus OSAL FreeRTOS sources.
-add_library(microtbx-modbus-freertos INTERFACE)
+add_library(microtbx-modbus-osal-freertos INTERFACE)
 
-target_sources(microtbx-modbus-freertos INTERFACE
+target_sources(microtbx-modbus-osal-freertos INTERFACE
     "${CMAKE_CURRENT_LIST_DIR}/source/osal/tbxmb_freertos.c"
 )
 
