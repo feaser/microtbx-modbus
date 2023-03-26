@@ -96,10 +96,12 @@ tTbxMbClient TbxMbClientCreate(tTbxMbTp transport,
       /* Convert the TP channel pointer to the context structure. */
       tTbxMbTpCtx * tpCtx = (tTbxMbTpCtx *)transport;
       /* Sanity check on the transport layer's interface function. That way there is 
-       * no need to do it later on, making it more run-time efficient. 
+       * no need to do it later on, making it more run-time efficient. Also check that
+       * it's not already linked to another channel.
        */
       TBX_ASSERT((tpCtx->transmitFcn != NULL) && (tpCtx->receptionDoneFcn != NULL) &&
-                 (tpCtx->getRxPacketFcn != NULL) && (tpCtx->getTxPacketFcn != NULL));
+                 (tpCtx->getRxPacketFcn != NULL) && (tpCtx->getTxPacketFcn != NULL) &&
+                 (tpCtx->channelCtx == NULL));
       /* Initialize the channel context. Start by crosslinking the transport layer. */
       newClientCtx->type = TBX_MB_CLIENT_CONTEXT_TYPE;
       newClientCtx->instancePtr = NULL;
