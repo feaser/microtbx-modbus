@@ -14,10 +14,11 @@ Since MicroTBX-Modbus builds upon the MicroTBX base component, make sure you alr
 
 ## Classical integration
 
-Adding MicroTBX-Modbus to your software project is a simple four step process: 
+Adding MicroTBX-Modbus to your software project is a simple five step process: 
 
 1. Copy all files from the `source` directory to your project.
 2. Copy the `source/template/tbxmb_port.c` port template source file to your project.
+2. Copy the `source/osal/tbxmb_XXX.c` for your selected operating system to your project.
 3. Configure your project such that the added `.c` files are compiled and linked during a build.
 4. Add the directories that contain the `.h` files to your compiler's include search path.
 
@@ -29,6 +30,7 @@ The use of [CMake](https://cmake.org/) to manage the build environment rapidly g
 2. Use `add_subdirectory()` to register the MicroTBX-Modbus interface library. 
 3. Copy the `source/template/tbxmb_port.c` port template source file to your project and add it as a source file to `add_executable()`. 
 4. Add the `microtbx-modbus` interface library to `target_link_libraries()`. 
+4. Add the `microtbx-modbus-osal-XXX` interface library for your selected operating system to `target_link_libraries()`. 
 
 Minimal `CMakeLists.txt` example, if you copied MicroTBX-Modbus to directory `third_party/microtbx-modbus`:
 
@@ -44,6 +46,7 @@ add_executable(MyProject
 
 target_link_libraries(MyProject
     microtbx-modbus
+    microtbx-modbus-osal-superloop
 )
 ```
 
