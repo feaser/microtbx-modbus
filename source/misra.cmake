@@ -5,6 +5,8 @@ if (CMAKE_CXX_CPPCHECK)
     get_target_property(microtbx_incs microtbx INTERFACE_INCLUDE_DIRECTORIES)
     # Collect MicroTBX Cortex-M port include directories.
     get_target_property(microtbx_cortexm_incs microtbx-cortexm INTERFACE_INCLUDE_DIRECTORIES)
+    # Collect MicroTBX template include directories.
+    get_target_property(microtbx_template_incs microtbx-template INTERFACE_INCLUDE_DIRECTORIES)
     # Collect MicroTBX-Modbus include directories.
     get_target_property(microtbx_modbus_incs microtbx-modbus INTERFACE_INCLUDE_DIRECTORIES)
     # Collect MicroTBX-Modbus template include directories.
@@ -14,6 +16,7 @@ if (CMAKE_CXX_CPPCHECK)
     set(search_path_incs)
     list(APPEND search_path_incs ${microtbx_incs})
     list(APPEND search_path_incs ${microtbx_cortexm_incs})
+    list(APPEND search_path_incs ${microtbx_template_incs})
     list(APPEND search_path_incs ${microtbx_modbus_incs})
     list(APPEND search_path_incs ${microtbx_modbus_template_incs})
     list(TRANSFORM search_path_incs PREPEND "-I")
@@ -22,11 +25,17 @@ if (CMAKE_CXX_CPPCHECK)
     get_target_property(microtbx_modbus_srcs microtbx-modbus INTERFACE_SOURCES)
     # Collect MicroTBX-Modbus template sources.
     get_target_property(microtbx_modbus_template_srcs microtbx-modbus-template INTERFACE_SOURCES)
+    # Collect MicroTBX-Modbus OSAL superloop sources.
+    get_target_property(microtbx_modbus_superloop_srcs microtbx-modbus-superloop INTERFACE_SOURCES)
+    # Collect MicroTBX-Modbus OSAL freertos sources.
+    get_target_property(microtbx_modbus_freertos_srcs microtbx-modbus-freertos INTERFACE_SOURCES)
 
     # Build list with MicroTBX-Modbus sources to check.
     set(check_srcs)
     list(APPEND check_srcs ${microtbx_modbus_srcs})
     list(APPEND check_srcs ${microtbx_modbus_template_srcs})
+    list(APPEND check_srcs ${microtbx_modbus_superloop_srcs})
+    list(APPEND check_srcs ${microtbx_modbus_freertos_srcs})
 
     # Set variable pointing to the addon for configuring the MISRA checks.
     set(misra_addon "${CMAKE_CURRENT_LIST_DIR}/misra.json")

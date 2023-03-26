@@ -35,6 +35,20 @@ extern "C" {
 #endif
 
 /****************************************************************************************
+* Macro definitions
+****************************************************************************************/
+#ifndef TBX_MB_EVENT_QUEUE_SIZE
+/** \brief Configure the size of the event queue. This default configuration should work
+ *         just fine in pretty much all usage scenarios. If for some reason a smaller or
+ *         larger event queue size is desired, you can override this configuration by
+ *         adding a macro with the same name, but a different value, to "tbx_conf.h".
+ */
+#define TBX_MB_EVENT_QUEUE_SIZE   ((uint8_t)TBX_MB_EVENT_NUM_ID * \
+                                   (uint8_t)TBX_MB_UART_NUM_PORT)
+#endif
+
+
+/****************************************************************************************
 * Type definitions
 ****************************************************************************************/
 /** \brief Handle to a Modbus OSAL semaphore object, in the format of an opaque

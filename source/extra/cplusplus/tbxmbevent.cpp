@@ -42,12 +42,12 @@
 ** \brief     Task method that drives the entire Modbus stack. It processes internally
 **            generated events. 
 ** \details   How to call this method depends on the selected operating system
-**            abstraction layer (OSAL) as configured with macro TBX_CONF_OSAL.
-**            - In a traditional superloop application (TBX_CONF_OSAL = 0), call this
-**              function continuously in the infinite program loop.
-**            - When using an RTOS (e.g. TBX_CONF_OSAL = 1 for FreeRTOS), create a new
-**              task during application initialization and call this method from this
-**              task's infinite loop.
+**            abstraction layer (OSAL):
+**            - In a traditional superloop application (tbxmb_superloop.c), call this
+**              method continuously in the infinite program loop.
+**            - When using an RTOS (e.g. tbxmb_freertos.c), create a new task during
+**              application initialization and call this method from this task's 
+**              infinite loop.
 **
 ****************************************************************************************/
 void TbxMbEvent::task()
