@@ -52,11 +52,11 @@ target_link_libraries(MyProject
 
 ## Adjust the port
 
-The MicroTBX-Modbus source code itself is fully hardware independent. The `tbxmb_port.c` port source file implements the hardware specifics. This means that you only need to update this source file, to get MicroTBX-Modbus working on your specific microcontroller system. You can find detailed instructions, on how to port MicroTBX-Modbus to your platform, in the [Portation](portation.md) section of this user manual.
+The MicroTBX-Modbus source code itself is fully hardware independent. The `tbxmb_port.c` port source file implements the hardware specifics. This means that you only need to update this source file, to get MicroTBX-Modbus working on your specific microcontroller system. You can find detailed instructions, on how to port MicroTBX-Modbus to your platform, in the [portation](portation.md) section of this user manual.
 
 ## Usage
 
-1. Add the following lines to each source-file, where you intend to make use of MicroTBX-Modbus:
+Add the following lines to each source-file, where you intend to make use of MicroTBX-Modbus:
 
 ```c
 #include <microtbx.h>
