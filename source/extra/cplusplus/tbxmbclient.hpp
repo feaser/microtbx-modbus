@@ -74,6 +74,9 @@ public:
   TbxMbClientRtu(uint16_t responseTimeout, uint16_t turnaroundDelay, 
                  tTbxMbUartPort serialPort, tTbxMbUartBaudrate baudrate, 
                  tTbxMbUartStopbits stopbits, tTbxMbUartParity parity);
+  TbxMbClientRtu(tTbxMbUartPort serialPort, tTbxMbUartBaudrate baudrate, 
+                 tTbxMbUartStopbits stopbits, tTbxMbUartParity parity)
+    : TbxMbClientRtu(1000U, 100U, serialPort, baudrate, stopbits, parity) { }
   virtual ~TbxMbClientRtu();
 
 private:
