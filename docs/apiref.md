@@ -681,11 +681,40 @@ void TbxMbServerSetCallbackCustomFunction (tTbxMbServer                channel,
 
 Registers the callback function that this server calls, whenever it received a PDU containing a function code not currently supported. With the aid of this callback function the user can implement support for new function codes.
 
+The example shows how to add support for function code 17 (*Report Server ID*). It's the counter-part to the example for [TbxMbClientCustomFunction()](#tbxmbclientcustomfunction). According to the Modbus protocol, the response to the *Report Server ID* request is device specific. The device implementation decides the number of bytes for the Server ID and if additional data is added to the response. The following code snippet implements support for *Report Server ID*, where the actual server ID is 16-bits and the response contains no additional data:
 
+```c
+uint8_t AppReportServerIdCallback(tTbxMbServer    channel,
+                                  uint8_t const * rxPdu,
+                                  uint8_t       * txPdu,
+                                  uint8_t       * len)
+{
+  uint8_t result = TBX_FALSE;
 
-**<u>TODO ADD EXAMPLE</u>**
+  /* Function code 17 - Report Server ID? */
+  if (rxPdu[0] == 17U)
+  {
+    /* Check the expected request length. */
+    if (*len == 1U)
+    {
+      /* Prepare the response. */
+      txPdu[0] = 17U; /* Function code. */
+      txPdu[1] = 3U;  /* Byte count. */
+      TbxMbCommonStoreUInt16BE(0x1234U, &txPdu[2]); /* server ID. */
+      txPdu[4] = 0xFFU; /* Run indicator status = ON. */
+      *len = 5U;
+      /* Function code handled. */
+      result = TBX_TRUE;
+    }
+  }
 
+  /* Give the result back to the caller. */
+  return result;
+}     
 
+/* Set the callback for handling custom function codes. */
+TbxMbServerSetCallbackCustomFunction(modbusServer, AppReportServerIdCallback);
+```
 
 | Parameter  | Description                                 |
 | ---------- | ------------------------------------------- |
@@ -972,11 +1001,41 @@ Send a custom function code PDU to the server and receive its response PDU. Than
 
 The `txPdu` and `rxPdu` parameters are pointers to the byte array of the PDU. The first byte (i.e. `txPdu[0]`) contains the function code, followed by its data bytes. When calling this function, set the `len` parameter to the length of the `txPdu`. This function updates the `len` parameter with the length of the received PDU, which it stores in `rxPdu`.
 
+The example shows how to add support for function code 17 (*Report Server ID*). It's the counter-part to the example for [TbxMbServerSetCallbackCustomFunction()](#tbxmbserversetcallbackcustomfunction). According to the Modbus protocol, the response to the *Report Server ID* request is device specific. The device implementation decides the number of bytes for the Server ID and if additional data is added to the response. The following code snippet implements support for *Report Server ID*, where it reads out the 16-bit server ID of a Modbus server with node address `10`:
 
+```c
+uint16_t AppReportServerId(tTbxMbClient channel,
+                           uint8_t      node)
+{
+  /* static to lower stack load. */
+  static uint8_t response[TBX_MB_TP_PDU_MAX_LEN]; 
+  uint8_t        request[1] = { 17U };
+  uint8_t        len = 1U;
+  uint16_t       result = 0U;
 
-**<u>TODO ADD EXAMPLE</u>**
+  /* Transceive function code 17 - Report Server ID. */
+  if (TbxMbClientCustomFunction(channel, node, request, 
+                                response, &len) == TBX_OK)
+  {
+    /* Response length as expected? */
+    if (len == 5U)
+    {
+      /* Not an exception response and byte count correct? */
+      if ((response[0] == 17U) && (response[1] == 3U))
+      {
+        /* Read out the received server ID. */
+        result = TbxMbCommonExtractUInt16BE(&response[2]);
+      }
+    }
+  }
 
+  /* Give the result back to the caller. */
+  return result;
+}                          
 
+/* Read the server ID. */
+uint16_t serverId = AppReportServerId(modbusClient, 10U);
+```
 
 | Parameter | Description                                                  |
 | --------- | ------------------------------------------------------------ |
