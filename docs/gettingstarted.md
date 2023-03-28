@@ -33,26 +33,10 @@ We'll create a Modbus server step-by-step with the following properties:
 The first step is always the construction of a transport layer object. It's the object that handles the actual transmission and reception of communication packets:
 
 ```c
-#include <microtbx.h>
-#include <microtbxmodbus.h>
-#include "board.h"
+/* Construct a Modbus RTU transport layer object. */
+tTbxMbTp modbusTp = TbxMbRtuCreate(10U, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS,
+                                   TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);   
 
-tTbxMbTp modbusTp;
-
-void main(void)
-{
-  /* Initialize the clock, enable peripherals and configure GPIO pins. */
-  BoardInit();
-  /* Construct a Modbus RTU transport layer object. */
-  modbusTp = TbxMbRtuCreate(10U, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS,
-                            TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);   
-
-  /* Enter the program's infinite loop. */  
-  for(;;)
-  {
-      
-  } 
-}
 ```
 
 ## Construct the server channel object
@@ -60,29 +44,8 @@ void main(void)
 With the transport layer object created, we continue with constructing a server channel object and attaching the transport layer object to it:
 
 ```c
-#include <microtbx.h>
-#include <microtbxmodbus.h>
-#include "board.h"
-
-tTbxMbTp modbusTp;
-tTbxMbServer modbusServer;
-
-void main(void)
-{
-  /* Initialize the clock, enable peripherals and configure GPIO pins. */
-  BoardInit();
-  /* Construct a Modbus RTU transport layer object. */
-  modbusTp = TbxMbRtuCreate(10U, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS, 
-                            TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);   
-  /* Construct a Modbus server object. */
-  modbusServer = TbxMbServerCreate(modbusTp);  
-    
-  /* Enter the program's infinite loop. */  
-  for(;;)
-  {
-      
-  } 
-}
+/* Construct a Modbus server object. */
+tTbxMbServer modbusServer = TbxMbServerCreate(modbusTp);  
 ```
 
 ## Call the task function for event processing
@@ -90,30 +53,8 @@ void main(void)
 An event task function drives the MicroTBX-Modbus stack. We just need to continuously call it in the program's infinite superloop:
 
 ```c
-#include <microtbx.h>
-#include <microtbxmodbus.h>
-#include "board.h"
-
-tTbxMbTp modbusTp;
-tTbxMbServer modbusServer;
-
-void main(void)
-{
-  /* Initialize the clock, enable peripherals and configure GPIO pins. */
-  BoardInit();
-  /* Construct a Modbus RTU transport layer object. */
-  modbusTp = TbxMbRtuCreate(10U, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS,
-                            TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);   
-  /* Construct a Modbus server object. */
-  modbusServer = TbxMbServerCreate(modbusTp);  
-    
-  /* Enter the program's infinite loop. */  
-  for(;;)
-  {
-    /* Continuously call the Modbus stack event task function. */
-    TbxMbEventTask();
-  } 
-}
+/* Continuously call the Modbus stack event task function. */
+TbxMbEventTask();
 ```
 
 ## Configure the callback for handling coil writes
@@ -121,13 +62,6 @@ void main(void)
 Our example Modbus server should enable a Modbus client to change the state of an LED, whenever it receives a coil write request. For this we'll implement a callback function, with a name of our choosing, and then register this callback function for coil write requests:
 
 ```c
-#include <microtbx.h>
-#include <microtbxmodbus.h>
-#include "board.h"
-
-tTbxMbTp modbusTp;
-tTbxMbServer modbusServer;
-
 tTbxMbServerResult AppWriteCoil(tTbxMbServer channel, uint16_t addr, uint8_t value)
 {
   tTbxMbServerResult result = TBX_MB_SERVER_OK;
@@ -152,6 +86,22 @@ tTbxMbServerResult AppWriteCoil(tTbxMbServer channel, uint16_t addr, uint8_t val
   return result;
 }
 
+/* Set the callback for accessing the coils in the Modbus data table. */
+TbxMbServerSetCallbackWriteCoil(modbusServer, AppWriteCoil);
+```
+
+Assembling it all together into our initial empty application results in this:
+
+```c
+#include <microtbx.h>
+#include <microtbxmodbus.h>
+#include "board.h"
+
+tTbxMbTp modbusTp;
+tTbxMbServer modbusServer;
+
+tTbxMbServerResult AppWriteCoil(tTbxMbServer channel, uint16_t addr, uint8_t value);
+
 void main(void)
 {
   /* Initialize the clock, enable peripherals and configure GPIO pins. */
@@ -170,6 +120,26 @@ void main(void)
     /* Continuously call the Modbus stack event task function. */
     TbxMbEventTask();
   } 
+}
+
+tTbxMbServerResult AppWriteCoil(tTbxMbServer channel, uint16_t addr, uint8_t value)
+{
+  tTbxMbServerResult result = TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
+    
+  /* Request to write the coil at address 0? */
+  if (addr == 0U)
+  {
+     if (value == TBX_ON)
+     {
+       BoardLedOn();    
+     }
+     else
+     {
+       BoardLedOff();  
+     }
+     result = TBX_MB_SERVER_OK;      
+  }
+  return result;
 }
 ```
 
@@ -230,39 +200,8 @@ Here follows to previous example application, upgraded for FreeRTOS:
 tTbxMbTp modbusTp;
 tTbxMbServer modbusServer;
 
-void AppModbusTask(void * pvParameters)
-{
-  /* Enter infinite task loop. */
-  for (;;)
-  {
-    /* Continuously call the Modbus stack event task function. */
-    TbxMbEventTask();
-  }
-}
-
-tTbxMbServerResult AppWriteCoil(tTbxMbServer channel, uint16_t addr, uint8_t value)
-{
-  tTbxMbServerResult result = TBX_MB_SERVER_OK;
-    
-  /* Request to write the coil at address 0? */
-  if (addr == 0U)
-  {
-     if (value == TBX_ON)
-     {
-       BoardLedOn();    
-     }
-     else
-     {
-       BoardLedOff();  
-     }
-  }
-  /* Unsupported coil address. */
-  else
-  {
-    result = TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
-  }
-  return result;
-}
+void AppModbusTask(void * pvParameters);
+tTbxMbServerResult AppWriteCoil(tTbxMbServer channel, uint16_t addr, uint8_t value);
 
 void main(void)
 {
@@ -279,6 +218,36 @@ void main(void)
   xTaskCreate(AppModbusTask, "ModbusTask", configMINIMAL_STACK_SIZE, NULL, 4U, NULL);    
   /* Start the RTOS scheduler. Note that this function does not return. */
   vTaskStartScheduler();
+}
+
+void AppModbusTask(void * pvParameters)
+{
+  /* Enter infinite task loop. */
+  for (;;)
+  {
+    /* Continuously call the Modbus stack event task function. */
+    TbxMbEventTask();
+  }
+}
+
+tTbxMbServerResult AppWriteCoil(tTbxMbServer channel, uint16_t addr, uint8_t value)
+{
+  tTbxMbServerResult result = TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
+    
+  /* Request to write the coil at address 0? */
+  if (addr == 0U)
+  {
+     if (value == TBX_ON)
+     {
+       BoardLedOn();    
+     }
+     else
+     {
+       BoardLedOff();  
+     }
+     result = TBX_MB_SERVER_OK;      
+  }
+  return result;
 }
 ```
 
