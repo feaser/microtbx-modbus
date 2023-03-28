@@ -346,11 +346,649 @@ Enumerated type with all supported parity modes.
 
 ### Server
 
-<u>**TODO**</u>
+#### TbxMbServerCreate
+
+```c
+tTbxMbServer TbxMbServerCreate(tTbxMbTp transport)
+```
+
+Creates a Modbus server channel object and assigns the specified Modbus transport layer to the channel for packet transmission and reception.
+
+This example creates a Modbus RTU server channel object for a node with address `10`:
+
+```c
+/* Construct a Modbus RTU transport layer object. */
+tTbxMbTp modbusTp = TbxMbRtuCreate(10U, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS,
+                                   TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY); 
+/* Construct a Modbus server object. */
+tTbxMbServer modbusServer = TbxMbServerCreate(modbusTp);  
+```
+
+| Parameter   | Description                                                  |
+| ----------- | ------------------------------------------------------------ |
+| `transport` | Handle to a previously created Modbus transport layer object to assign to the channel. |
+
+| Return value                                                 |
+| ------------------------------------------------------------ |
+| Handle to the newly created Modbus server channel object if successful, `NULL` otherwise. |
+
+#### TbxMbServerFree
+
+```c
+void TbxMbServerFree(tTbxMbServer channel)
+```
+
+Releases a Modbus server channel object, previously created with [TbxMbServerCreate()](#tbxmbservercreate).
+
+| Parameter | Description                                            |
+| --------- | ------------------------------------------------------ |
+| `channel` | Handle to the Modbus server channel object to release. |
+
+#### TbxMbServerSetCallbackReadInput
+
+```c
+void TbxMbServerSetCallbackReadInput(tTbxMbServer          channel,
+                                     tTbxMbServerReadInput callback)
+```
+
+Registers the callback function that this server calls, whenever a client requests the reading of a specific discrete input.
+
+The example connects the state of two digital inputs to the Modbus discrete inputs at addresses `10000` to `10001`:
+
+```c
+tTbxMbServerResult AppReadInput(tTbxMbServer   channel,
+                                uint16_t       addr,
+                                uint8_t      * value)
+{
+  tTbxMbServerResult result = TBX_MB_SERVER_OK;
+
+  /* Filter on the requested discrete input address. */
+  switch (addr)
+  {
+  case 10000U:
+    *value = BspDigitalIn(BSP_DIGITAL_IN1);
+    break;
+  
+  case 10001U:
+    *value = BspDigitalIn(BSP_DIGITAL_IN2);
+    break;
+  
+  default:
+    /* Unsupported discrete input address. */
+    result = TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
+    break;
+  }
+
+  /* Give the result back to the caller. */
+  return result;
+}
+
+/* Set the callback for reading the Modbus discrete inputs. */
+TbxMbServerSetCallbackReadInput(modbusServer, AppReadInput);
+```
+
+| Parameter  | Description                                 |
+| ---------- | ------------------------------------------- |
+| `channel`  | Handle to the Modbus server channel object. |
+| `callback` | Pointer to the callback function.           |
+
+#### TbxMbServerSetCallbackReadCoil
+
+```c
+void TbxMbServerSetCallbackReadCoil(tTbxMbServer         channel,
+                                    tTbxMbServerReadCoil callback)
+```
+
+Registers the callback function that this server calls, whenever a client requests the reading of a specific coil.
+
+The example assumes the application stores the state of two coils in an array with name `appCoils[]` . Whenever a client requests the reading of the Modbus coils at addresses `0` to `1`, the currently stored values in the `appCoils[]` array are returned:
+
+```c
+uint8_t appCoils[2] = { TBX_ON, TBX_OFF };
+
+tTbxMbServerResult AppReadCoil(tTbxMbServer   channel,
+                               uint16_t       addr,
+                               uint8_t      * value)
+{
+  tTbxMbServerResult result = TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
+
+  /* Supported coil address? */
+  if (addr <= 1U)
+  {
+    /* Store the current coil state. */
+    *value = appCoils[addr];
+    result = TBX_MB_SERVER_OK;
+  }    
+  /* Give the result back to the caller. */
+  return result;
+}
+
+/* Set the callback for reading the Modbus coils. */
+TbxMbServerSetCallbackReadCoil(modbusServer, AppReadCoil);
+```
+
+| Parameter  | Description                                 |
+| ---------- | ------------------------------------------- |
+| `channel`  | Handle to the Modbus server channel object. |
+| `callback` | Pointer to the callback function.           |
+
+#### TbxMbServerSetCallbackWriteCoil
+
+```c
+void TbxMbServerSetCallbackWriteCoil(tTbxMbServer          channel,
+                                     tTbxMbServerWriteCoil callback)
+```
+
+Registers the callback function that this server calls, whenever a client requests the writing of a specific coil.
+
+The example connects the Modbus coil addresses `0` to `1` to the  state of two digital outputs:
+
+```c
+tTbxMbServerResult AppWriteCoil(tTbxMbServer   channel,
+                                uint16_t       addr,
+                                uint8_t        value)
+{
+  tTbxMbServerResult result = TBX_MB_SERVER_OK;
+
+  /* Filter on the requested coil address. */
+  switch (addr)
+  {
+  case 0U:
+    BspDigitalOut(BSP_DIGITAL_OUT1, value);
+    break;
+  
+  case 1U:
+    BspDigitalOut(BSP_DIGITAL_OUT2, value);
+    break;
+  
+  default:
+    /* Unsupported coil address. */
+    result = TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
+    break;
+  }
+
+  /* Give the result back to the caller. */
+  return result;
+}
+
+/* Set the callback for writing the Modbus coils. */
+TbxMbServerSetCallbackWriteCoil(modbusServer, AppWriteCoil);
+```
+
+| Parameter  | Description                                 |
+| ---------- | ------------------------------------------- |
+| `channel`  | Handle to the Modbus server channel object. |
+| `callback` | Pointer to the callback function.           |
+
+#### TbxMbServerSetCallbackReadInputReg
+
+```c
+void TbxMbServerSetCallbackReadInputReg(tTbxMbServer                channel,
+                                        tTbxMbServerReadInputReg    callback)
+```
+
+Registers the callback function that this server calls, whenever a client requests the reading of a specific input register.
+
+The example connects the state of two analog inputs to the Modbus input registers at addresses `30000` to `30001`:
+
+```c
+tTbxMbServerResult AppReadInputReg(tTbxMbServer  channel,
+                                    uint16_t      addr, 
+                                    uint16_t    * value)
+{
+  tTbxMbServerResult result = TBX_MB_SERVER_OK;
+
+  /* Filter on the requested input register address. */
+  switch (addr)
+  {
+  case 30000U:
+    *value = BspAnalogIn(BSP_ANALOG_IN1);
+    break;
+  
+  case 30001U:
+    *value = BspAnalogIn(BSP_ANALOG_IN2);
+    break;
+  
+  default:
+    /* Unsupported input register address. */
+    result = TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
+    break;
+  }
+
+  /* Give the result back to the caller. */
+  return result;
+}
+
+/* Set the callback for reading the Modbus input registers. */
+TbxMbServerSetCallbackReadInputReg(modbusServer, AppReadInputReg);
+```
+
+| Parameter  | Description                                 |
+| ---------- | ------------------------------------------- |
+| `channel`  | Handle to the Modbus server channel object. |
+| `callback` | Pointer to the callback function.           |
+
+#### TbxMbServerSetCallbackReadHoldingReg
+
+```c
+void TbxMbServerSetCallbackReadHoldingReg(tTbxMbServer                channel,
+                                          tTbxMbServerReadHoldingReg  callback)
+```
+
+Registers the callback function that this server calls, whenever a client requests the reading of a specific holding register.
+
+The example assumes the application stores the state of two holding registers in an array with name `appHoldingRegs[]` . Whenever a client requests the reading of the Modbus holding registers at addresses `40000` to `40001`, the currently stored values in the `appHoldingRegs[]` array are returned:
+
+```c
+uint16_t appHoldingRegs[2] = { 1234, 5678 };
+
+tTbxMbServerResult AppReadHoldingReg(tTbxMbServer   channel,
+                                     uint16_t       addr,
+                                     uint16_t     * value)
+{
+  tTbxMbServerResult result = TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
+
+  /* Supported holding register address? */
+  if ( (addr >= 40000) && (addr <= 40001U) )
+  {
+    /* Store the holding register state. */
+    *value = appHoldingReg[addr - 40000U];
+    result = TBX_MB_SERVER_OK;
+  }    
+  /* Give the result back to the caller. */
+  return result;
+}
+
+/* Set the callback for reading the Modbus holding registers. */
+TbxMbServerSetCallbackReadHoldingReg(modbusServer, AppReadHoldingReg);
+```
+
+| Parameter  | Description                                 |
+| ---------- | ------------------------------------------- |
+| `channel`  | Handle to the Modbus server channel object. |
+| `callback` | Pointer to the callback function.           |
+
+#### TbxMbServerSetCallbackWriteHoldingReg
+
+```c
+void TbxMbServerSetCallbackWriteHoldingReg(tTbxMbServer                channel,
+                                           tTbxMbServerWriteHoldingReg callback)
+```
+
+Registers the callback function that this server calls, whenever a client requests the writing of a specific holding register.
+
+The example connects the Modbus holding registers addresses `40000` to `40001` to two 8-bit PWM output signals:
+
+```c
+tTbxMbServerResult AppWriteHoldingReg(tTbxMbServer channel,
+                                      uint16_t     addr, 
+                                      uint16_t     value)
+{
+  tTbxMbServerResult result = TBX_MB_SERVER_OK;
+
+  /* Filter on the requested holding register address. */
+  switch (addr)
+  {
+  case 40000U:
+    /* PWM supports 8-bit duty cycle. */
+    if (value <= 255U)
+    {
+      BspPwmOut(BSP_PWM_OUT1, (uint8_t)value);
+    }
+    else
+    {
+      result = TBX_MB_SERVER_ERR_DEVICE_FAILURE;
+    }
+    break;
+  
+  case 40001U:
+    /* PWM supports 8-bit duty cycle. */
+    if (value <= 255U)
+    {
+      BspPwmOut(BSP_PWM_OUT2, (uint8_t)value);
+    }
+    else
+    {
+      result = TBX_MB_SERVER_ERR_DEVICE_FAILURE;
+    }
+    break;
+  
+  default:
+    /* Unsupported holding register address. */
+    result = TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
+    break;
+  }
+
+  /* Give the result back to the caller. */
+  return result;
+}
+
+/* Set the callback for writing the Modbus holding registers. */
+TbxMbServerSetCallbackWriteHoldingReg(modbusServer, AppWriteHoldingReg);
+```
+
+| Parameter  | Description                                 |
+| ---------- | ------------------------------------------- |
+| `channel`  | Handle to the Modbus server channel object. |
+| `callback` | Pointer to the callback function.           |
+
+#### TbxMbServerSetCallbackCustomFunction
+
+```c
+void TbxMbServerSetCallbackCustomFunction (tTbxMbServer                channel,
+                                           tTbxMbServerCustomFunction  callback)
+```
+
+Registers the callback function that this server calls, whenever it received a PDU containing a function code not currently supported. With the aid of this callback function the user can implement support for new function codes.
+
+
+
+**<u>TODO ADD EXAMPLE</u>**
+
+
+
+| Parameter  | Description                                 |
+| ---------- | ------------------------------------------- |
+| `channel`  | Handle to the Modbus server channel object. |
+| `callback` | Pointer to the callback function.           |
 
 ### Client
 
-**<u>TODO</u>**
+#### TbxMbClientCreate
+
+```c
+tTbxMbClient TbxMbClientCreate(tTbxMbTp transport,
+                               uint16_t responseTimeout,
+                               uint16_t turnaroundDelay)
+```
+
+Creates a Modbus client channel object and assigns the specified Modbus transport layer to the channel for packet transmission and reception.
+
+This example creates a Modbus RTU client channel object. Note the the `nodeAddr` parameter of function [TbxMbRtuCreate()](#tbxmbrtucreate) is not applicable when used on a client and should simply be set to a value of `0`:
+
+```c
+/* Construct a Modbus RTU transport layer object. */
+tTbxMbTp modbusTp = TbxMbRtuCreate(0U, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS,
+                                   TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY); 
+/* Construct a Modbus client object. */
+tTbxMbClient modbusClient = TbxMbClientCreate(modbusTp, 1000U, 100U);
+```
+
+| Parameter         | Description                                                  |
+| ----------------- | ------------------------------------------------------------ |
+| `transport`       | Handle to a previously created Modbus transport layer object to assign to the<br>channel. |
+| `responseTimeout` | Maximum time in milliseconds to wait for a response from the Modbus server,<br>after sending a PDU. |
+| `turnaroundDelay` | Delay time in milliseconds after sending a broadcast PDU to give all recipients<br>sufficient time to process the PDU. |
+
+| Return value                                                 |
+| ------------------------------------------------------------ |
+| Handle to the newly created Modbus client channel object if successful, `NULL` otherwise. |
+
+#### TbxMbClientFree
+
+```c
+void TbxMbClientFree(tTbxMbClient channel)
+```
+
+Releases a Modbus client channel object, previously created with [TbxMbClientCreate()](#tbxmbclientcreate).
+
+| Parameter | Description                                            |
+| --------- | ------------------------------------------------------ |
+| `channel` | Handle to the Modbus client channel object to release. |
+
+#### TbxMbClientReadCoils
+
+```c
+uint8_t TbxMbClientReadCoils(tTbxMbClient   channel,
+                             uint8_t        node,
+                             uint16_t       addr,
+                             uint16_t       num,
+                             uint8_t      * coils)
+```
+
+Reads the coil(s) from the server with the specified node address.
+
+The example reads the state of two coils at Modbus addresses `0` to `1`, from a Modbus server with node address `10`:
+
+```c
+uint8_t coils[2] = { 0 };
+
+TbxMbClientReadCoils(modbusClient, 10U, 0U, 2U, coils);
+```
+
+| Parameter | Description                                                  |
+| --------- | ------------------------------------------------------------ |
+| `channel` | Handle to the Modbus client channel for the requested operation. |
+| `node`    | The address of the server. This parameter is transport layer dependent. It is needed on<br>RTU/ASCII, yet don't care for TCP unless it is a gateway to an RTU network. If it's don't<br>care, set it to a value of `1`. |
+| `addr`    | Starting element address (0..65535) in the Modbus data table for the coil read operation. |
+| `num`     | Number of elements to read from the coils data table. Range can be `1`..`2000`. |
+| `coils`   | Pointer to array with `TBX_ON` / `TBX_OFF` values where the coil state will be written to. |
+
+| Return value                                   |
+| ---------------------------------------------- |
+| `TBX_OK` if successful, `TBX_ERROR` otherwise. |
+
+#### TbxMbClientReadInputs
+
+```c
+uint8_t TbxMbClientReadInputs(tTbxMbClient   channel,
+                              uint8_t        node,
+                              uint16_t       addr,
+                              uint16_t       num,
+                              uint8_t      * inputs)
+```
+
+Reads the discrete input(s) from the server with the specified node address.
+
+The example reads the state of two discrete inputs at Modbus addresses `10000` to `10001`, from a Modbus server with node address `10`:
+
+```c
+uint8_t inputs[2] = { 0 };
+
+TbxMbClientReadInputs(modbusClient, 10U, 10000U, 2U, inputs);
+```
+
+| Parameter | Description                                                  |
+| --------- | ------------------------------------------------------------ |
+| `channel` | Handle to the Modbus client channel for the requested operation. |
+| `node`    | The address of the server. This parameter is transport layer dependent. It is needed on<br>RTU/ASCII, yet don't care for TCP unless it is a gateway to an RTU network. If it's don't<br>care, set it to a value of `1`. |
+| `addr`    | Starting element address (0..65535) in the Modbus data table for the discrete input<br>read operation. |
+| `num`     | Number of elements to read from the discrete inputs data table. Range can be `1`..`2000`. |
+| `inputs`  | Pointer to array with `TBX_ON` / `TBX_OFF` values where the discrete input state will be<br>written to. |
+
+| Return value                                   |
+| ---------------------------------------------- |
+| `TBX_OK` if successful, `TBX_ERROR` otherwise. |
+
+#### TbxMbClientReadInputRegs
+
+```c
+uint8_t TbxMbClientReadInputRegs(tTbxMbClient   channel,
+                                 uint8_t        node,
+                                 uint16_t       addr,
+                                 uint8_t        num,
+                                 uint16_t     * inputRegs)
+```
+
+Reads the input register(s) from the server with the specified node address.
+
+The example reads two input registers at Modbus addresses `30000` to `30001`, from a Modbus server with node address `10`:
+
+```c
+uint16_t inputRegs[2] = { 0 };
+
+TbxMbClientReadInputRegs(modbusClient, 10U, 30000U, 2U, inputRegs);
+```
+
+| Parameter   | Description                                                  |
+| ----------- | ------------------------------------------------------------ |
+| `channel`   | Handle to the Modbus client channel for the requested operation. |
+| `node`      | The address of the server. This parameter is transport layer dependent. It is needed on<br>RTU/ASCII, yet don't care for TCP unless it is a gateway to an RTU network. If it's don't<br>care, set it to a value of `1`. |
+| `addr`      | Starting element address (0..65535) in the Modbus data table for the input register<br>read operation. |
+| `num`       | Number of elements to read from the input registers data table. Range can be `1`..`125`. |
+| `inputRegs` | Pointer to array where the input register values will be written to. |
+
+| Return value                                   |
+| ---------------------------------------------- |
+| `TBX_OK` if successful, `TBX_ERROR` otherwise. |
+
+#### TbxMbClientReadHoldingRegs
+
+```c
+uint8_t TbxMbClientReadHoldingRegs(tTbxMbClient   channel,
+                                   uint8_t        node,
+                                   uint16_t       addr,
+                                   uint8_t        num,
+                                   uint16_t     * holdingRegs)
+```
+
+Reads the holding register(s) from the server with the specified node address.
+
+The example reads two holding registers at Modbus addresses `40000` to `40001`, from a Modbus server with node address `10`:
+
+```c
+uint16_t holdingRegs[2] = { 0 };
+
+TbxMbClientReadHoldingRegs(modbusClient, 10U, 40000U, 2U, holdingRegs);
+```
+
+| Parameter     | Description                                                  |
+| ------------- | ------------------------------------------------------------ |
+| `channel`     | Handle to the Modbus client channel for the requested operation. |
+| `node`        | The address of the server. This parameter is transport layer dependent. It is needed on<br>RTU/ASCII, yet don't care for TCP unless it is a gateway to an RTU network. If it's don't<br>care, set it to a value of `1`. |
+| `addr`        | Starting element address (0..65535) in the Modbus data table for the holding register<br>read operation. |
+| `num`         | Number of elements to read from the holding registers data table. Range can be<br>`1`..`125`. |
+| `holdingRegs` | Pointer to array where the holding register values will be written to. |
+
+| Return value                                   |
+| ---------------------------------------------- |
+| `TBX_OK` if successful, `TBX_ERROR` otherwise. |
+
+#### TbxMbClientWriteCoils
+
+```c
+uint8_t TbxMbClientWriteCoils(tTbxMbClient         channel,
+                              uint8_t              node,
+                              uint16_t             addr,
+                              uint16_t             num,
+                              uint8_t      const * coils)
+```
+
+Writes the coil(s) to the server with the specified node address.
+
+The example writes the state of two coils at Modbus addresses `0` to `1`, to a Modbus server with node address `10`:
+
+```c
+uint8_t coils[2] = { TBX_OFF, TBX_OFF };
+
+TbxMbClientWriteCoils(modbusClient, 10U, 0U, 2U, coils);
+```
+
+| Parameter | Description                                                  |
+| --------- | ------------------------------------------------------------ |
+| `channel` | Handle to the Modbus client channel for the requested operation. |
+| `node`    | The address of the server. This parameter is transport layer dependent. It is needed on<br>RTU/ASCII, yet don't care for TCP unless it is a gateway to an RTU network. If it's don't<br>care, set it to a value of `1`. |
+| `addr`    | Starting element address (0..65535) in the Modbus data table for the coil write operation. |
+| `num`     | Number of elements to write to the coils data table. Range can be `1`..`1968`. |
+| `coils`   | Pointer to array with the desired `TBX_ON` / `TBX_OFF` coil values. |
+
+| Return value                                   |
+| ---------------------------------------------- |
+| `TBX_OK` if successful, `TBX_ERROR` otherwise. |
+
+#### TbxMbClientWriteHoldingRegs
+
+```c
+uint8_t TbxMbClientWriteHoldingRegs(tTbxMbClient         channel,
+                                    uint8_t              node,
+                                    uint16_t             addr,
+                                    uint8_t              num,
+                                    uint16_t     const * holdingRegs)
+```
+
+Writes the holding register(s) to the server with the specified node address.
+
+The example writes two holding registers at Modbus addresses `40000` to `40001`, to a Modbus server with node address `10`:
+
+```c
+uint16_t holdingRegs[2] = { 63U, 127U };
+
+TbxMbClientWriteHoldingRegs(modbusClient, 10U, 40000U, 2U, holdingRegs);
+```
+
+| Parameter     | Description                                                  |
+| ------------- | ------------------------------------------------------------ |
+| `channel`     | Handle to the Modbus client channel for the requested operation. |
+| `node`        | The address of the server. This parameter is transport layer dependent. It is needed on<br>RTU/ASCII, yet don't care for TCP unless it is a gateway to an RTU network. If it's don't<br>care, set it to a value of `1`. |
+| `addr`        | Starting element address (0..65535) in the Modbus data table for the holding register<br>write operation. |
+| `num`         | Number of elements to write to the holding registers data table. Range can be<br>`1`..`123`. |
+| `holdingRegs` | Pointer to array with the desired holding register values.   |
+
+| Return value                                   |
+| ---------------------------------------------- |
+| `TBX_OK` if successful, `TBX_ERROR` otherwise. |
+
+#### TbxMbClientDiagnostics
+
+```c
+uint8_t TbxMbClientDiagnostics(tTbxMbClient         channel,
+                               uint8_t              node,
+                               uint16_t             subcode,
+                               uint16_t           * count)
+```
+
+Perform diagnostic operation on the server for checking the communication system.
+
+The example obtains the number of packets with a correct CRC, received by a Modbus server with node address `10`:
+
+```c
+uint16_t count = 0U;
+
+TbxMbClientDiagnostics(modbusClient, 10U, TBX_MB_DIAG_SC_SERVER_MESSAGE_COUNT, &count);
+```
+
+| Parameter | Description                                                  |
+| --------- | ------------------------------------------------------------ |
+| `channel` | Handle to the Modbus client channel for the requested operation. |
+| `node`    | The address of the server. This parameter is transport layer dependent. It is needed on<br>RTU/ASCII, yet don't care for TCP unless it is a gateway to an RTU network. If it's don't<br>care, set it to a value of `1`. |
+| `subcode` | Sub-function code for specifying the diagnostic operation to perform. Currently<br>supported values:<br>- `TBX_MB_DIAG_SC_QUERY_DATA`<br>\- `TBX_MB_DIAG_SC_CLEAR_COUNTERS`<br>- `TBX_MB_DIAG_SC_BUS_MESSAGE_COUNT`<br>- `TBX_MB_DIAG_SC_BUS_COMM_ERROR_COUNT`<br>- `TBX_MB_DIAG_SC_BUS_EXCEPTION_ERROR_COUNT`<br>- `TBX_MB_DIAG_SC_SERVER_MESSAGE_COUNT`<br>\- `TBX_MB_DIAG_SC_SERVER_NO_RESPONSE_COUNT` |
+| `count`   | Location where the retrieved count value will be written to. Only applicable for the<br>sub-function codes that end with `_COUNT`. |
+
+| Return value                                   |
+| ---------------------------------------------- |
+| `TBX_OK` if successful, `TBX_ERROR` otherwise. |
+
+#### TbxMbClientCustomFunction
+
+```c
+uint8_t TbxMbClientCustomFunction(tTbxMbClient         channel,
+                                  uint8_t              node,
+                                  uint8_t      const * txPdu,
+                                  uint8_t            * rxPdu,
+                                  uint8_t            * len)
+```
+
+Send a custom function code PDU to the server and receive its response PDU. Thanks to this functionality, the user can support Modbus function codes that are either currently not supported or user defined extensions. 
+
+The `txPdu` and `rxPdu` parameters are pointers to the byte array of the PDU. The first byte (i.e. `txPdu[0]`) contains the function code, followed by its data bytes. When calling this function, set the `len` parameter to the length of the `txPdu`. This function updates the `len` parameter with the length of the received PDU, which it stores in `rxPdu`.
+
+
+
+**<u>TODO ADD EXAMPLE</u>**
+
+
+
+| Parameter | Description                                                  |
+| --------- | ------------------------------------------------------------ |
+| `channel` | Handle to the Modbus client channel for the requested operation. |
+| `node`    | The address of the server. This parameter is transport layer dependent. It is needed on<br>RTU/ASCII, yet don't care for TCP unless it is a gateway to an RTU network. If it's don't<br>care, set it to a value of `1`. |
+| `txPdu`   | Pointer to a byte array with the PDU to transmit.            |
+| `rxPdu`   | Pointer to a byte array with the received response PDU.      |
+| `len`     | Pointer to the PDU length, including the function code.      |
+
+| Return value                                   |
+| ---------------------------------------------- |
+| `TBX_OK` if successful, `TBX_ERROR` otherwise. |
 
 ### Event
 
@@ -399,7 +1037,7 @@ void main(void)
   /* TODO Construct a Modbus transport layer object. */
   /* TODO Construct a Modbus client or server object. */
 
-    /* Create the Modbus task. */
+  /* Create the Modbus task. */
   xTaskCreate(AppModbusTask, "ModbusTask", configMINIMAL_STACK_SIZE, NULL, 4U, NULL);    
   /* Start the RTOS scheduler. Note that this function does not return. */
   vTaskStartScheduler();
@@ -415,6 +1053,38 @@ void AppModbusTask(void * pvParameters)
   }
 }
 ```
+
+### Common
+
+#### TbxMbCommonExtractUInt16BE
+
+```c
+uint16_t TbxMbCommonExtractUInt16BE(uint8_t const * data)
+```
+
+Helper function to extract an unsigned 16-bit value from the data of a Modbus packet, where 16-bit values are always stored in the big endian format.
+
+| Parameter | Description                                                  |
+| --------- | ------------------------------------------------------------ |
+| `data`    | Pointer to the byte array that holds the two bytes to extract, stored in the big endian<br>format. |
+
+| Return value                       |
+| ---------------------------------- |
+| The 16-bit unsigned integer value. |
+
+#### TbxMbCommonStoreUInt16BE
+
+```c
+void TbxMbCommonStoreUInt16BE(uint16_t   value,
+                              uint8_t  * data)
+```
+
+Helper function to store an unsigned 16-bit value in the data of a Modbus packet, where 16-bit values are always stored in the big endian format.
+
+| Parameter | Description                                                  |
+| --------- | ------------------------------------------------------------ |
+| `value`   | The unsigned 16-bit value to store.                          |
+| `data`    | Pointer to the byte array where to store the value in the big endian format. |
 
 ### RTU
 
@@ -455,6 +1125,18 @@ tTbxMbTp modbusTp = TbxMbRtuCreate(10U, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS,
 | Return value                                                 |
 | ------------------------------------------------------------ |
 | Handle to the newly created RTU transport layer object if successful, `NULL` otherwise. |
+
+#### TbxMbRtuFree
+
+```c
+void TbxMbRtuFree(tTbxMbTp transport)
+```
+
+Releases a Modbus RTU transport layer object, previously created with [TbxMbRtuCreate()](#tbxmbrtucreate).
+
+| Parameter   | Description                                      |
+| ----------- | ------------------------------------------------ |
+| `transport` | Handle to RTU transport layer object to release. |
 
 ### UART
 
