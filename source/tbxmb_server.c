@@ -89,7 +89,7 @@ static void TbxMbServerFC16WriteMultipleRegs (tTbxMbServerCtx       * context,
 
 
 /************************************************************************************//**
-** \brief     Creates a Modbus server channel object and assigs the specified Modbus
+** \brief     Creates a Modbus server channel object and assigns the specified Modbus
 **            transport layer to the channel for packet transmission and reception.
 ** \param     transport Handle to a previously created Modbus transport layer object to
 **            assign to the channel.
@@ -191,7 +191,7 @@ void TbxMbServerFree(tTbxMbServer channel)
 
 /************************************************************************************//**
 ** \brief     Registers the callback function that this server calls, whenever a client
-**            request the reading of a specific discrete input.
+**            requests the reading of a specific discrete input.
 ** \param     channel Handle to the Modbus server channel object.
 ** \param     callback Pointer to the callback function.
 **
@@ -219,7 +219,7 @@ void TbxMbServerSetCallbackReadInput(tTbxMbServer          channel,
 
 /************************************************************************************//**
 ** \brief     Registers the callback function that this server calls, whenever a client
-**            request the reading of a specific coil.
+**            requests the reading of a specific coil.
 ** \param     channel Handle to the Modbus server channel object.
 ** \param     callback Pointer to the callback function.
 **
@@ -247,7 +247,7 @@ void TbxMbServerSetCallbackReadCoil(tTbxMbServer         channel,
 
 /************************************************************************************//**
 ** \brief     Registers the callback function that this server calls, whenever a client
-**            request the writing of a specific coil.
+**            requests the writing of a specific coil.
 ** \param     channel Handle to the Modbus server channel object.
 ** \param     callback Pointer to the callback function.
 **
@@ -275,7 +275,7 @@ void TbxMbServerSetCallbackWriteCoil(tTbxMbServer          channel,
 
 /************************************************************************************//**
 ** \brief     Registers the callback function that this server calls, whenever a client
-**            request the reading of a specific input register.
+**            requests the reading of a specific input register.
 ** \param     channel Handle to the Modbus server channel object.
 ** \param     callback Pointer to the callback function.
 **
@@ -303,7 +303,7 @@ void TbxMbServerSetCallbackReadInputReg(tTbxMbServer             channel,
 
 /************************************************************************************//**
 ** \brief     Registers the callback function that this server calls, whenever a client
-**            request the reading of a specific holding register.
+**            requests the reading of a specific holding register.
 ** \param     channel Handle to the Modbus server channel object.
 ** \param     callback Pointer to the callback function.
 **
@@ -331,7 +331,7 @@ void TbxMbServerSetCallbackReadHoldingReg(tTbxMbServer               channel,
 
 /************************************************************************************//**
 ** \brief     Registers the callback function that this server calls, whenever a client
-**            request the writing of a specific holding register.
+**            requests the writing of a specific holding register.
 ** \param     channel Handle to the Modbus server channel object.
 ** \param     callback Pointer to the callback function.
 **
@@ -358,7 +358,7 @@ void TbxMbServerSetCallbackWriteHoldingReg(tTbxMbServer                channel,
 
 
 /************************************************************************************//**
-** \brief     Registers the callback function that this server calls, whenever is
+** \brief     Registers the callback function that this server calls, whenever it
 **            received a PDU containing a function code not currently supported. With the
 **            aid of this callback function the user can implement support for new
 **            function codes.

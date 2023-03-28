@@ -292,7 +292,7 @@ static uint8_t TbxMbClientTransceive(tTbxMbClientCtx * clientCtx,
 ** \param     addr Starting element address (0..65535) in the Modbus data table for the
 **            coil read operation.
 ** \param     num Number of elements to read from the coils data table. Range can be
-**            1..2000
+**            1..2000.
 ** \param     coils Pointer to array with TBX_ON / TBX_OFF values where the coil state
 **            will be written to.
 ** \return    TBX_OK if successful, TBX_ERROR otherwise.
@@ -824,7 +824,7 @@ uint8_t TbxMbClientReadHoldingRegs(tTbxMbClient   channel,
 **            coil write operation.
 ** \param     num Number of elements to write to the coils data table. Range can be
 **            1..1968
-** \param     coils Pointer to array with the desired TBX_ON / TBX_OFF coils values.
+** \param     coils Pointer to array with the desired TBX_ON / TBX_OFF coil values.
 ** \return    TBX_OK if successful, TBX_ERROR otherwise.
 **
 ****************************************************************************************/
