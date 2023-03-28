@@ -108,6 +108,47 @@ extern "C" {
 #define TBX_MB_FC_EXCEPTION_MASK                      (0x80U)
 
 
+/****************************************************************************************
+* Inline functions
+****************************************************************************************/
+/************************************************************************************//**
+** \brief     Helper function to extract an unsigned 16-bit value from the data of a 
+**            Modbus packet. Note that unsigned 16-bit values are always store in the
+**            big endian format, e.g. 0x1234 is stored as:
+**            - data[0] = 0x12
+**            - data[1] = 0x34
+** \param     data Pointer to the byte array that holds the two bytes to extract, stored
+**            in the big endian format.
+** \return    The 16-bit unsigned integer value.
+**
+****************************************************************************************/
+static inline uint16_t TbxMbCommonExtractUInt16BE(uint8_t const * data)
+{
+  return ((uint16_t)data[0] << 8U) | data[1];
+} /*** end of TbxMbCommonExtractUInt16BE ***/
+
+
+/************************************************************************************//**
+** \brief     Helper function to store an unsigned 16-bit value in the data of a Modbus
+**            packet. Note that unsigned 16-bit values are always stored in the
+**            big endian format, e.g. 0x1234 is stored as:
+**            - data[0] = 0x12
+**            - data[1] = 0x34
+** \param     value The unsigned 16-bit value to store.
+** \param     data Pointer to the byte array where to store the value in the big endian
+**            format.
+**
+****************************************************************************************/
+static inline void TbxMbCommonStoreUInt16BE(uint16_t   value,
+                                            uint8_t  * data)
+{
+  data[0] = (uint8_t)(value >> 8U);
+  data[1] = (uint8_t)value;
+} /*** end of TbxMbCommonExtractUInt16BE ***/
+
+
+
+
 #ifdef __cplusplus
 }
 #endif

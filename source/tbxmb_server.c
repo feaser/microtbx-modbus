@@ -388,42 +388,6 @@ void TbxMbServerSetCallbackCustomFunction(tTbxMbServer               channel,
 
 
 /************************************************************************************//**
-** \brief     Helper function to extract an unsigned 16-bit value from the data of a 
-**            Modbus packet. Note that unsigned 16-bit values are always store in the
-**            big endian format, e.g. 0x1234 is stored as:
-**            - data[0] = 0x12
-**            - data[1] = 0x34
-** \param     data Pointer to the byte array that holds the two bytes to extract, stored
-**            in the big endian format.
-** \return    The 16-bit unsigned integer value.
-**
-****************************************************************************************/
-static inline uint16_t TbxMbServerExtractUInt16BE(uint8_t const * data)
-{
-  return ((uint16_t)data[0] << 8U) | data[1];
-} /*** end of TbxMbServerExtractUInt16BE ***/
-
-
-/************************************************************************************//**
-** \brief     Helper function to store an unsigned 16-bit value in the data of a Modbus
-**            packet. Note that unsigned 16-bit values are always stored in the
-**            big endian format, e.g. 0x1234 is stored as:
-**            - data[0] = 0x12
-**            - data[1] = 0x34
-** \param     value The unsigned 16-bit value to store.
-** \param     data Pointer to the byte array where to store the value in the big endian
-**            format.
-**
-****************************************************************************************/
-static inline void TbxMbServerStoreUInt16BE(uint16_t   value,
-                                            uint8_t  * data)
-{
-  data[0] = (uint8_t)(value >> 8U);
-  data[1] = (uint8_t)value;
-} /*** end of TbxMbServerExtractUInt16BE ***/
-
-
-/************************************************************************************//**
 ** \brief     Event processing function that is automatically called when an event for
 **            this server channel object was received in TbxMbEventTask().
 ** \param     event Pointer to the event to process. Note that the event->context points
@@ -627,8 +591,8 @@ static void TbxMbServerFC01ReadCoils(tTbxMbServerCtx       * context,
   if ((context != NULL) && (rxPacket != NULL) && (txPacket != NULL))
   {
     /* Read out request packet parameters. */
-    uint16_t startAddr = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[0]);
-    uint16_t numCoils  = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[2]);
+    uint16_t startAddr = TbxMbCommonExtractUInt16BE(&rxPacket->pdu.data[0]);
+    uint16_t numCoils  = TbxMbCommonExtractUInt16BE(&rxPacket->pdu.data[2]);
 
     /* Check if a callback function was registered. */
     if (context->readCoilFcn == NULL)
@@ -741,8 +705,8 @@ static void TbxMbServerFC02ReadInputs(tTbxMbServerCtx       * context,
   if ((context != NULL) && (rxPacket != NULL) && (txPacket != NULL))
   {
     /* Read out request packet parameters. */
-    uint16_t startAddr = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[0]);
-    uint16_t numInputs = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[2]);
+    uint16_t startAddr = TbxMbCommonExtractUInt16BE(&rxPacket->pdu.data[0]);
+    uint16_t numInputs = TbxMbCommonExtractUInt16BE(&rxPacket->pdu.data[2]);
 
     /* Check if a callback function was registered. */
     if (context->readInputFcn == NULL)
@@ -856,8 +820,8 @@ static void TbxMbServerFC03ReadHoldingRegs(tTbxMbServerCtx       * context,
   if ((context != NULL) && (rxPacket != NULL) && (txPacket != NULL))
   {
     /* Read out request packet parameters. */
-    uint16_t startAddr = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[0]);
-    uint16_t numRegs   = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[2]);
+    uint16_t startAddr = TbxMbCommonExtractUInt16BE(&rxPacket->pdu.data[0]);
+    uint16_t numRegs   = TbxMbCommonExtractUInt16BE(&rxPacket->pdu.data[2]);
 
     /* Check if a callback function was registered. */
     if (context->readHoldingRegFcn == NULL)
@@ -892,7 +856,7 @@ static void TbxMbServerFC03ReadHoldingRegs(tTbxMbServerCtx       * context,
         if (srvResult == TBX_MB_SERVER_OK)
         {
           /* Store the register value in the response. */
-          TbxMbServerStoreUInt16BE(regValue, &txPacket->pdu.data[1U + (idx * 2U)]);
+          TbxMbCommonStoreUInt16BE(regValue, &txPacket->pdu.data[1U + (idx * 2U)]);
         }
         /* Exception detected. */
         else
@@ -937,8 +901,8 @@ static void TbxMbServerFC04ReadInputRegs(tTbxMbServerCtx       * context,
   if ((context != NULL) && (rxPacket != NULL) && (txPacket != NULL))
   {
     /* Read out request packet parameters. */
-    uint16_t startAddr = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[0]);
-    uint16_t numRegs   = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[2]);
+    uint16_t startAddr = TbxMbCommonExtractUInt16BE(&rxPacket->pdu.data[0]);
+    uint16_t numRegs   = TbxMbCommonExtractUInt16BE(&rxPacket->pdu.data[2]);
 
     /* Check if a callback function was registered. */
     if (context->readInputRegFcn == NULL)
@@ -973,7 +937,7 @@ static void TbxMbServerFC04ReadInputRegs(tTbxMbServerCtx       * context,
         if (srvResult == TBX_MB_SERVER_OK)
         {
           /* Store the register value in the response. */
-          TbxMbServerStoreUInt16BE(regValue, &txPacket->pdu.data[1U + (idx * 2U)]);
+          TbxMbCommonStoreUInt16BE(regValue, &txPacket->pdu.data[1U + (idx * 2U)]);
         }
         /* Exception detected. */
         else
@@ -1018,8 +982,8 @@ static void TbxMbServerFC05WriteSingleCoil(tTbxMbServerCtx       * context,
   if ((context != NULL) && (rxPacket != NULL) && (txPacket != NULL))
   {
     /* Read out request packet parameters. */
-    uint16_t startAddr   = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[0]);
-    uint16_t outputValue = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[2]);
+    uint16_t startAddr   = TbxMbCommonExtractUInt16BE(&rxPacket->pdu.data[0]);
+    uint16_t outputValue = TbxMbCommonExtractUInt16BE(&rxPacket->pdu.data[2]);
 
     /* Check if a callback function was registered. */
     if (context->writeCoilFcn == NULL)
@@ -1090,8 +1054,8 @@ static void TbxMbServerFC06WriteSingleReg(tTbxMbServerCtx       * context,
   if ((context != NULL) && (rxPacket != NULL) && (txPacket != NULL))
   {
     /* Read out request packet parameters. */
-    uint16_t regAddr  = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[0]);
-    uint16_t regValue = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[2]);
+    uint16_t regAddr  = TbxMbCommonExtractUInt16BE(&rxPacket->pdu.data[0]);
+    uint16_t regValue = TbxMbCommonExtractUInt16BE(&rxPacket->pdu.data[2]);
 
     /* Check if a callback function was registered. */
     if (context->writeHoldingRegFcn == NULL)
@@ -1153,8 +1117,8 @@ static void TbxMbServerFC08Diagnostics(tTbxMbServerCtx       * context,
   if ((context != NULL) && (rxPacket != NULL) && (txPacket != NULL))
   {
     /* Read out request packet parameters. */
-    uint16_t subCode   = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[0]);
-    uint16_t dataField = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[2]);
+    uint16_t subCode   = TbxMbCommonExtractUInt16BE(&rxPacket->pdu.data[0]);
+    uint16_t dataField = TbxMbCommonExtractUInt16BE(&rxPacket->pdu.data[2]);
     /* Prepare the most common response. It's typically the sub-function code echoed,
      * together with a 16-bit unsigned value.
      */
@@ -1196,7 +1160,7 @@ static void TbxMbServerFC08Diagnostics(tTbxMbServerCtx       * context,
           context->tpCtx->diagInfo.srvMsgCnt     = 0U;
           context->tpCtx->diagInfo.srvNoRespCnt  = 0U;
           /* Echo the request data field. */
-          TbxMbServerStoreUInt16BE(dataField, &txPacket->pdu.data[2U]);
+          TbxMbCommonStoreUInt16BE(dataField, &txPacket->pdu.data[2U]);
         }
       }
       break;
@@ -1215,7 +1179,7 @@ static void TbxMbServerFC08Diagnostics(tTbxMbServerCtx       * context,
         else
         {
           /* Store he bus message count. */
-          TbxMbServerStoreUInt16BE(context->tpCtx->diagInfo.busMsgCnt, 
+          TbxMbCommonStoreUInt16BE(context->tpCtx->diagInfo.busMsgCnt, 
                                    &txPacket->pdu.data[2U]);
         }
       }
@@ -1235,7 +1199,7 @@ static void TbxMbServerFC08Diagnostics(tTbxMbServerCtx       * context,
         else
         {
           /* Store he bus message count. */
-          TbxMbServerStoreUInt16BE(context->tpCtx->diagInfo.busCommErrCnt, 
+          TbxMbCommonStoreUInt16BE(context->tpCtx->diagInfo.busCommErrCnt, 
                                    &txPacket->pdu.data[2U]);
         }
       }
@@ -1255,7 +1219,7 @@ static void TbxMbServerFC08Diagnostics(tTbxMbServerCtx       * context,
         else
         {
           /* Store he bus message count. */
-          TbxMbServerStoreUInt16BE(context->tpCtx->diagInfo.busExcpErrCnt, 
+          TbxMbCommonStoreUInt16BE(context->tpCtx->diagInfo.busExcpErrCnt, 
                                    &txPacket->pdu.data[2U]);
         }
       }
@@ -1275,7 +1239,7 @@ static void TbxMbServerFC08Diagnostics(tTbxMbServerCtx       * context,
         else
         {
           /* Store he bus message count. */
-          TbxMbServerStoreUInt16BE(context->tpCtx->diagInfo.srvMsgCnt, 
+          TbxMbCommonStoreUInt16BE(context->tpCtx->diagInfo.srvMsgCnt, 
                                    &txPacket->pdu.data[2U]);
         }
       }
@@ -1295,7 +1259,7 @@ static void TbxMbServerFC08Diagnostics(tTbxMbServerCtx       * context,
         else
         {
           /* Store he bus message count. */
-          TbxMbServerStoreUInt16BE(context->tpCtx->diagInfo.srvNoRespCnt, 
+          TbxMbCommonStoreUInt16BE(context->tpCtx->diagInfo.srvNoRespCnt, 
                                    &txPacket->pdu.data[2U]);
         }
       }
@@ -1334,8 +1298,8 @@ static void TbxMbServerFC15WriteMultipleCoils(tTbxMbServerCtx       * context,
   if ((context != NULL) && (rxPacket != NULL) && (txPacket != NULL))
   {
     /* Read out request packet parameters. */
-    uint16_t startAddr = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[0]);
-    uint16_t numCoils  = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[2]);
+    uint16_t startAddr = TbxMbCommonExtractUInt16BE(&rxPacket->pdu.data[0]);
+    uint16_t numCoils  = TbxMbCommonExtractUInt16BE(&rxPacket->pdu.data[2]);
     uint8_t  byteCnt   = rxPacket->pdu.data[4];
     /* Determine the number of bytes needed to hold all the coil bits. Make it U16 
      * because the range validity of numCoils is not yet checked.
@@ -1448,8 +1412,8 @@ static void TbxMbServerFC16WriteMultipleRegs(tTbxMbServerCtx       * context,
   if ((context != NULL) && (rxPacket != NULL) && (txPacket != NULL))
   {
     /* Read out request packet parameters. */
-    uint16_t startAddr = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[0]);
-    uint16_t numRegs   = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[2]);
+    uint16_t startAddr = TbxMbCommonExtractUInt16BE(&rxPacket->pdu.data[0]);
+    uint16_t numRegs   = TbxMbCommonExtractUInt16BE(&rxPacket->pdu.data[2]);
     uint8_t  byteCnt   = rxPacket->pdu.data[4];
 
     /* Check if a callback function was registered. */
@@ -1483,7 +1447,7 @@ static void TbxMbServerFC16WriteMultipleRegs(tTbxMbServerCtx       * context,
         uint16_t           regValue;
         tTbxMbServerResult srvResult;
         /* Extract the requested register value. */
-        regValue = TbxMbServerExtractUInt16BE(&rxPacket->pdu.data[5U + (idx * 2U)]);
+        regValue = TbxMbCommonExtractUInt16BE(&rxPacket->pdu.data[5U + (idx * 2U)]);
         /* Write the register value. */
         srvResult = context->writeHoldingRegFcn(context, startAddr + idx, regValue);
         /* Exception reported? */

@@ -218,43 +218,6 @@ static void TbxMbClientProcessEvent(tTbxMbEvent * event)
 
 
 /************************************************************************************//**
-** \brief     Helper function to extract an unsigned 16-bit value from the data of a 
-**            Modbus packet. Note that unsigned 16-bit values are always store in the
-**            big endian format, e.g. 0x1234 is stored as:
-**            - data[0] = 0x12
-**            - data[1] = 0x34
-** \param     data Pointer to the byte array that holds the two bytes to extract, stored
-**            in the big endian format.
-** \return    The 16-bit unsigned integer value.
-**
-****************************************************************************************/
-static inline uint16_t TbxMbClientExtractUInt16BE(uint8_t const * data)
-{
-  return ((uint16_t)data[0] << 8U) | data[1];
-} /*** end of TbxMbServerExtractUInt16BE ***/
-
-
-/************************************************************************************//**
-** \brief     Helper function to store an unsigned 16-bit value in the data of a Modbus
-**            packet. Note that unsigned 16-bit values are always stored in the
-**            big endian format, e.g. 0x1234 is stored as:
-**            - data[0] = 0x12
-**            - data[1] = 0x34
-** \param     value The unsigned 16-bit value to store.
-** \param     data Pointer to the byte array where to store the value in the big endian
-**            format.
-**
-****************************************************************************************/
-static inline void TbxMbClientStoreUInt16BE(uint16_t   value,
-                                            uint8_t  * data)
-{
-  data[0] = (uint8_t)(value >> 8U);
-  data[1] = (uint8_t)value;
-} /*** end of TbxMbServerExtractUInt16BE ***/
-
-
-
-/************************************************************************************//**
 ** \brief     Helper function to both transmit a request packet and receive the reponse
 **            packet, if applicable (unicast).
 ** \param     clientCtx Pointer to the Modbus client channel for the requested operation.
@@ -368,9 +331,9 @@ uint8_t TbxMbClientReadCoils(tTbxMbClient   channel,
       txPacket->pdu.code = TBX_MB_FC01_READ_COILS;
       txPacket->dataLen = 4U;
       /* Starting address. */
-      TbxMbClientStoreUInt16BE(addr, &txPacket->pdu.data[0]);
+      TbxMbCommonStoreUInt16BE(addr, &txPacket->pdu.data[0]);
       /* Number of coils. */
-      TbxMbClientStoreUInt16BE(num, &txPacket->pdu.data[2]);
+      TbxMbCommonStoreUInt16BE(num, &txPacket->pdu.data[2]);
 
       /* Determine the request type (broadcast / unicast). */
       uint8_t isBroadcast = TBX_FALSE;
@@ -515,9 +478,9 @@ uint8_t TbxMbClientReadInputs(tTbxMbClient   channel,
       txPacket->pdu.code = TBX_MB_FC02_READ_DISCRETE_INPUTS;
       txPacket->dataLen = 4U;
       /* Starting address. */
-      TbxMbClientStoreUInt16BE(addr, &txPacket->pdu.data[0]);
+      TbxMbCommonStoreUInt16BE(addr, &txPacket->pdu.data[0]);
       /* Number of discrete inputs. */
-      TbxMbClientStoreUInt16BE(num, &txPacket->pdu.data[2]);
+      TbxMbCommonStoreUInt16BE(num, &txPacket->pdu.data[2]);
 
       /* Determine the request type (broadcast / unicast). */
       uint8_t isBroadcast = TBX_FALSE;
@@ -662,9 +625,9 @@ uint8_t TbxMbClientReadInputRegs(tTbxMbClient   channel,
       txPacket->pdu.code = TBX_MB_FC04_READ_INPUT_REGISTERS;
       txPacket->dataLen = 4U;
       /* Starting address. */
-      TbxMbClientStoreUInt16BE(addr, &txPacket->pdu.data[0]);
+      TbxMbCommonStoreUInt16BE(addr, &txPacket->pdu.data[0]);
       /* Number of registers. */
-      TbxMbClientStoreUInt16BE(num, &txPacket->pdu.data[2]);
+      TbxMbCommonStoreUInt16BE(num, &txPacket->pdu.data[2]);
 
       /* Determine the request type (broadcast / unicast). */
       uint8_t isBroadcast = TBX_FALSE;
@@ -711,7 +674,7 @@ uint8_t TbxMbClientReadInputRegs(tTbxMbClient   channel,
             /* Read out and store the input register values. */
             for (uint8_t idx = 0U; idx < num; idx++)
             {
-              inputRegs[idx] = TbxMbClientExtractUInt16BE(&regValPtr[idx * 2U]);
+              inputRegs[idx] = TbxMbCommonExtractUInt16BE(&regValPtr[idx * 2U]);
             }
           }
         }
@@ -781,9 +744,9 @@ uint8_t TbxMbClientReadHoldingRegs(tTbxMbClient   channel,
       txPacket->pdu.code = TBX_MB_FC03_READ_HOLDING_REGISTERS;
       txPacket->dataLen = 4U;
       /* Starting address. */
-      TbxMbClientStoreUInt16BE(addr, &txPacket->pdu.data[0]);
+      TbxMbCommonStoreUInt16BE(addr, &txPacket->pdu.data[0]);
       /* Number of registers. */
-      TbxMbClientStoreUInt16BE(num, &txPacket->pdu.data[2]);
+      TbxMbCommonStoreUInt16BE(num, &txPacket->pdu.data[2]);
 
       /* Determine the request type (broadcast / unicast). */
       uint8_t isBroadcast = TBX_FALSE;
@@ -830,7 +793,7 @@ uint8_t TbxMbClientReadHoldingRegs(tTbxMbClient   channel,
             /* Read out and store the holding register values. */
             for (uint8_t idx = 0U; idx < num; idx++)
             {
-              holdingRegs[idx] = TbxMbClientExtractUInt16BE(&regValPtr[idx * 2U]);
+              holdingRegs[idx] = TbxMbCommonExtractUInt16BE(&regValPtr[idx * 2U]);
             }
           }
         }
@@ -901,10 +864,10 @@ uint8_t TbxMbClientWriteCoils(tTbxMbClient         channel,
         txPacket->pdu.code = TBX_MB_FC05_WRITE_SINGLE_COIL;
         txPacket->dataLen = 4U;
         /* Coil address. */
-        TbxMbClientStoreUInt16BE(addr, &txPacket->pdu.data[0]);
+        TbxMbCommonStoreUInt16BE(addr, &txPacket->pdu.data[0]);
         /* Coil value. */
         uint16_t coilValue = (coils[0] == TBX_OFF) ? 0x0000U : 0xFF00U;
-        TbxMbClientStoreUInt16BE(coilValue, &txPacket->pdu.data[2]);
+        TbxMbCommonStoreUInt16BE(coilValue, &txPacket->pdu.data[2]);
       }
       /* Writing multiple coils. */
       else
@@ -922,9 +885,9 @@ uint8_t TbxMbClientWriteCoils(tTbxMbClient         channel,
         txPacket->pdu.code = TBX_MB_FC15_WRITE_MULTIPLE_COILS;
         txPacket->dataLen = numBytes + 5U;
         /* Start address. */
-        TbxMbClientStoreUInt16BE(addr, &txPacket->pdu.data[0]);
+        TbxMbCommonStoreUInt16BE(addr, &txPacket->pdu.data[0]);
         /* Number of holding registers. */
-        TbxMbClientStoreUInt16BE(num, &txPacket->pdu.data[2]);
+        TbxMbCommonStoreUInt16BE(num, &txPacket->pdu.data[2]);
         /* Byte count. */
         txPacket->pdu.data[4] = numBytes;
         /* Prepare loop indices that aid with reading the input bits. */
@@ -994,8 +957,8 @@ uint8_t TbxMbClientWriteCoils(tTbxMbClient         channel,
              */
             if ((rxPacket->node != node) ||
                 (rxPacket->pdu.code != TBX_MB_FC05_WRITE_SINGLE_COIL) ||
-                (TbxMbClientExtractUInt16BE(&rxPacket->pdu.data[0]) != addr) ||
-                (TbxMbClientExtractUInt16BE(&rxPacket->pdu.data[2]) != coilValue) ||
+                (TbxMbCommonExtractUInt16BE(&rxPacket->pdu.data[0]) != addr) ||
+                (TbxMbCommonExtractUInt16BE(&rxPacket->pdu.data[2]) != coilValue) ||
                 (rxPacket->dataLen != 4U))
             {
               result = TBX_ERROR;
@@ -1011,8 +974,8 @@ uint8_t TbxMbClientWriteCoils(tTbxMbClient         channel,
              */
             if ((rxPacket->node != node) ||
                 (rxPacket->pdu.code != TBX_MB_FC15_WRITE_MULTIPLE_COILS) ||
-                (TbxMbClientExtractUInt16BE(&rxPacket->pdu.data[0]) != addr) ||
-                (TbxMbClientExtractUInt16BE(&rxPacket->pdu.data[2]) != num) ||
+                (TbxMbCommonExtractUInt16BE(&rxPacket->pdu.data[0]) != addr) ||
+                (TbxMbCommonExtractUInt16BE(&rxPacket->pdu.data[2]) != num) ||
                 (rxPacket->dataLen != 4U))
             {
               result = TBX_ERROR;
@@ -1087,9 +1050,9 @@ uint8_t TbxMbClientWriteHoldingRegs(tTbxMbClient         channel,
         txPacket->pdu.code = TBX_MB_FC06_WRITE_SINGLE_REGISTER;
         txPacket->dataLen = 4U;
         /* Holding register address. */
-        TbxMbClientStoreUInt16BE(addr, &txPacket->pdu.data[0]);
+        TbxMbCommonStoreUInt16BE(addr, &txPacket->pdu.data[0]);
         /* Holding register value. */
-        TbxMbClientStoreUInt16BE(holdingRegs[0], &txPacket->pdu.data[2]);
+        TbxMbCommonStoreUInt16BE(holdingRegs[0], &txPacket->pdu.data[2]);
       }
       /* Writing multiple holding registers. */
       else
@@ -1101,9 +1064,9 @@ uint8_t TbxMbClientWriteHoldingRegs(tTbxMbClient         channel,
         txPacket->pdu.code = TBX_MB_FC16_WRITE_MULTIPLE_REGISTERS;
         txPacket->dataLen = byteCount + 5U;
         /* Start address. */
-        TbxMbClientStoreUInt16BE(addr, &txPacket->pdu.data[0]);
+        TbxMbCommonStoreUInt16BE(addr, &txPacket->pdu.data[0]);
         /* Number of holding registers. */
-        TbxMbClientStoreUInt16BE(num, &txPacket->pdu.data[2]);
+        TbxMbCommonStoreUInt16BE(num, &txPacket->pdu.data[2]);
         /* Byte count. */
         txPacket->pdu.data[4] = byteCount;
         /* Set pointer to where the holding registers start in the request. */
@@ -1111,7 +1074,7 @@ uint8_t TbxMbClientWriteHoldingRegs(tTbxMbClient         channel,
         /* Store the holding register values. */
         for (uint8_t idx = 0U; idx < num; idx++)
         {
-          TbxMbClientStoreUInt16BE(holdingRegs[idx], &regValPtr[idx * 2U]);
+          TbxMbCommonStoreUInt16BE(holdingRegs[idx], &regValPtr[idx * 2U]);
         }
       }
       /* Determine the request type (broadcast / unicast). */
@@ -1149,8 +1112,8 @@ uint8_t TbxMbClientWriteHoldingRegs(tTbxMbClient         channel,
              */
             if ((rxPacket->node != node) ||
                 (rxPacket->pdu.code != TBX_MB_FC06_WRITE_SINGLE_REGISTER) ||
-                (TbxMbClientExtractUInt16BE(&rxPacket->pdu.data[0]) != addr) ||
-                (TbxMbClientExtractUInt16BE(&rxPacket->pdu.data[2]) != holdingRegs[0]) ||
+                (TbxMbCommonExtractUInt16BE(&rxPacket->pdu.data[0]) != addr) ||
+                (TbxMbCommonExtractUInt16BE(&rxPacket->pdu.data[2]) != holdingRegs[0]) ||
                 (rxPacket->dataLen != 4U))
             {
               result = TBX_ERROR;
@@ -1166,8 +1129,8 @@ uint8_t TbxMbClientWriteHoldingRegs(tTbxMbClient         channel,
              */
             if ((rxPacket->node != node) ||
                 (rxPacket->pdu.code != TBX_MB_FC16_WRITE_MULTIPLE_REGISTERS) ||
-                (TbxMbClientExtractUInt16BE(&rxPacket->pdu.data[0]) != addr) ||
-                (TbxMbClientExtractUInt16BE(&rxPacket->pdu.data[2]) != num) ||
+                (TbxMbCommonExtractUInt16BE(&rxPacket->pdu.data[0]) != addr) ||
+                (TbxMbCommonExtractUInt16BE(&rxPacket->pdu.data[2]) != num) ||
                 (rxPacket->dataLen != 4U))
             {
               result = TBX_ERROR;
@@ -1256,14 +1219,14 @@ uint8_t TbxMbClientDiagnostics(tTbxMbClient   channel,
       /* Prepare the request packet. */
       txPacket->node = node;
       txPacket->pdu.code = TBX_MB_FC08_DIAGNOSTICS;
-      TbxMbClientStoreUInt16BE(subcode, &txPacket->pdu.data[0]);
+      TbxMbCommonStoreUInt16BE(subcode, &txPacket->pdu.data[0]);
       /* Requested to perform a query data diagnostic operation? */
       if (subcode == TBX_MB_DIAG_SC_QUERY_DATA)
       {
         /* Write the query data for loopback testing. */
         for (uint8_t idx = 0U; idx < (sizeof(queryData)/sizeof(queryData[0])); idx++)
         {
-          TbxMbClientStoreUInt16BE(queryData[idx], &txPacket->pdu.data[2U + (idx * 2U)]);
+          TbxMbCommonStoreUInt16BE(queryData[idx], &txPacket->pdu.data[2U + (idx * 2U)]);
         }
         txPacket->dataLen = ((sizeof(queryData) / sizeof(queryData[0])) * 2U) + 2U;
       }
@@ -1271,7 +1234,7 @@ uint8_t TbxMbClientDiagnostics(tTbxMbClient   channel,
       else
       {
         /* Store the data field as per the protocol. */
-        TbxMbClientStoreUInt16BE(0x0000U, &txPacket->pdu.data[2U]);
+        TbxMbCommonStoreUInt16BE(0x0000U, &txPacket->pdu.data[2U]);
         txPacket->dataLen = 4U;
       }
 
@@ -1306,7 +1269,7 @@ uint8_t TbxMbClientDiagnostics(tTbxMbClient   channel,
            */
           if ((rxPacket->node != node) ||
               (rxPacket->pdu.code != TBX_MB_FC08_DIAGNOSTICS) ||
-              (TbxMbClientExtractUInt16BE(&rxPacket->pdu.data[0]) != subcode))
+              (TbxMbCommonExtractUInt16BE(&rxPacket->pdu.data[0]) != subcode))
           {
             result = TBX_ERROR;
           }
@@ -1328,7 +1291,7 @@ uint8_t TbxMbClientDiagnostics(tTbxMbClient   channel,
                 for (uint8_t idx = 0U; idx < queryDataLen; idx++)
                 {
                   uint8_t const * entryPtr = &rxPacket->pdu.data[2];
-                  uint16_t entry = TbxMbClientExtractUInt16BE(&entryPtr[idx * 2U]);
+                  uint16_t entry = TbxMbCommonExtractUInt16BE(&entryPtr[idx * 2U]);
                   /* Check that its value is the same as what was sent in the request. */
                   if (entry != queryData[idx])
                   {
@@ -1350,7 +1313,7 @@ uint8_t TbxMbClientDiagnostics(tTbxMbClient   channel,
               else
               {
                 uint8_t const * dataValPtr = &rxPacket->pdu.data[2];
-                uint16_t dataVal = TbxMbClientExtractUInt16BE(dataValPtr);
+                uint16_t dataVal = TbxMbCommonExtractUInt16BE(dataValPtr);
                 /* Check that the value is as expected. */
                 if (dataVal != 0x0000U)
                 {
@@ -1370,7 +1333,7 @@ uint8_t TbxMbClientDiagnostics(tTbxMbClient   channel,
               else
               {
                 uint8_t const * countValPtr = &rxPacket->pdu.data[2];
-                uint16_t countVal = TbxMbClientExtractUInt16BE(countValPtr);
+                uint16_t countVal = TbxMbCommonExtractUInt16BE(countValPtr);
                 /* Verify that count parameter. */
                 TBX_ASSERT(count != NULL);
                 /* Only continue with a valid count parameter. */
