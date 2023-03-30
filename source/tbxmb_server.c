@@ -1304,7 +1304,7 @@ static void TbxMbServerFC15WriteMultipleCoils(tTbxMbServerCtx       * context,
     /* Determine the number of bytes needed to hold all the coil bits. Make it U16 
      * because the range validity of numCoils is not yet checked.
      */
-    uint16_t numBytes = (uint8_t)(numCoils / 8U);
+    uint16_t numBytes = (uint16_t)(numCoils / 8U);
     if ((numCoils % 8U) != 0U)
     {
       numBytes++;
