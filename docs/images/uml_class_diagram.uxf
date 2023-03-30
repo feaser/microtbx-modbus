@@ -117,37 +117,37 @@ fontfamily=Monospaced //possible: SansSerif,Serif,Monospaced
 --
 +&lt;&lt;Create&gt;&gt; TbxMbClient()
 
-/-readInputs      (node:  uint8_t,/
+/+readInputs      (node:  uint8_t,/
 /                  addr:  uint16_t,/
 /                  num:   uint16_t/
 /                  inputs: uint8_t[]): uint8_t/
 
-/-readCoils       (node:        uint8_t,/
+/+readCoils       (node:        uint8_t,/
 /                  addr:        uint16_t,/
 /                  num:         uint16_t/
 /                  coils:       uint8_t[]): uint8_t/
 
-/-writeCoils      (node:        uint8_t,/
+/+writeCoils      (node:        uint8_t,/
 /                  addr:        uint16_t,/
 /                  num:         uint16_t/
 /                  coils:       uint8_t[]): uint8_t/
 
-/-readInputRegs   (node:        uint8_t,/
+/+readInputRegs   (node:        uint8_t,/
 /                  addr:        uint16_t,/
 /                  num:         uint16_t/
 /                  inputRegs:   uint16_t[]): uint8_t/
 
-/-readHoldingRegs (node:        uint8_t,/
+/+readHoldingRegs (node:        uint8_t,/
 /                  addr:        uint16_t,/
 /                  num:         uint16_t/
 /                  holdingRegs: uint16_t[]): uint8_t/
 
-/-writeHoldingRegs(node:        uint8_t,/
+/+writeHoldingRegs(node:        uint8_t,/
 /                  addr:        uint16_t,/
 /                  num:         uint16_t/
 /                  holdingRegs: uint16_t[]): uint8_t/
 
-/-customFunction  (node:        uint8_t,/
+/+customFunction  (node:        uint8_t,/
 /                  txPdu:       uint8_t[],/
 /                  rxPdu:       uint8_t[],/
 /                  len:         uint8_t&amp;): bool/
