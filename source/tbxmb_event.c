@@ -75,6 +75,14 @@ typedef struct
 **              application initialization and call this function from this task's 
 **              infinite loop.
 **
+**            When using a traditional superloop application in combination with just
+**            a Modbus client, you can omit the call to this task function. With this
+**            combination, the communication with a Modbus server happens in a blocking
+**            manner and the event task is automatically called internally, while
+**            blocking. Convenient and easy, but not optimal from a run-time performance.
+**            For this reason it is recommended to use an RTOS in combination with a
+**            Modbus client.
+**
 ****************************************************************************************/
 void TbxMbEventTask(void)
 {
