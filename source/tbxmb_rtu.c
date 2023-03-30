@@ -200,8 +200,8 @@ tTbxMbTp TbxMbRtuCreate(uint8_t            nodeAddr,
        */
       if (baudrate > TBX_MB_UART_19200BPS)
       {
-        newTpCtx->t1_5Ticks = 15U + 1U;                    /* 750us / 50us ticks.      */
-        newTpCtx->t3_5Ticks = 35U + 1U;                    /* 1750us / 50us ticks      */
+        newTpCtx->t1_5Ticks = 16U;                         /* 750us / 50us ticks.      */
+        newTpCtx->t3_5Ticks = 36U;                         /* 1750us / 50us ticks      */
       }
       /* Need to calculate the 1.5 and 3.5 character times. */
       else
