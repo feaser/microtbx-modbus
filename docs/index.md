@@ -51,7 +51,7 @@ The only reason not to use MicroTBX-Modbus is that it currently only supports Mo
 
 ## System requirements
 
-With MicroTBX-Modbus being a modern communication stack, the focus is more on ease and flexibility of use for the developer, and less on keeping the ROM footprint low. Therefore the recommended system requirements are slightly higher than comparative Modbus software solutions. It is recommended to use a microcontroller with at least 32 KiB flash and 4 KiB RAM. However, it will still run on something as basic as an 8-bit Arduino Uno with just 2 KiB or RAM.
+With MicroTBX-Modbus being a modern communication stack, the focus is more on ease and flexibility of use for the developer, and less on keeping the ROM footprint low. Therefore the recommended system requirements are slightly higher than comparative Modbus software solutions. It is recommended to use a microcontroller with at least 32 KiB flash and 4 KiB RAM.
 
 ## Next steps
 
