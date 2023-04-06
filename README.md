@@ -9,7 +9,7 @@ Features:
 * Written in the C programming language (C99) with high MISRA compliance.
 * Supports both Modbus client and Modbus server functionality.
 * Supports multi channel for both the Modbus client and server.
-* Flexible dual licensing model.
+* Flexible [dual licensing](https://feaser.github.io/microtbx-modbus/licensing/) model.
 * Designed such that it can be used with and without and RTOS.
 * Easy to integrate into existing software projects, especially when using CMake.
 * Includes C++ wrappers for those preferring to develop in an object-oriented manner.
