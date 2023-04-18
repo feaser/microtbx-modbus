@@ -25,6 +25,10 @@ Additionally, an assortment of demo programs is available in a separate Git repo
 
 * [https://github.com/feaser/microtbx-demos](https://github.com/feaser/microtbx-demos)
 
+Especially for those working with an STM32 microcontroller, you can find an in-depth and hands-on tutorial on the Feaser development blog:
+
+* [STM32 Modbus RTU server tutorial](https://www.feaser.com/en/blog/2023/04/stm32-modbus-rtu-server-tutorial/)
+
 ## User manual
 
 The online user manual is located at the following location:
