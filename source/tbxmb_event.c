@@ -120,13 +120,22 @@ void TbxMbEventTask(void)
       {
         case TBX_MB_EVENT_ID_START_POLLING:
         {
-          /* Add the context at the end of the event poller list. */
-          uint8_t insertResult = TbxListInsertItemBack(pollerList, newEvent.context);
-          /* Check that the item could be added to the queue. If not, then the heaps size
-           * is configured too small. In this case increase the heap size using
-           * configuration macro TBX_CONF_HEAP_SIZE. 
+          /* Poller list entries are allocated from a memory pool. This means that there
+           * is no need to worry about heap fragmentation. Just make sure to cap the
+           * maximum number of entries to prevent heap exhaustion.
            */
-          TBX_ASSERT(insertResult == TBX_OK);
+          TBX_ASSERT(TbxListGetSize(pollerList) <= TBX_MB_EVENT_QUEUE_SIZE);
+          /* Only continue if the current poller list size is not yet maxed out. */
+          if (TbxListGetSize(pollerList) <= TBX_MB_EVENT_QUEUE_SIZE)
+          {
+            /* Add the context at the end of the event poller list. */
+            uint8_t insertResult = TbxListInsertItemBack(pollerList, newEvent.context);
+            /* Check that the item could be added to the queue. If not, then the heaps size
+             * is configured too small. In this case increase the heap size using
+            * configuration macro TBX_CONF_HEAP_SIZE. 
+            */
+            TBX_ASSERT(insertResult == TBX_OK);
+          }
         }
         break;
       
