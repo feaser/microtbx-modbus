@@ -775,7 +775,7 @@ static uint8_t TbxMbRtuValidate(tTbxMbTp transport)
        * - Packet data (dataLen bytes)
        * - CRC16 (2 bytes)
        */
-      uint8_t * crcPtr = &aduPtr[2U + tpCtx->rxPacket.dataLen];
+      uint8_t const * crcPtr = &aduPtr[2U + tpCtx->rxPacket.dataLen];
       /* Read out the CRC16 stored in the ADU packet. */
       uint16_t packetCrc = crcPtr[0] | (uint16_t)(crcPtr[1] << 8U);
       /* Calculate the CRC16 based on the packet contents. It's calculated over the

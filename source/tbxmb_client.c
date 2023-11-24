@@ -387,7 +387,7 @@ uint8_t TbxMbClientReadCoils(tTbxMbClient   channel,
             uint8_t   bitIdx  = 0U;
             uint8_t   byteIdx = 0U;
             /* Initialize byte array pointer for reading the coils. */
-            uint8_t * coilData = &rxPacket->pdu.data[1];
+            uint8_t const * coilData = &rxPacket->pdu.data[1];
             /* Loop through all the coils. */
             for (uint16_t idx = 0U; idx < num; idx++)
             {
@@ -534,7 +534,7 @@ uint8_t TbxMbClientReadInputs(tTbxMbClient   channel,
             uint8_t   bitIdx  = 0U;
             uint8_t   byteIdx = 0U;
             /* Initialize byte array pointer for reading the input bits. */
-            uint8_t * inputData = &rxPacket->pdu.data[1];
+            uint8_t const * inputData = &rxPacket->pdu.data[1];
             /* Loop through all the inputs. */
             for (uint16_t idx = 0U; idx < num; idx++)
             {
