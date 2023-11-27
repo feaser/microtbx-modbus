@@ -1,4 +1,12 @@
 -----------------------------------------------------------------------------------------
+2023-11-27 Frank Voorburg <voorburg@feaser.com>
+
+* Added cap to the size of the poller list.
+* Some code improvements by adding a few pointer-to-const specifiers.
+* Update the documentation and added a tutorial link to the readme.
+* Public release of version 0.9.1.
+
+-----------------------------------------------------------------------------------------
 2023-03-20 Frank Voorburg <voorburg@feaser.com>
 
 * First public release of MicroTBX-Modbus.
