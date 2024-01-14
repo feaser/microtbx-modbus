@@ -8,6 +8,7 @@ nav:
   - Dual licensing: 'licensing.md'
   - MISRA compliance: 'misra.md'
   - Integration: 'integration.md'
+  - Configuration: 'configuration.md'
   - Portation: 'portation.md'
   - Extras: 'extras.md'
   - API reference: 'apiref.md'

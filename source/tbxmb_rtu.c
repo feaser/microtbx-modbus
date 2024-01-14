@@ -43,18 +43,22 @@
 * Macro definitions
 ****************************************************************************************/
 #ifndef TBX_MB_RTU_T1_5_TIMEOUT_ENABLE
-/** \brief By default enable the monitoring of the max. 1.5 character time between
- *         newly received bytes. The Modbus RTU protocol requires that there is no more
- *         than a 1.5 character time between newly received packet bytes. Otherwise a
- *         newly received packet should be ignored. This RTU transport layer supports
- *         this monitoring if this configuration macro is > 0, which is recommended.
+/** \brief The Modbus RTU protocol requires that there is no more than a 1.5 character
+ *         time between newly received packet bytes. Otherwise a newly received packet
+ *         should be ignored. This RTU transport layer supports this monitoring if this
+ *         configuration macro is > 0, which is recommended.
+ * 
  *         However, not all RTU hardware on the market fullfills this requirement. To
- *         be able to still communicate with those types of devices, you can disable
- *         this 1.5 character timeout monitoring. In this case you can override this
- *         configuration by adding a macro with the same name, but with a value of 0
- *         (disable), to "tbx_conf.h".
+ *         make it easier to get communication with other Modbus RTU devices working,
+ *         the monitoring of the max. 1.5 character timeout is disabled by default. 
+ *             
+ *         In case you know that all devices on your Modbus RTU network adhere to the
+ *         max. 1.5 character time requirement or you need to pass Modbus compliance
+ *         testing, you can enable the 1.5 character timeout detection. To override this
+ *         default configuration, you can add a macro with the same name, but with a
+ *         value of 1 (enable), to "tbx_conf.h".
  */
-#define TBX_MB_RTU_T1_5_TIMEOUT_ENABLE      (1U)
+#define TBX_MB_RTU_T1_5_TIMEOUT_ENABLE      (0U)
 #endif
 
 /** \brief Unique context type to identify a context as being an RTU transport layer. */
