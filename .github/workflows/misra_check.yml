@@ -12,17 +12,17 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get install cppcheck
       - name: Checkout tests repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: feaser/microtbx-tests
           submodules: true
       - name: Checkout microtbx repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: feaser/microtbx
           path: 'third_party/microtbx'
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: 'third_party/microtbx-modbus'
       - name: Generate build environment
