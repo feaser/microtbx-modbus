@@ -525,11 +525,16 @@ static uint8_t TbxMbRtuTransmit(tTbxMbTp transport)
        */
       uint16_t waitTimeoutMs = (waitTimeoutTicks + 19U) / 20U;
       /* Wait for the transition from INIT to IDLE with the calculated timeout. Note
-       * that there is not need to check the return value. This would just mean that
-       * no transition to IDLE took place before the timeout. The IDLE state check if
+       * that there is no need to check the return value. This would just mean that
+       * no transition to IDLE took place before the timeout. The IDLE state check is
        * done later on in this function, so that error situation is already handled.
+       * Make sure to briefly leave the critical section for calling TbxMbOsalSemTake().
+       * With an RTOS this could lead to a context switch for which interrupts need to
+       * be enabled.
        */
+      TbxCriticalSectionExit();
       (void)TbxMbOsalSemTake(tpCtx->initStateExitSem, waitTimeoutMs);
+      TbxCriticalSectionEnter();
     }
     /* New transmissions are only possible from the IDLE state. */
     uint8_t okayToTransmit = TBX_FALSE;
