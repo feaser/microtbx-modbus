@@ -49,8 +49,11 @@ typedef struct
   void               * instancePtr;              /**< Reserved for C++ wrapper.        */
   tTbxMbEventPoll      pollFcn;                  /**< Event poll function.             */
   tTbxMbEventProcess   processFcn;               /**< Event process function.          */
-  /* Private members. */
+  /* The type member must always be the first one after the three entries that match
+   * those in tTbxMbEventCtx.
+   */
   uint8_t              type;                     /**< Context type.                    */
+  /* Private client channel specific methods and members. */
   tTbxMbTpCtx        * tpCtx;                    /**< Assigned transport layer context.*/
   uint16_t             responseTimeout;          /**< Maximum response wait time (ms). */
   uint16_t             turnaroundDelay;          /**< Delay (ms) after broadcast PDU.  */

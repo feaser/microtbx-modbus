@@ -123,7 +123,7 @@ tTbxMbServer TbxMbServerCreate(tTbxMbTp transport)
       TBX_ASSERT((tpCtx->transmitFcn != NULL) && (tpCtx->receptionDoneFcn != NULL) &&
                  (tpCtx->getRxPacketFcn != NULL) && (tpCtx->getTxPacketFcn != NULL) &&
                  (tpCtx->channelCtx == NULL));              
-      /* Initialize the channel context. Start by crosslinking the transport layer. */
+      /* Initialize the channel context. */
       newServerCtx->type = TBX_MB_SERVER_CONTEXT_TYPE;
       newServerCtx->instancePtr = NULL;
       newServerCtx->pollFcn = NULL;
@@ -135,6 +135,7 @@ tTbxMbServer TbxMbServerCreate(tTbxMbTp transport)
       newServerCtx->readHoldingRegFcn = NULL;
       newServerCtx->writeHoldingRegFcn = NULL;
       newServerCtx->customFunctionFcn = NULL;
+      /* Crosslink the transport layer. */
       newServerCtx->tpCtx = tpCtx;
       newServerCtx->tpCtx->channelCtx = newServerCtx;
       newServerCtx->tpCtx->isClient = TBX_FALSE;
@@ -882,8 +883,8 @@ static void TbxMbServerFC03ReadHoldingRegs(tTbxMbServerCtx       * context,
 **
 ****************************************************************************************/
 static void TbxMbServerFC04ReadInputRegs(tTbxMbServerCtx       * context,
-                                        tTbxMbTpPacket  const * rxPacket,
-                                        tTbxMbTpPacket        * txPacket)
+                                         tTbxMbTpPacket  const * rxPacket,
+                                         tTbxMbTpPacket        * txPacket)
 {
   /* Verify parameters. */
   TBX_ASSERT((context != NULL) && (rxPacket != NULL) && (txPacket != NULL));

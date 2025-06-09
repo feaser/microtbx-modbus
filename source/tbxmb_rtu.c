@@ -81,9 +81,57 @@
 
 
 /****************************************************************************************
+* Type definitions
+****************************************************************************************/
+/** \brief   Modbus RTU transport layer context that groups all transport layer specific
+ *           data. It's what the tTbxMbTp opaque pointer points to when using the RTU
+ *           transport layer. Think of it as this type having tTbxMbTpCtx as its base.
+ *           Therefore, the first entries must always be an exact copy for those in
+ *           tTbxMbTpCtx.
+ */
+typedef struct
+{
+  /* Event interface methods. The following three entries must always be at the start
+   * and exactly match those in tTbxMbEventCtx. Think of it as the base that this struct
+   * derives from. 
+   */
+  void                  * instancePtr;           /**< Reserved for C++ wrapper.        */
+  tTbxMbEventPoll         pollFcn;               /**< Event poll function.             */
+  tTbxMbEventProcess      processFcn;            /**< Event process function.          */
+  /* The type member must always be the first one after the three entries that match
+   * those in tTbxMbEventCtx.
+   */
+  uint8_t                 type;                  /**< Context type.                    */
+  /* Public methods and members shared between all transport layers. These must always
+   * follow the type member and be in exactly the same order for all transport layers.
+   */
+  void                  * channelCtx;            /**< Assigned channel context.        */
+  uint8_t                 isClient;              /**< Info about the channel context.  */
+  tTbxMbTpDiagInfo        diagInfo;              /**< Diagnostics information.         */
+  tTbxMbTpTransmit        transmitFcn;           /**< Packet transmit function.        */
+  tTbxMbTpReceptionDone   receptionDoneFcn;      /**< Rx packet processing done fcn.   */
+  tTbxMbTpGetRxPacket     getRxPacketFcn;        /**< Obtain Rx packet access function.*/
+  tTbxMbTpGetTxPacket     getTxPacketFcn;        /**< Obtain Rx packet access function.*/
+  /* Private RTU transport layer specific methods and members. */
+  uint8_t                 nodeAddr;              /**< Node address.                    */
+  tTbxMbUartPort          port;                  /**< UART port                        */
+  tTbxMbTpPacket          txPacket;              /**< Transmit packet buffer.          */
+  uint16_t                txDoneTime;            /**< Tx packet done timestamp.        */
+  tTbxMbTpPacket          rxPacket;              /**< Reception packet buffer.         */
+  uint16_t                rxTime;                /**< Last Rx byte timestamp.          */
+  uint16_t                rxAduWrIdx;            /**< ADU Rx packet write index.       */
+  uint8_t                 rxAduOkay;             /**< ADU Rx packet OK/NOK flag.       */
+  uint16_t                t1_5Ticks;             /**< 1.5 character time in 50us ticks.*/
+  uint16_t                t3_5Ticks;             /**< 3.5 character time in 50us ticks.*/
+  uint8_t                 state;                 /**< Communication state.             */
+  tTbxMbOsalSem           initStateExitSem;      /**< Exit INIT state semaphore.       */
+} tTbxMbTpRtuCtx;
+
+
+/****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
-static void             TbxMbRtuPoll            (tTbxMbTp               transport);
+static void             TbxMbRtuPoll            (void                 * context);
 
 static uint8_t          TbxMbRtuTransmit        (tTbxMbTp               transport);
 
@@ -112,7 +160,7 @@ static uint16_t         TbxMbRtuCalculatCrc     (uint8_t        const * data,
  *         transport layer handle that uses a specific serial port, in a run-time
  *         efficient way.
  */
-static volatile tTbxMbTpCtx * tbxMbRtuCtx[TBX_MB_UART_NUM_PORT] = { 0 };
+static volatile tTbxMbTpRtuCtx * tbxMbTpRtuCtx[TBX_MB_UART_NUM_PORT] = { 0 };
 
 
 /************************************************************************************//**
@@ -158,7 +206,7 @@ tTbxMbTp TbxMbRtuCreate(uint8_t            nodeAddr,
       (parity < TBX_MB_UART_NUM_PARITY))
   {
     /* Allocate memory for the new transport context. */
-    tTbxMbTpCtx * newTpCtx = TbxMemPoolAllocateAuto(sizeof(tTbxMbTpCtx));
+    tTbxMbTpRtuCtx * newTpCtx = TbxMemPoolAllocateAuto(sizeof(tTbxMbTpRtuCtx));
     /* Verify memory allocation of the transport context. */
     TBX_ASSERT(newTpCtx != NULL);
     /* Only continue if the memory allocation succeeded. */
@@ -184,7 +232,7 @@ tTbxMbTp TbxMbRtuCreate(uint8_t            nodeAddr,
       newTpCtx->diagInfo.srvMsgCnt = 0U;
       newTpCtx->diagInfo.srvNoRespCnt = 0U;
       /* Store the transport context in the lookup table. */
-      tbxMbRtuCtx[port] = newTpCtx;
+      tbxMbTpRtuCtx[port] = newTpCtx;
       /* Initialize the port. Note the RTU always uses 8 databits. */
       TbxMbUartInit(port, baudrate, TBX_MB_UART_8_DATABITS, stopbits, parity,
                     TbxMbRtuTransmitComplete, TbxMbRtuDataReceived);
@@ -264,14 +312,14 @@ void TbxMbRtuFree(tTbxMbTp transport)
   if (transport != NULL)
   {
     /* Convert the TP channel pointer to the context structure. */
-    tTbxMbTpCtx * tpCtx = (tTbxMbTpCtx *)transport;
+    tTbxMbTpRtuCtx * tpCtx = (tTbxMbTpRtuCtx *)transport;
     /* Sanity check on the context type. */
     TBX_ASSERT(tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE);
     /* Release the semaphore used for syncing to the INIT to IDLE state transition. */
     TbxMbOsalSemFree(tpCtx->initStateExitSem);
     TbxCriticalSectionEnter();
     /* Remove the channel from the lookup table. */
-    tbxMbRtuCtx[tpCtx->port] = NULL;
+    tbxMbTpRtuCtx[tpCtx->port] = NULL;
     /* Invalidate the context to protect it from accidentally being used afterwards. */
     tpCtx->type = 0U;
     tpCtx->pollFcn = NULL;
@@ -287,19 +335,20 @@ void TbxMbRtuFree(tTbxMbTp transport)
 ** \brief     Event polling function that is automatically called during each call of
 **            TbxMbEventTask(), if activated. Use the TBX_MB_EVENT_ID_START_POLLING and
 **            TBX_MB_EVENT_ID_STOP_POLLING events to activate and deactivate.
-** \param     transport Handle to RTU transport layer object.
+** \param     context Opaque context pointer, which in this case is the handle to the RTU
+**            transport layer object.
 **
 ****************************************************************************************/
-static void TbxMbRtuPoll(tTbxMbTp transport)
+static void TbxMbRtuPoll(void * context)
 {
   /* Verify parameters. */
-  TBX_ASSERT(transport != NULL);
+  TBX_ASSERT(context != NULL);
 
   /* Only continue with valid parameters. */
-  if (transport != NULL)
+  if (context != NULL)
   {
-    /* Convert the TP channel pointer to the context structure. */
-    tTbxMbTpCtx * tpCtx = (tTbxMbTpCtx *)transport;
+    /* Convert the opaque context point to a TP channel context structure. */
+    tTbxMbTpRtuCtx * tpCtx = (tTbxMbTpRtuCtx *)context;
     /* Sanity check on the context type. */
     TBX_ASSERT(tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE);
     /* Filter on the current state. */
@@ -367,11 +416,28 @@ static void TbxMbRtuPoll(tTbxMbTp transport)
             /* Newly received packet is valid. */
             else
             {
-              /* Post an event to the linked channel for further processing of the PDU.*/
+              /* Prepare event for further processing of the received PDU. */
               tTbxMbEvent pduRxEvent;
+              TbxCriticalSectionEnter();
               pduRxEvent.context = tpCtx->channelCtx;
+              TbxCriticalSectionExit();
               pduRxEvent.id = TBX_MB_EVENT_ID_PDU_RECEIVED;
-              TbxMbOsalEventPost(&pduRxEvent, TBX_FALSE);
+              /* Only post the event if a channel is actually linked. */
+              if (pduRxEvent.context != NULL)
+              {
+                /* Post an event to the linked channel for further processing of the
+                 * PDU.
+                 */
+                TbxMbOsalEventPost(&pduRxEvent, TBX_FALSE);
+              }
+              /* PDU received but not actually linked to a channel. */
+              else
+              {
+                /* Discard the newly received frame by transitioning back to IDLE. */
+                TbxCriticalSectionEnter();
+                tpCtx->state = TBX_MB_RTU_STATE_IDLE;
+                TbxCriticalSectionExit();
+              }
             }
           }
           /* Frame was marked as not okay (NOK) during its reception. Most likely a
@@ -413,7 +479,9 @@ static void TbxMbRtuPoll(tTbxMbTp transport)
           /* Post an event to the linked channel for inform them that the PDU
            * transmission completed. Note that it's okay to reuse the event local.
            */
+          TbxCriticalSectionEnter();
           newEvent.context = tpCtx->channelCtx;
+          TbxCriticalSectionExit();
           newEvent.id = TBX_MB_EVENT_ID_PDU_TRANSMITTED;
           TbxMbOsalEventPost(&newEvent, TBX_FALSE);
         }
@@ -479,19 +547,17 @@ static uint8_t TbxMbRtuTransmit(tTbxMbTp transport)
   if (transport != NULL)
   {
     /* Convert the TP channel pointer to the context structure. */
-    tTbxMbTpCtx * tpCtx = (tTbxMbTpCtx *)transport;
+    tTbxMbTpRtuCtx * tpCtx = (tTbxMbTpRtuCtx *)transport;
     /* Sanity check on the context type. */
     TBX_ASSERT(tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE);
     /* Are we requested to transmit an exception response? */
     TbxCriticalSectionEnter();
-    uint8_t codeCopy = tpCtx->txPacket.pdu.code;
-    TbxCriticalSectionExit();
-    if ((codeCopy & TBX_MB_FC_EXCEPTION_MASK) == TBX_MB_FC_EXCEPTION_MASK)
+    if ((tpCtx->txPacket.pdu.code & TBX_MB_FC_EXCEPTION_MASK) == 
+        TBX_MB_FC_EXCEPTION_MASK)
     {
       /* Increment the total number of exception responses. */
       tpCtx->diagInfo.busExcpErrCnt++;
     }
-    TbxCriticalSectionEnter();
     /* Still in the INIT state and configured as a client? */
     if ( (tpCtx->state == TBX_MB_RTU_STATE_INIT) && (tpCtx->isClient == TBX_TRUE) )
     {
@@ -572,8 +638,8 @@ static uint8_t TbxMbRtuTransmit(tTbxMbTp transport)
       /* Populate the ADU head. For RTU it is the address field right in front of the
        * PDU. For client->server transfers the address field is the servers's node
        * address (unicast) or 0 (broadcast) and the client channel will have stored it in
-       * the txPacket.node element. For server-client transfers it always the servers's
-       * node address as stored when creating the RTU transport layer context.
+       * the txPacket.node element. For server->client transfers it's always the
+       * servers's node address as stored when creating the RTU transport layer context.
        */
       aduPtr[0] = (tpCtx->isClient == TBX_TRUE) ? tpCtx->txPacket.node : tpCtx->nodeAddr;
       /* Populate the ADU tail. For RTU it is the CRC16 right after the PDU's data. */
@@ -596,7 +662,9 @@ static uint8_t TbxMbRtuTransmit(tTbxMbTp transport)
     if (result == TBX_ERROR)
     {
       /* Increment the total number of not sent responses. */
+      TbxCriticalSectionEnter();
       tpCtx->diagInfo.srvNoRespCnt++;
+      TbxCriticalSectionExit();
     }
   }
   /* Give the result back to the caller. */
@@ -621,7 +689,7 @@ static void TbxMbRtuReceptionDone(tTbxMbTp transport)
   if (transport != NULL)
   {
     /* Convert the TP channel pointer to the context structure. */
-    tTbxMbTpCtx * tpCtx = (tTbxMbTpCtx *)transport;
+    tTbxMbTpRtuCtx * tpCtx = (tTbxMbTpRtuCtx *)transport;
     /* Sanity check on the context type. */
     TBX_ASSERT(tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE);
     /* This function should only be called in the VALIDATION state. Verify this. */
@@ -665,7 +733,7 @@ static tTbxMbTpPacket * TbxMbRtuGetRxPacket(tTbxMbTp transport)
   if (transport != NULL)
   {
     /* Convert the TP channel pointer to the context structure. */
-    tTbxMbTpCtx * tpCtx = (tTbxMbTpCtx *)transport;
+    tTbxMbTpRtuCtx * tpCtx = (tTbxMbTpRtuCtx *)transport;
     /* Sanity check on the context type. */
     TBX_ASSERT(tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE);
     /* Access to the reception packet by a channel is only allowed in the VALIDATION
@@ -706,7 +774,7 @@ static tTbxMbTpPacket * TbxMbRtuGetTxPacket(tTbxMbTp transport)
   if (transport != NULL)
   {
     /* Convert the TP channel pointer to the context structure. */
-    tTbxMbTpCtx * tpCtx = (tTbxMbTpCtx *)transport;
+    tTbxMbTpRtuCtx * tpCtx = (tTbxMbTpRtuCtx *)transport;
     /* Sanity check on the context type. */
     TBX_ASSERT(tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE);
     /* Access to the transmission packet by a channel is only allowed outside the 
@@ -746,7 +814,7 @@ static uint8_t TbxMbRtuValidate(tTbxMbTp transport)
   if (transport != NULL)
   {
     /* Convert the TP channel pointer to the context structure. */
-    tTbxMbTpCtx * tpCtx = (tTbxMbTpCtx *)transport;
+    tTbxMbTpRtuCtx * tpCtx = (tTbxMbTpRtuCtx *)transport;
     /* Sanity check on the context type. */
     TBX_ASSERT(tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE);
     /* This function should only be called in the VALIDATION state. Verify this. */
@@ -764,7 +832,9 @@ static uint8_t TbxMbRtuValidate(tTbxMbTp transport)
       /* Increment the total number of received packets, regardless of addressing or
        * CRC.
        */
+      TbxCriticalSectionEnter();
       tpCtx->diagInfo.busMsgCnt++;
+      TbxCriticalSectionExit();
       /* The ADU for an RTU packet starts at one byte before the PDU, which is the last
        * byte of head[]. Get the pointer of where the ADU starts in the rxPacket.
        */
@@ -786,7 +856,9 @@ static uint8_t TbxMbRtuValidate(tTbxMbTp transport)
       if (packetCrc != calcCrc)
       {
         /* Increment the total number of received packets with an incorrect CRC. */
+        TbxCriticalSectionEnter();
         tpCtx->diagInfo.busCommErrCnt++;
+        TbxCriticalSectionExit();
       }
       /* CRC16 check passed. */
       else
@@ -803,7 +875,9 @@ static uint8_t TbxMbRtuValidate(tTbxMbTp transport)
             /* Increment the total number of received packets with a correct CRC, that
              * were addressed to us. Either via unicast of broadcast.
              */
+            TbxCriticalSectionEnter();
             tpCtx->diagInfo.srvMsgCnt++;
+            TbxCriticalSectionExit();
             /* Set the node address in the txPacket node element. It is used during
              * transmission to decide if the actual sending of the response should be
              * suppressed, which is the case for TBX_MB_TP_NODE_ADDR_BROADCAST. No need
@@ -856,12 +930,12 @@ static void TbxMbRtuTransmitComplete(tTbxMbUartPort port)
   if (port < TBX_MB_UART_NUM_PORT)
   {
     /* Obtain transport layer context linked to UART port of this event. */
-    tTbxMbTpCtx volatile * tpCtx = tbxMbRtuCtx[port];
+    tTbxMbTpRtuCtx volatile * tpCtx = tbxMbTpRtuCtx[port];
     /* Verify transport layer context. */
     TBX_ASSERT(tpCtx != NULL)
     /* Only continue with a valid transport layer context. Note that there is no need
      * to also check the transport layer type, because only RTU types are stored in the
-     * tbxMbRtuCtx[] array.
+     * tbxMbTpRtuCtx[] array.
      */
     if (tpCtx != NULL)
     {
@@ -923,12 +997,12 @@ static void TbxMbRtuDataReceived(tTbxMbUartPort         port,
       (len > 0U))
   {
     /* Obtain transport layer context linked to UART port of this event. */
-    tTbxMbTpCtx volatile * tpCtx = tbxMbRtuCtx[port];
+    tTbxMbTpRtuCtx volatile * tpCtx = tbxMbTpRtuCtx[port];
     /* Verify transport layer context. */
     TBX_ASSERT(tpCtx != NULL)
     /* Only continue with a valid transport layer context. Note that there is no need
      * to also check the transport layer type, because only RTU types are stored in the
-     * tbxMbRtuCtx[] array.
+     * tbxMbTpRtuCtx[] array.
      */
     if (tpCtx != NULL)
     {
