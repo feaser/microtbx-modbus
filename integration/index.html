@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Integration - MicroTBX-Modbus User Manual</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Integration";
+        var mkdocs_page_input_path = "integration.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> MicroTBX-Modbus User Manual
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../gettingstarted/">Getting started</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../licensing/">Dual licensing</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../misra/">MISRA compliance</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Integration</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#classical-integration">Classical integration</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#cmake-integration">CMake integration</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#adjust-the-port">Adjust the port</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#usage">Usage</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../configuration/">Configuration</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../portation/">Portation</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../extras/">Extras</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../apiref/">API reference</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">MicroTBX-Modbus User Manual</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Integration</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/feaser/microtbx-modbus/edit/master/docs/integration.md" class="icon icon-github"> Edit on GitHub</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="integration">Integration</h1>
+<p>To make the MicroTBX-Modbus functionality available to your embedded software project, you need to integrate its source code into your project. This section of the user manual walks you through this process step-by-step. It covers two integration approaches:</p>
+<ul>
+<li>
+<p>Classical integration, where you add the source files manually to your project and configure your build environment accordingly.</p>
+</li>
+<li>
+<p>CMake integration, where you leverage the power of CMake to do the heavy-lifting.</p>
+</li>
+</ul>
+<p>As a reference, you can look at the separate repository with <a href="https://github.com/feaser/microtbx-demos/tree/main/demos/modbus">MicroTBX-Modbus demo programs</a>. It includes demo programs for different microcontroller boards that are preconfigured and already have MicroTBX-Modbus fully integrated.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<p>Since MicroTBX-Modbus builds upon the MicroTBX base component, make sure you already integrated the MicroTBX base component into your embedded software project. You can find the MicroTBX integration instructions in the <a href="https://feaser.github.io/microtbx/#integration">MicroTBX user manual</a>.</p>
+<h2 id="classical-integration">Classical integration</h2>
+<p>Adding MicroTBX-Modbus to your software project is a simple five step process: </p>
+<ol>
+<li>Copy all files from the <code>source</code> directory to your project.</li>
+<li>Copy the <code>source/template/tbxmb_port.c</code> port template source file to your project.</li>
+<li>Copy the <code>source/osal/tbxmb_XXX.c</code> for your selected operating system to your project.</li>
+<li>Configure your project such that the added <code>.c</code> files are compiled and linked during a build.</li>
+<li>Add the directories that contain the <code>.h</code> files to your compiler's include search path.</li>
+</ol>
+<h2 id="cmake-integration">CMake integration</h2>
+<p>The use of <a href="https://cmake.org/">CMake</a> to manage the build environment rapidly gains popularity among embedded software developers. It makes adding third-party libraries, such as MicroTBX-Modbus, a breeze:</p>
+<ol>
+<li>Copy the entire MicroTBX-Modbus directory into your project. Manually or as a <a href="https://git-scm.com/book/en/v2/Git-Tools-Submodules">Git submodule</a>.</li>
+<li>Use <code>add_subdirectory()</code> to register the MicroTBX-Modbus interface library. </li>
+<li>Copy the <code>source/template/tbxmb_port.c</code> port template source file to your project and add it as a source file to <code>add_executable()</code>. </li>
+<li>Add the <code>microtbx-modbus</code> interface library to <code>target_link_libraries()</code>. </li>
+<li>Add the <code>microtbx-modbus-osal-XXX</code> interface library for your selected operating system to <code>target_link_libraries()</code>. </li>
+</ol>
+<p>Minimal <code>CMakeLists.txt</code> example, if you copied MicroTBX-Modbus to directory <code>third_party/microtbx-modbus</code>:</p>
+<pre><code class="language-cmake">project(MyProject)
+
+add_subdirectory(third_party/microtbx-modbus)
+
+add_executable(MyProject
+    main.c
+    tbxmb_port.c
+)
+
+target_link_libraries(MyProject
+    microtbx-modbus
+    microtbx-modbus-osal-superloop
+)
+</code></pre>
+<h2 id="adjust-the-port">Adjust the port</h2>
+<p>The MicroTBX-Modbus source code itself is fully hardware independent. The <code>tbxmb_port.c</code> port source file implements the hardware specifics. This means that you only need to update this source file, to get MicroTBX-Modbus working on your specific microcontroller system. You can find detailed instructions, on how to port MicroTBX-Modbus to your platform, in the <a href="../portation/">portation</a> section of this user manual.</p>
+<h2 id="usage">Usage</h2>
+<p>Add the following lines to each source-file, where you intend to make use of MicroTBX-Modbus:</p>
+<pre><code class="language-c">#include &lt;microtbx.h&gt;
+#include &lt;microtbxmodbus.h&gt;
+</code></pre>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../misra/" class="btn btn-neutral float-left" title="MISRA compliance"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../configuration/" class="btn btn-neutral float-right" title="Configuration">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/feaser/microtbx-modbus" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../misra/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../configuration/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
