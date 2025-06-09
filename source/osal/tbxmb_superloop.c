@@ -194,16 +194,7 @@ tTbxMbOsalSem TbxMbOsalSemCreate(void)
   tTbxMbOsalSem result = NULL;
 
   /* Allocate memory for the new semaphore context. */
-  tTbxMbOsalSemCtx * newSemCtx = TbxMemPoolAllocate(sizeof(tTbxMbOsalSemCtx));
-  /* Automatically increase the memory pool, if it was too small. */
-  if (newSemCtx == NULL)
-  {
-    /* No need to check the return value, because if it failed, the following
-     * allocation fails too, which is verified later on.
-     */
-    (void)TbxMemPoolCreate(1U, sizeof(tTbxMbOsalSemCtx));
-    newSemCtx = TbxMemPoolAllocate(sizeof(tTbxMbOsalSemCtx));      
-  }
+  tTbxMbOsalSemCtx * newSemCtx = TbxMemPoolAllocateAuto(sizeof(tTbxMbOsalSemCtx));
   /* Verify memory allocation of the semaphore context. */
   TBX_ASSERT(newSemCtx != NULL);
   /* Only continue if the memory allocation succeeded. */

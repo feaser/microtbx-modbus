@@ -108,16 +108,7 @@ tTbxMbServer TbxMbServerCreate(tTbxMbTp transport)
   if (transport != NULL)
   {
     /* Allocate memory for the new channel context. */
-    tTbxMbServerCtx * newServerCtx = TbxMemPoolAllocate(sizeof(tTbxMbServerCtx));
-    /* Automatically increase the memory pool, if it was too small. */
-    if (newServerCtx == NULL)
-    {
-      /* No need to check the return value, because if it failed, the following
-       * allocation fails too, which is verified later on.
-       */
-      (void)TbxMemPoolCreate(1U, sizeof(tTbxMbServerCtx));
-      newServerCtx = TbxMemPoolAllocate(sizeof(tTbxMbServerCtx));      
-    }
+    tTbxMbServerCtx * newServerCtx = TbxMemPoolAllocateAuto(sizeof(tTbxMbServerCtx));
     /* Verify memory allocation of the channel context. */
     TBX_ASSERT(newServerCtx != NULL);
     /* Only continue if the memory allocation succeeded. */

@@ -158,16 +158,7 @@ tTbxMbTp TbxMbRtuCreate(uint8_t            nodeAddr,
       (parity < TBX_MB_UART_NUM_PARITY))
   {
     /* Allocate memory for the new transport context. */
-    tTbxMbTpCtx * newTpCtx = TbxMemPoolAllocate(sizeof(tTbxMbTpCtx));
-    /* Automatically increase the memory pool, if it was too small. */
-    if (newTpCtx == NULL)
-    {
-      /* No need to check the return value, because if it failed, the following
-       * allocation fails too, which is verified later on.
-       */
-      (void)TbxMemPoolCreate(1U, sizeof(tTbxMbTpCtx));
-      newTpCtx = TbxMemPoolAllocate(sizeof(tTbxMbTpCtx));      
-    }
+    tTbxMbTpCtx * newTpCtx = TbxMemPoolAllocateAuto(sizeof(tTbxMbTpCtx));
     /* Verify memory allocation of the transport context. */
     TBX_ASSERT(newTpCtx != NULL);
     /* Only continue if the memory allocation succeeded. */
