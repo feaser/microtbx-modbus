@@ -40,14 +40,6 @@
 /****************************************************************************************
 * Type definitions
 ****************************************************************************************/
-/** \brief Event task interface function to detect events in a polling manner. */
-typedef void (* tTbxMbEventPoll)   (void        * context);
-
-
-/** \brief Event processor interface function for processing events. */
-typedef void (* tTbxMbEventProcess)(tTbxMbEvent * event);
-
-
 /** \brief Minimal context for accessing the event poll and process functions. Think of
  *         it as the base type for all the other context (client/server/tp). That's the
  *         reason why these other context start with similar entries at exactly the same

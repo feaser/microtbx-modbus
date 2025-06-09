@@ -93,14 +93,6 @@ typedef struct
 } tTbxMbTpDiagInfo;
 
 
-/** \brief Transport layer interface function to detect events in a polling manner. */
-typedef void (* tTbxMbTpPoll)                   (void        * context);
-
-
-/** \brief Transport layer interface function for processing events. */
-typedef void (* tTbxMbTpProcess)                (tTbxMbEvent * event);
-
-
 /** \brief Transport layer interface function to start the transmission of the data 
  *         packet, stored in the transport layer context. Use getTxPacketFcn() to
  *         obtain access to the transmit packet.
@@ -153,8 +145,8 @@ typedef struct
    * derives from. 
    */
   void                  * instancePtr;           /**< Reserved for C++ wrapper.        */
-  tTbxMbTpPoll            pollFcn;               /**< Event poll function.             */
-  tTbxMbTpProcess         processFcn;            /**< Event process function.          */
+  tTbxMbEventPoll         pollFcn;               /**< Event poll function.             */
+  tTbxMbEventProcess      processFcn;            /**< Event process function.          */
   /* Private members. */
   uint8_t                 type;                  /**< Context type.                    */
   uint8_t                 nodeAddr;              /**< Node address (RTU/ASCII only).   */

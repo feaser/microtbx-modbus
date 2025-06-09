@@ -61,6 +61,14 @@ typedef struct
 } tTbxMbEvent;
 
 
+/** \brief Event task interface function to detect events in a polling manner. */
+typedef void (* tTbxMbEventPoll)   (void        * context);
+
+
+/** \brief Event processor interface function for processing events. */
+typedef void (* tTbxMbEventProcess)(tTbxMbEvent * event);
+
+
 #ifdef __cplusplus
 }
 #endif
