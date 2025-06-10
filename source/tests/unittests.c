@@ -50,6 +50,138 @@
 /** \brief Keeps track of how often an assertion got triggered. */
 uint32_t assertionCnt = 0;
 
+/** \brief Modbus server coils. */
+uint8_t mbServerCoils[2] = { TBX_OFF, TBX_OFF };
+
+/** \brief Modbus server holding registers. */
+uint16_t mbServerHoldingRegs[2] = { 0U, 0U };
+
+
+/************************************************************************************//**
+** \brief     Reads a data element from the discrete inputs data table.
+** \details   Note that the element is specified by its zero-based address in the range
+**            0 - 65535, not its element number (1 - 65536).
+** \param     channel Handle to the Modbus server channel object that triggered the 
+**            callback.
+** \param     addr Element address (0..65535).
+** \param     value Pointer to write the value of the input to. Use TBX_ON if the input
+**            is on, TBX_OFF otherwise.
+** \return    TBX_MB_SERVER_OK if successful, TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR if the
+**            specific data element address is not supported by this server, 
+**            TBX_MB_SERVER_ERR_DEVICE_FAILURE otherwise.
+**
+****************************************************************************************/
+tTbxMbServerResult mbServer_ReadInput(tTbxMbServer channel, uint16_t addr,
+                                      uint8_t * value)
+{
+  tTbxMbServerResult result = TBX_MB_SERVER_OK;
+
+  /* Filter on the requested discrete input address. */
+  switch (addr)
+  {
+  case 10000U:
+    *value = TBX_ON;
+    break;
+
+  case 10001U:
+    *value = TBX_OFF;
+    break;
+
+  default:
+  /* Unsupported discrete input address. */
+  result = TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
+  break;
+  }
+
+  /* Give the result back to the caller. */
+  return result;
+} /*** end of mbServer_ReadInput ***/
+
+
+/************************************************************************************//**
+** \brief     Reads a data element from the coils data table.
+** \details   Note that the element is specified by its zero-based address in the range
+**            0 - 65535, not its element number (1 - 65536).
+** \param     channel Handle to the Modbus server channel object that triggered the 
+**            callback.
+** \param     addr Element address (0..65535).
+** \param     value Pointer to write the value of the coil to. TBX_ON if the coil is
+**            activate, TBX_OFF otherwise.
+** \return    TBX_MB_SERVER_OK if successful, TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR if the
+**            specific data element address is not supported by this server, 
+**            TBX_MB_SERVER_ERR_DEVICE_FAILURE otherwise.
+**
+****************************************************************************************/
+static tTbxMbServerResult mbServer_ReadCoil(tTbxMbServer channel, uint16_t addr,
+                                            uint8_t * value)
+{
+  tTbxMbServerResult result = TBX_MB_SERVER_OK;
+
+  TBX_UNUSED_ARG(channel);
+
+  /* Filter on the requested coil address. */
+  switch (addr)
+  {
+  case 0U:
+    *value = mbServerCoils[0];
+    break;
+
+  case 1U:
+    *value = mbServerCoils[1];
+    break;
+
+  default:
+    /* Unsupported coil address. */
+    result = TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
+    break;
+  }
+
+  /* Give the result back to the caller. */
+  return result;
+} /*** end of mbServer_ReadCoil ***/
+
+
+/************************************************************************************//**
+** \brief     Writes a data element to the coils data table.
+** \details   Note that the element is specified by its zero-based address in the range
+**            0 - 65535, not its element number (1 - 65536).
+** \param     channel Handle to the Modbus server channel object that triggered the 
+**            callback.
+** \param     addr Element address (0..65535).
+** \param     value Coil value. Use TBX_ON to activate the coil, TBX_OFF otherwise.
+** \return    TBX_MB_SERVER_OK if successful, TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR if the
+**            specific data element address is not supported by this server, 
+**            TBX_MB_SERVER_ERR_DEVICE_FAILURE otherwise.
+**
+****************************************************************************************/
+static tTbxMbServerResult mbServer_WriteCoil(tTbxMbServer channel, uint16_t addr,
+                                             uint8_t value)
+{
+tTbxMbServerResult result = TBX_MB_SERVER_OK;
+
+TBX_UNUSED_ARG(channel);
+
+  /* Filter on the requested coil address. */
+  switch (addr)
+  {
+  case 0U:
+    mbServerCoils[0] = value;
+    break;
+
+  case 1U:
+    mbServerCoils[1] = value;
+    break;
+
+  default:
+    /* Unsupported coil address. */
+    result = TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
+    break;
+  }
+
+/* Give the result back to the caller. */
+return result;
+} /*** end of mbServer_WriteCoil ***/
+
 
 /************************************************************************************//**
 ** \brief     Reads a data element from the input registers data table.
@@ -67,8 +199,8 @@ uint32_t assertionCnt = 0;
 **            TBX_MB_SERVER_ERR_DEVICE_FAILURE otherwise.
 **
 ****************************************************************************************/
-static tTbxMbServerResult mbServer_ReadInputReg(tTbxMbServer channel, uint16_t addr, 
-                                                uint16_t * value)
+tTbxMbServerResult mbServer_ReadInputReg(tTbxMbServer channel, uint16_t addr, 
+                                         uint16_t * value)
 {
   tTbxMbServerResult result = TBX_MB_SERVER_OK;
 
@@ -93,6 +225,147 @@ static tTbxMbServerResult mbServer_ReadInputReg(tTbxMbServer channel, uint16_t a
   /* Give the result back to the caller. */
   return result;
 } /*** end of mbServer_ReadInputReg ***/
+
+
+/************************************************************************************//**
+** \brief     Reads a data element from the holding registers data table.
+** \details   Note that the element is specified by its zero-based address in the range
+**            0 - 65535, not its element number (1 - 65536).
+**            The value of the holding register in already in your CPUs native endianess.
+** \param     channel Handle to the Modbus server channel object that triggered the 
+**            callback.
+** \param     addr Element address (0..65535).
+** \param     value Pointer to write the value of the holding register to.
+** \return    TBX_MB_SERVER_OK if successful, TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR if the
+**            specific data element address is not supported by this server, 
+**            TBX_MB_SERVER_ERR_DEVICE_FAILURE otherwise.
+**
+****************************************************************************************/
+tTbxMbServerResult mbServer_ReadHoldingReg(tTbxMbServer channel, uint16_t addr, 
+                                           uint16_t * value)
+{
+  tTbxMbServerResult result = TBX_MB_SERVER_OK;
+
+  TBX_UNUSED_ARG(channel);
+
+  /* Filter on the requested holding register address. */
+  switch (addr)
+  {
+  case 40000U:
+    *value = mbServerHoldingRegs[0];
+    break;
+
+  case 40001U:
+    *value = mbServerHoldingRegs[1];
+    break;
+
+  default:
+    /* Unsupported holding register address. */
+    result = TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
+    break;
+  }
+
+  /* Give the result back to the caller. */
+  return result;
+} /*** end of mbServer_ReadHoldingReg ***/
+
+
+/************************************************************************************//**
+** \brief     Writes a data element to the holding registers data table.
+** \details   Note that the element is specified by its zero-based address in the range
+**            0 - 65535, not its element number (1 - 65536).
+**            The value of the holding register in already in your CPUs native endianess.
+** \param     channel Handle to the Modbus server channel object that triggered the 
+**            callback.
+** \param     addr Element address (0..65535).
+** \param     value Value of the holding register.
+** \return    TBX_MB_SERVER_OK if successful, TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR if the
+**            specific data element address is not supported by this server, 
+**            TBX_MB_SERVER_ERR_DEVICE_FAILURE otherwise.
+**
+****************************************************************************************/
+tTbxMbServerResult mbServer_WriteHoldingReg(tTbxMbServer channel, uint16_t addr, 
+                                            uint16_t value)
+{
+  tTbxMbServerResult result = TBX_MB_SERVER_OK;
+
+  TBX_UNUSED_ARG(channel);
+
+  /* Filter on the requested holding register address. */
+  switch (addr)
+  {
+  case 40000U:
+    /* This holding register supports < 1024 values. */
+    if (value < 1024U)
+    {
+      mbServerHoldingRegs[0] = value;
+    }
+    else
+    {
+      result = TBX_MB_SERVER_ERR_DEVICE_FAILURE;
+    }
+    break;
+
+  case 40001U:
+    mbServerHoldingRegs[1] = value;
+    break;
+
+  default:
+    /* Unsupported holding register address. */
+    result = TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
+    break;
+  }
+
+  /* Give the result back to the caller. */
+  return result;
+} /*** end of mbServer_WriteHoldingReg ***/
+
+
+
+/************************************************************************************//**
+** \brief     Custom function code implementation for function code 17 (Report ServerID).
+** \details   According to the Modbus protocol, the response to the Report Server ID 
+**            request is device specific. The device implementation decides the number of
+**            bytes for the Server ID and if additional data is added to the response. 
+**            The following code snippet implements support for Report Server ID, where
+**            the actual server ID is 16-bits and the response contains no additional
+**            data.
+** \param     channel Handle to the Modbus server channel object that triggered the 
+**            callback.
+** \param     rxPdu Pointer to a byte array for reading the received PDU.
+** \param     txPdu Pointer to a byte array for writing the response PDU.
+** \param     len Pointer to the received PDU length, including the function code. When
+**            preparing the response, you can write the length of the transmit PDU to
+**            len as well.
+** \return    TBX_TRUE if the callback function handled the received function code and
+**            prepared a response PDU. TBX_FALSE otherwise.
+**
+****************************************************************************************/
+uint8_t mbServer_ReportServerIdCallback(tTbxMbServer channel, uint8_t const * rxPdu,
+                                        uint8_t * txPdu, uint8_t * len)
+{
+  uint8_t result = TBX_FALSE;
+
+  /* Function code 17 - Report Server ID? */
+  if (rxPdu[0] == 17U)
+  {
+    /* Check the expected request length. */
+    if (*len == 1U)
+    {
+      /* Prepare the response. */
+      txPdu[0] = 17U; /* Function code. */
+      txPdu[1] = 3U;  /* Byte count. */
+      TbxMbCommonStoreUInt16BE(0x1234U, &txPdu[2]); /* server ID. */
+      txPdu[4] = 0xFFU; /* Run indicator status = ON. */
+      *len = 5U;
+      /* Function code handled. */
+      result = TBX_TRUE;
+    }
+  }
+
+  /* Give the result back to the caller. */
+  return result;
+}  /*** end of mbServer_ReportServerIdCallback ***/ 
 
 
 /************************************************************************************//**
@@ -457,15 +730,22 @@ void test_TbxMbTpRtuCreate_CanRecreate(void)
 
 
 /************************************************************************************//**
-** \brief     Tests that invalid parameters trigger an assertion and returns NULL.
+** \brief     Tests that invalid parameters trigger an assertion.
 **
 ****************************************************************************************/
 void test_TbxMbTpRtuFree_ShouldAssertOnInvalidParams(void)
 {
+  size_t heapFreeBefore;
+  size_t heapFreeAfter;
+
   assertionCnt = 0;
+  heapFreeBefore = TbxHeapGetFree();
   TbxMbRtuFree(NULL);
+  heapFreeAfter = TbxHeapGetFree();
   /* Make sure an assertion was triggered. */
   TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
 } /*** end of test_TbxMbTpRtuFree_ShouldAssertOnInvalidParams ***/
 
 
@@ -486,13 +766,170 @@ void test_TbxMbTpRtuFree_CanFree(void)
   /* Make sure no assertion was triggered. */
   TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
 
-
   /* Free the transport layer. */
   assertionCnt = 0;
   TbxMbRtuFree(result);
   /* Make sure no assertion was triggered. */
   TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
 } /*** end of test_TbxMbTpRtuFree_CanFree ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that invalid parameters trigger an assertion and returns NULL.
+**
+****************************************************************************************/
+void test_TbxMbServerCreate_ShouldAssertOnInvalidParams(void)
+{
+  tTbxMbServer result;
+  size_t       heapFreeBefore;
+  size_t       heapFreeAfter;
+
+  assertionCnt = 0;
+  heapFreeBefore = TbxHeapGetFree();
+  result = TbxMbServerCreate(NULL);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an error was returned. */
+  TEST_ASSERT_EQUAL(NULL, result);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+} /*** end of test_TbxMbServerCreate_ShouldAssertOnInvalidParams ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that a Modbus server can be created.
+**
+****************************************************************************************/
+void test_TbxMbServerCreate_CanCreate(void)
+{
+  tTbxMbTp     tpRtu;
+  tTbxMbServer mbServer;
+
+  assertionCnt = 0;
+  tpRtu = TbxMbRtuCreate(10, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS, 
+                         TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  /* Make sure a valid context was returned. */
+  TEST_ASSERT_NOT_NULL(tpRtu);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  assertionCnt = 0;
+  mbServer = TbxMbServerCreate(tpRtu);
+  /* Make sure a valid context was returned. */
+  TEST_ASSERT_NOT_NULL(mbServer);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Free the server and transport layer. */
+  TbxMbServerFree(mbServer);
+  TbxMbRtuFree(tpRtu);
+} /*** end of test_TbxMbTpRtuCreate_CanCreate ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that a Modbus server can be recreated, meaning that no new memory is
+**            allocated from the heap via a memory pool.
+**
+****************************************************************************************/
+void test_TbxMbServerCreate_CanRecreate(void)
+{
+  tTbxMbTp     tpRtu;
+  tTbxMbServer mbServer;
+  size_t       heapFreeBefore;
+  size_t       heapFreeAfter;
+
+  assertionCnt = 0;
+  heapFreeBefore = TbxHeapGetFree();
+  tpRtu = TbxMbRtuCreate(10, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS, 
+                         TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  /* Make sure a valid context was returned. */
+  TEST_ASSERT_NOT_NULL(tpRtu);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  assertionCnt = 0;
+  mbServer = TbxMbServerCreate(tpRtu);
+  /* Make sure a valid context was returned. */
+  TEST_ASSERT_NOT_NULL(mbServer);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Free the server and transport layer. */
+  assertionCnt = 0;
+  TbxMbServerFree(mbServer);
+  TbxMbRtuFree(tpRtu);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+} /*** end of test_TbxMbServerCreate_CanRecreate ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that invalid parameters trigger an assertion.
+**
+****************************************************************************************/
+void test_TbxMbServerFree_ShouldAssertOnInvalidParams(void)
+{
+  size_t heapFreeBefore;
+  size_t heapFreeAfter;
+
+  assertionCnt = 0;
+  heapFreeBefore = TbxHeapGetFree();
+  TbxMbServerFree(NULL);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+} /*** end of test_TbxMbServerFree_ShouldAssertOnInvalidParams ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that a Modbus server can be freed.
+**
+****************************************************************************************/
+void test_TbxMbServerFree_CanFree(void)
+{
+  tTbxMbTp     tpRtu;
+  tTbxMbServer mbServer;
+  size_t       heapFreeBefore;
+  size_t       heapFreeAfter;
+
+  assertionCnt = 0;
+  heapFreeBefore = TbxHeapGetFree();
+  tpRtu = TbxMbRtuCreate(10, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS, 
+                         TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  /* Make sure a valid context was returned. */
+  TEST_ASSERT_NOT_NULL(tpRtu);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  assertionCnt = 0;
+  mbServer = TbxMbServerCreate(tpRtu);
+  /* Make sure a valid context was returned. */
+  TEST_ASSERT_NOT_NULL(mbServer);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Free the server. */
+  assertionCnt = 0;
+  TbxMbServerFree(mbServer);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Free the transport layer. */
+  assertionCnt = 0;
+  TbxMbRtuFree(tpRtu);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+} /*** end of test_TbxMbServerFree_CanFree ***/
 
 
 /************************************************************************************//**
@@ -513,12 +950,27 @@ int runTests(void)
   RUN_TEST(test_TbxMbGeneric_TpNodeAddressMacrosShouldBePresent);
   RUN_TEST(test_TbxMbGeneric_TpPduMacrosShouldBePresent);
   RUN_TEST(test_TbxMbGeneric_TypesShouldBePresent);
-  /* Test for a Modbus RTU transport layer. */
+  /* Tests for a Modbus RTU transport layer. */
   RUN_TEST(test_TbxMbTpRtuCreate_ShouldAssertOnInvalidParams);
   RUN_TEST(test_TbxMbTpRtuCreate_CanCreate);
   RUN_TEST(test_TbxMbTpRtuCreate_CanRecreate);
   RUN_TEST(test_TbxMbTpRtuFree_ShouldAssertOnInvalidParams);
   RUN_TEST(test_TbxMbTpRtuFree_CanFree);
+  /* Tests for a Modbus server. */
+  RUN_TEST(test_TbxMbServerCreate_ShouldAssertOnInvalidParams);
+  RUN_TEST(test_TbxMbServerCreate_CanCreate);
+  RUN_TEST(test_TbxMbServerCreate_CanRecreate);
+  RUN_TEST(test_TbxMbServerFree_ShouldAssertOnInvalidParams);
+  RUN_TEST(test_TbxMbServerFree_CanFree);
+  /* TODO ##Vg CONTINUE HERE.
+   *           Test XxxShouldAssertOnInvalidParams and XxxCanSetCallback for all the
+   *           TbxMbServerSetCallbackXxx() API functions of the server. Note that 
+   *           callback functions were already added.
+   */
+
+  /* TODO ##Vg Tests for a Modbus client. Note that these also perform addition test
+   *           with a server, otherwise the client API cannot be tested.
+   */
 
   /* Inform the framework that unit testing is done and return the result. */
   return UNITY_END();
