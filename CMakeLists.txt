@@ -41,6 +41,17 @@ target_include_directories(microtbx-modbus-extra-cpp INTERFACE
     "${CMAKE_CURRENT_LIST_DIR}/source/extra/cplusplus"
 )
 
+# Create interface library for the unit test specific sources.
+add_library(microtbx-modbus-tests INTERFACE)
+
+target_sources(microtbx-modbus-tests INTERFACE
+    "${CMAKE_CURRENT_LIST_DIR}/source/tests/unittests.c"
+)
+
+target_include_directories(microtbx-modbus-tests INTERFACE 
+    "${CMAKE_CURRENT_LIST_DIR}/source/tests"
+)
+
 # Create interface library for the template. Only used for MISRA check.
 add_library(microtbx-modbus-template INTERFACE)
 
