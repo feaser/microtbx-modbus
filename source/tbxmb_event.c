@@ -84,6 +84,11 @@ void TbxMbEventTask(void)
   static uint16_t         waitTimeoutMS = 5000U;
   tTbxMbEvent             newEvent = { 0 };
 
+  /* Make sure the OSAL event module is initialized, just in case the application already
+   * calls this task function, because it created a transport layer object.
+   */
+  TbxMbOsalEventInit();
+
   /* Only initialize the poller list once, */
   if (pollerListInitialized == TBX_FALSE)
   {
