@@ -56,6 +56,20 @@ uint8_t mbServerCoils[2] = { TBX_OFF, TBX_OFF };
 /** \brief Modbus server holding registers. */
 uint16_t mbServerHoldingRegs[2] = { 0U, 0U };
 
+/** \brief An invalid MicroTBX-Modbus context. The type is set to one that is not used
+ *         by any of its internal contexts. 
+ */
+struct
+{
+  void    * instancePtr;                         /**< Reserved for C++ wrapper.        */
+  void    * pollFcn;                             /**< Event poll function.             */
+  void    * processFcn;                          /**< Event process function.          */
+  /* The type member must always be the first one after the three entries that match
+   * those in tTbxMbEventCtx.
+   */
+  uint8_t   type;                                /**< Context type.                    */
+} invalidCtx = {NULL, NULL, NULL, 255U};
+
 
 /************************************************************************************//**
 ** \brief     Reads a data element from the discrete inputs data table.
@@ -746,6 +760,16 @@ void test_TbxMbTpRtuFree_ShouldAssertOnInvalidParams(void)
   TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
   /* Make sure no heap memory was allocated. */
   TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Try passing a dummy context with an invalid type as a rtu context. */
+  assertionCnt = 0;
+  heapFreeBefore = TbxHeapGetFree();
+  TbxMbRtuFree(&invalidCtx);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
 } /*** end of test_TbxMbTpRtuFree_ShouldAssertOnInvalidParams ***/
 
 
@@ -794,6 +818,10 @@ void test_TbxMbServerCreate_ShouldAssertOnInvalidParams(void)
   TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
   /* Make sure no heap memory was allocated. */
   TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* TODO ##Vg Still need to add an extra test that tries to pass &invalidCtx and then
+   *           verifies that an assertion was triggers.
+   */
 } /*** end of test_TbxMbServerCreate_ShouldAssertOnInvalidParams ***/
 
 
@@ -876,9 +904,20 @@ void test_TbxMbServerFree_ShouldAssertOnInvalidParams(void)
   size_t heapFreeBefore;
   size_t heapFreeAfter;
 
+  /* Try NULL as a server context. */
   assertionCnt = 0;
   heapFreeBefore = TbxHeapGetFree();
   TbxMbServerFree(NULL);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Try passing a dummy context with an invalid type as a server context. */
+  assertionCnt = 0;
+  heapFreeBefore = TbxHeapGetFree();
+  TbxMbServerFree(&invalidCtx);
   heapFreeAfter = TbxHeapGetFree();
   /* Make sure an assertion was triggered. */
   TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
@@ -933,6 +972,88 @@ void test_TbxMbServerFree_CanFree(void)
 
 
 /************************************************************************************//**
+** \brief     Tests that invalid parameters trigger an assertion.
+**
+****************************************************************************************/
+void test_TbxMbServerSetCallbackReadInput_ShouldAssertOnInvalidParams(void)
+{
+  tTbxMbTp     tpRtu;
+  tTbxMbServer mbServer;
+  size_t       heapFreeBefore;
+  size_t       heapFreeAfter;
+
+  /* First create a transport protocol context and a server context. */
+  tpRtu = TbxMbRtuCreate(10, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS, 
+                         TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  TEST_ASSERT_NOT_NULL(tpRtu);
+  mbServer = TbxMbServerCreate(tpRtu);
+  TEST_ASSERT_NOT_NULL(tpRtu);
+
+  /* Try NULL as a server context. */
+  assertionCnt = 0;
+  heapFreeBefore = TbxHeapGetFree();
+  TbxMbServerSetCallbackReadInput(NULL, mbServer_ReadInput);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Try passing a dummy context with an invalid type as a server context. */
+  assertionCnt = 0;
+  heapFreeBefore = TbxHeapGetFree();
+  TbxMbServerSetCallbackReadInput(&invalidCtx, mbServer_ReadInput);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Try NULL as the callback function pointer. */
+  assertionCnt = 0;
+  heapFreeBefore = TbxHeapGetFree();
+  TbxMbServerSetCallbackReadInput(mbServer, NULL);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Free the server and transport protocol. */
+  TbxMbServerFree(mbServer);
+  TbxMbRtuFree(tpRtu);
+} /*** end of test_TbxMbServerSetCallbackReadInput_ShouldAssertOnInvalidParams ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that the callback function can be set.
+**
+****************************************************************************************/
+void test_TbxMbServerSetCallbackReadInput_CanSet(void)
+{
+  tTbxMbTp     tpRtu;
+  tTbxMbServer mbServer;
+
+  /* First create a transport protocol context and a server context. */
+  tpRtu = TbxMbRtuCreate(10, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS, 
+                         TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  TEST_ASSERT_NOT_NULL(tpRtu);
+  mbServer = TbxMbServerCreate(tpRtu);
+  TEST_ASSERT_NOT_NULL(tpRtu);
+
+  /* Try setting the callback functioin. */
+  assertionCnt = 0;
+  TbxMbServerSetCallbackReadInput(mbServer, mbServer_ReadInput);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Free the server and transport protocol. */
+  TbxMbServerFree(mbServer);
+  TbxMbRtuFree(tpRtu);
+} /*** end of test_TbxMbServerSetCallbackReadInput_CanSet ***/
+
+
+/************************************************************************************//**
 ** \brief     Handles the running of the unit tests.
 ** \return    Test results.
 **
@@ -962,10 +1083,25 @@ int runTests(void)
   RUN_TEST(test_TbxMbServerCreate_CanRecreate);
   RUN_TEST(test_TbxMbServerFree_ShouldAssertOnInvalidParams);
   RUN_TEST(test_TbxMbServerFree_CanFree);
+  RUN_TEST(test_TbxMbServerSetCallbackReadInput_ShouldAssertOnInvalidParams);
+  RUN_TEST(test_TbxMbServerSetCallbackReadInput_CanSet);
+
+  /* TODO ##Vg CONTINUE HERE FIRST
+   *           test_TbxMbServerCreate_ShouldAssertOnInvalidParams() should also try
+   *           passing the &invalidCtx and result in an assertion. Note that this is
+   *           currently not actually checked in TbxMbServerCreate() nor 
+   *           TbxMbClientCreate(). This should be fixed. 
+   *           Note that this does require a bit or refactoring, because 
+   *           TBX_MB_RTU_CONTEXT_TYPE is defined in tbxmb_rtu.c. Will need to go to a
+   *           header file that the client and server can access. Either make a new
+   *           rtu private header or move it to tp_private.
+   */
+
   /* TODO ##Vg CONTINUE HERE.
    *           Test XxxShouldAssertOnInvalidParams and XxxCanSetCallback for all the
    *           TbxMbServerSetCallbackXxx() API functions of the server. Note that 
    *           callback functions were already added.
+   *           -> TbxMbServerSetCallbackReadInput() is done already.
    */
 
   /* TODO ##Vg Tests for a Modbus client. Note that these also perform addition test
