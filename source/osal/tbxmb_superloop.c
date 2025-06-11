@@ -229,8 +229,12 @@ void TbxMbOsalSemFree(tTbxMbOsalSem sem)
     tTbxMbOsalSemCtx * semCtx = (tTbxMbOsalSemCtx *)sem;
     /* Sanity check on the context type. */
     TBX_ASSERT(semCtx->type == TBX_MB_OSAL_SEM_CONTEXT_TYPE);
-    /* Give the semaphore context back to the memory pool. */
-    TbxMemPoolRelease(semCtx);
+    /* Only continue with a valid context type. */
+    if (semCtx->type == TBX_MB_OSAL_SEM_CONTEXT_TYPE)
+    {
+      /* Give the semaphore context back to the memory pool. */
+      TbxMemPoolRelease(semCtx);
+    }
   }
 } /*** end of TbxMbOsalSemFree ***/
 
@@ -257,10 +261,14 @@ void TbxMbOsalSemGive(tTbxMbOsalSem sem,
     tTbxMbOsalSemCtx * semCtx = (tTbxMbOsalSemCtx *)sem;
     /* Sanity check on the context type. */
     TBX_ASSERT(semCtx->type == TBX_MB_OSAL_SEM_CONTEXT_TYPE);
-    /* Give the semaphore by setting its count to 1. */
-    TbxCriticalSectionEnter();
-    semCtx->count = 1U;
-    TbxCriticalSectionExit();
+    /* Only continue with a valid context type. */
+    if (semCtx->type == TBX_MB_OSAL_SEM_CONTEXT_TYPE)
+    {
+      /* Give the semaphore by setting its count to 1. */
+      TbxCriticalSectionEnter();
+      semCtx->count = 1U;
+      TbxCriticalSectionExit();
+    }
   }
 } /*** end of TbxMbOsalSemGive ***/
 
@@ -290,73 +298,77 @@ uint8_t TbxMbOsalSemTake(tTbxMbOsalSem sem,
     tTbxMbOsalSemCtx * semCtx = (tTbxMbOsalSemCtx *)sem;
     /* Sanity check on the context type. */
     TBX_ASSERT(semCtx->type == TBX_MB_OSAL_SEM_CONTEXT_TYPE);
-    /* Is the semaphore currently available? */
-    TbxCriticalSectionEnter();
-    if (semCtx->count > 0U)
+    /* Only continue with a valid context type. */
+    if (semCtx->type == TBX_MB_OSAL_SEM_CONTEXT_TYPE)
     {
-      /* Take the semaphore and update the result for success. */
-      semCtx->count = 0U;
-      result = TBX_TRUE;
-    }
-    /* Semaphore not yet available. Wait for it with the hope that it becomes available
-     * before the specified timeout. 
-     */
-    else
-    {
-      /* Keep track of when the last millisecond was detected. */
-      uint16_t volatile lastMsTickTime = TbxMbPortTimerCount();
-      /* Initialize variable with the actual number of milliseconds to wait. */
-      uint16_t volatile waitTimeMs = timeoutMs;
-      /* Enter wait loop. */
-      while (waitTimeMs > 0U)
+      /* Is the semaphore currently available? */
+      TbxCriticalSectionEnter();
+      if (semCtx->count > 0U)
       {
-        /* Temporarily leave the critical section. */
-        TbxCriticalSectionExit();
-        /* Run the event task to make sure that whatever is supposed to give the
-         * semaphore can actually do so.
-         */
-        TbxMbEventTask();
-        /* Get the number of ticks that elapsed since the last millisecond detection. 
-         * Note that this calculation works, even if the 20 kHz timer counter
-         * overflowed.
-         */
-        uint16_t deltaTicks = TbxMbPortTimerCount() - lastMsTickTime;
-        /* Determine how many milliseconds passed since the last one was detected. */
-        uint16_t deltaMs = deltaTicks / 20U;
-        /* Did one or more milliseconds pass? */
-        if (deltaMs > 0U)
+        /* Take the semaphore and update the result for success. */
+        semCtx->count = 0U;
+        result = TBX_TRUE;
+      }
+      /* Semaphore not yet available. Wait for it with the hope that it becomes available
+       * before the specified timeout. 
+       */
+      else
+      {
+        /* Keep track of when the last millisecond was detected. */
+        uint16_t volatile lastMsTickTime = TbxMbPortTimerCount();
+        /* Initialize variable with the actual number of milliseconds to wait. */
+        uint16_t volatile waitTimeMs = timeoutMs;
+        /* Enter wait loop. */
+        while (waitTimeMs > 0U)
         {
-          /* Update the last millisecond detection tick time. Needed for the detection
-           * of the next millisecond. Note that this calculation works, even if the
-           * lastMsTickTime variable overflows.
+          /* Temporarily leave the critical section. */
+          TbxCriticalSectionExit();
+          /* Run the event task to make sure that whatever is supposed to give the
+           * semaphore can actually do so.
            */
-          lastMsTickTime += (deltaMs * 20U);
-          /* Subtract the elapsed milliseconds from the remaining wait time, with
-           * underflow protection. Note that the wait loop automatically stops when
-           * waitTimeMs becomes zero.
+          TbxMbEventTask();
+          /* Get the number of ticks that elapsed since the last millisecond detection. 
+           * Note that this calculation works, even if the 20 kHz timer counter
+           * overflowed.
            */
-          if (waitTimeMs >= deltaMs)
+          uint16_t deltaTicks = TbxMbPortTimerCount() - lastMsTickTime;
+          /* Determine how many milliseconds passed since the last one was detected. */
+          uint16_t deltaMs = deltaTicks / 20U;
+          /* Did one or more milliseconds pass? */
+          if (deltaMs > 0U)
           {
-            waitTimeMs -= deltaMs;
+            /* Update the last millisecond detection tick time. Needed for the detection
+             * of the next millisecond. Note that this calculation works, even if the
+             * lastMsTickTime variable overflows.
+             */
+            lastMsTickTime += (deltaMs * 20U);
+            /* Subtract the elapsed milliseconds from the remaining wait time, with
+             * underflow protection. Note that the wait loop automatically stops when
+             * waitTimeMs becomes zero.
+             */
+            if (waitTimeMs >= deltaMs)
+            {
+              waitTimeMs -= deltaMs;
+            }
+            else
+            {
+              waitTimeMs = 0U;
+            }
           }
-          else
+          /* Re-enter the critical section. */
+          TbxCriticalSectionEnter();
+          /* Did the semaphore become available? */
+          if (semCtx->count > 0U)
           {
-            waitTimeMs = 0U;
+            /* Take the semaphore, update the result for success, and leave the loop. */
+            semCtx->count = 0U;
+            result = TBX_TRUE;
+            break;
           }
-        }
-        /* Re-enter the critical section. */
-        TbxCriticalSectionEnter();
-        /* Did the semaphore become available? */
-        if (semCtx->count > 0U)
-        {
-          /* Take the semaphore, update the result for success, and leave the loop. */
-          semCtx->count = 0U;
-          result = TBX_TRUE;
-          break;
         }
       }
+      TbxCriticalSectionExit();
     }
-    TbxCriticalSectionExit();
   }
   /* Give the result back to the caller. */
   return result;

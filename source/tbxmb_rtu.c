@@ -315,18 +315,22 @@ void TbxMbRtuFree(tTbxMbTp transport)
     tTbxMbTpRtuCtx * tpCtx = (tTbxMbTpRtuCtx *)transport;
     /* Sanity check on the context type. */
     TBX_ASSERT(tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE);
-    /* Release the semaphore used for syncing to the INIT to IDLE state transition. */
-    TbxMbOsalSemFree(tpCtx->initStateExitSem);
-    TbxCriticalSectionEnter();
-    /* Remove the channel from the lookup table. */
-    tbxMbTpRtuCtx[tpCtx->port] = NULL;
-    /* Invalidate the context to protect it from accidentally being used afterwards. */
-    tpCtx->type = 0U;
-    tpCtx->pollFcn = NULL;
-    tpCtx->processFcn = NULL;
-    TbxCriticalSectionExit();
-    /* Give the transport layer context back to the memory pool. */
-    TbxMemPoolRelease(tpCtx);
+    /* Only continue with a valid context type. */
+    if (tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE)
+    {
+      /* Release the semaphore used for syncing to the INIT to IDLE state transition. */
+      TbxMbOsalSemFree(tpCtx->initStateExitSem);
+      TbxCriticalSectionEnter();
+      /* Remove the channel from the lookup table. */
+      tbxMbTpRtuCtx[tpCtx->port] = NULL;
+      /* Invalidate the context to protect it from accidentally being used afterwards. */
+      tpCtx->type = 0U;
+      tpCtx->pollFcn = NULL;
+      tpCtx->processFcn = NULL;
+      TbxCriticalSectionExit();
+      /* Give the transport layer context back to the memory pool. */
+      TbxMemPoolRelease(tpCtx);
+    }
   }
 } /*** end of TbxMbRtuFree ***/
 
@@ -351,179 +355,184 @@ static void TbxMbRtuPoll(void * context)
     tTbxMbTpRtuCtx * tpCtx = (tTbxMbTpRtuCtx *)context;
     /* Sanity check on the context type. */
     TBX_ASSERT(tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE);
-    /* Filter on the current state. */
-    TbxCriticalSectionEnter();
-    uint8_t currentState = tpCtx->state;
-    TbxCriticalSectionExit();
-    switch (currentState)
+    /* Only continue with a valid context type. */
+    if (tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE)
     {
-      case TBX_MB_RTU_STATE_RECEPTION:
+      /* Filter on the current state. */
+      TbxCriticalSectionEnter();
+      uint8_t currentState = tpCtx->state;
+      TbxCriticalSectionExit();
+      switch (currentState)
       {
-        TbxCriticalSectionEnter();
-        uint16_t rxTimeCopy = tpCtx->rxTime;
-        TbxCriticalSectionExit();
-        /* Calculate the number of time ticks that elapsed since the reception of the
-         * last byte. Note that this calculation works, even if the timer counter
-         * overflowed.
-         */
-        uint16_t deltaTicks = TbxMbPortTimerCount() - rxTimeCopy;
-        /* Did 3.5 character times elapse since the last byte reception? */
-        if (deltaTicks >= tpCtx->t3_5Ticks)
+        case TBX_MB_RTU_STATE_RECEPTION:
         {
-          /* Instruct the event task to stop calling our polling function. */
-          tTbxMbEvent newEvent;
-          newEvent.context = tpCtx;
-          newEvent.id = TBX_MB_EVENT_ID_STOP_POLLING;
-          TbxMbOsalEventPost(&newEvent, TBX_FALSE);
-          /* Is the newly received frame still in the OK state? */
           TbxCriticalSectionEnter();
-          uint8_t rxAduOkayCpy = tpCtx->rxAduOkay;
+          uint16_t rxTimeCopy = tpCtx->rxTime;
           TbxCriticalSectionExit();
-          if (rxAduOkayCpy == TBX_TRUE)
+          /* Calculate the number of time ticks that elapsed since the reception of the
+           * last byte. Note that this calculation works, even if the timer counter
+           * overflowed.
+           */
+          uint16_t deltaTicks = TbxMbPortTimerCount() - rxTimeCopy;
+          /* Did 3.5 character times elapse since the last byte reception? */
+          if (deltaTicks >= tpCtx->t3_5Ticks)
           {
-            /* Transition to the VALIDATION state. This prevents newly received bytes
-             * from being added to the packet. No bytes should be received anyways at
-             * this point, but you never know. Better safe than sorry.
-             */
+            /* Instruct the event task to stop calling our polling function. */
+            tTbxMbEvent newEvent;
+            newEvent.context = tpCtx;
+            newEvent.id = TBX_MB_EVENT_ID_STOP_POLLING;
+            TbxMbOsalEventPost(&newEvent, TBX_FALSE);
+            /* Is the newly received frame still in the OK state? */
             TbxCriticalSectionEnter();
-            tpCtx->state = TBX_MB_RTU_STATE_VALIDATION;
+            uint8_t rxAduOkayCpy = tpCtx->rxAduOkay;
             TbxCriticalSectionExit();
-            /* Packet reception complete. Set the PDU data length field. At this point 
-             * rxAduWrIdx holds to total received bytes in the ADU. The PDU data length
-             * is that one, minus:
-             * - Node address (1 byte)
-             * - Function code (1 byte)
-             * - CRC16 (2 bytes)
-             *
-             * Note that in the VALIDATION state, the data reception path is locked until
-             * a transition back to IDLE state is made. Consequenty, there is no need for
-             * critical sections when accessing the .rxXyz elements of the TP context. 
-             */
-            tpCtx->rxPacket.dataLen = tpCtx->rxAduWrIdx - 4U;
-            /* Also store the node address in the packet's node element. That's were 
-             * channels expect it. It's in the first byte of the ADU and the ADU starts
-             * at one byte before the PDU, which is the last byte of head[].
-             */
-            tpCtx->rxPacket.node = tpCtx->rxPacket.head[TBX_MB_TP_ADU_HEAD_LEN_MAX-1U];
-            /* Validate the newly received packet. */
-            if (TbxMbRtuValidate(tpCtx) != TBX_OK)
+            if (rxAduOkayCpy == TBX_TRUE)
             {
-              /* Discard the newly received frame by transitioning back to IDLE. */
+              /* Transition to the VALIDATION state. This prevents newly received bytes
+               * from being added to the packet. No bytes should be received anyways at
+               * this point, but you never know. Better safe than sorry.
+               */
               TbxCriticalSectionEnter();
-              tpCtx->state = TBX_MB_RTU_STATE_IDLE;
+              tpCtx->state = TBX_MB_RTU_STATE_VALIDATION;
               TbxCriticalSectionExit();
-            }
-            /* Newly received packet is valid. */
-            else
-            {
-              /* Prepare event for further processing of the received PDU. */
-              tTbxMbEvent pduRxEvent;
-              TbxCriticalSectionEnter();
-              pduRxEvent.context = tpCtx->channelCtx;
-              TbxCriticalSectionExit();
-              pduRxEvent.id = TBX_MB_EVENT_ID_PDU_RECEIVED;
-              /* Only post the event if a channel is actually linked. */
-              if (pduRxEvent.context != NULL)
-              {
-                /* Post an event to the linked channel for further processing of the
-                 * PDU.
-                 */
-                TbxMbOsalEventPost(&pduRxEvent, TBX_FALSE);
-              }
-              /* PDU received but not actually linked to a channel. */
-              else
+              /* Packet reception complete. Set the PDU data length field. At this point 
+               * rxAduWrIdx holds to total received bytes in the ADU. The PDU data length
+               * is that one, minus:
+               * - Node address (1 byte)
+               * - Function code (1 byte)
+               * - CRC16 (2 bytes)
+               *
+               * Note that in the VALIDATION state, the data reception path is locked
+               * until a transition back to IDLE state is made. Consequenty, there is no
+               * need for critical sections when accessing the .rxXyz elements of the TP
+               * context. 
+               */
+              tpCtx->rxPacket.dataLen = tpCtx->rxAduWrIdx - 4U;
+              /* Also store the node address in the packet's node element. That's were 
+               * channels expect it. It's in the first byte of the ADU and the ADU starts
+               * at one byte before the PDU, which is the last byte of head[].
+               */
+              tpCtx->rxPacket.node = tpCtx->rxPacket.head[TBX_MB_TP_ADU_HEAD_LEN_MAX-1U];
+              /* Validate the newly received packet. */
+              if (TbxMbRtuValidate(tpCtx) != TBX_OK)
               {
                 /* Discard the newly received frame by transitioning back to IDLE. */
                 TbxCriticalSectionEnter();
                 tpCtx->state = TBX_MB_RTU_STATE_IDLE;
                 TbxCriticalSectionExit();
               }
+              /* Newly received packet is valid. */
+              else
+              {
+                /* Prepare event for further processing of the received PDU. */
+                tTbxMbEvent pduRxEvent;
+                TbxCriticalSectionEnter();
+                pduRxEvent.context = tpCtx->channelCtx;
+                TbxCriticalSectionExit();
+                pduRxEvent.id = TBX_MB_EVENT_ID_PDU_RECEIVED;
+                /* Only post the event if a channel is actually linked. */
+                if (pduRxEvent.context != NULL)
+                {
+                  /* Post an event to the linked channel for further processing of the
+                   * PDU.
+                   */
+                  TbxMbOsalEventPost(&pduRxEvent, TBX_FALSE);
+                }
+                /* PDU received but not actually linked to a channel. */
+                else
+                {
+                  /* Discard the newly received frame by transitioning back to IDLE. */
+                  TbxCriticalSectionEnter();
+                  tpCtx->state = TBX_MB_RTU_STATE_IDLE;
+                  TbxCriticalSectionExit();
+                }
+              }
+            }
+            /* Frame was marked as not okay (NOK) during its reception. Most likely a
+             * 1.5 character timeout. 
+             */
+            else
+            {
+              /* Discard the newly received frame by transitioning back to IDLE. */
+              TbxCriticalSectionEnter();
+              tpCtx->state = TBX_MB_RTU_STATE_IDLE;
+              TbxCriticalSectionExit();
             }
           }
-          /* Frame was marked as not okay (NOK) during its reception. Most likely a
-           * 1.5 character timeout. 
+        }
+        break;
+
+        case TBX_MB_RTU_STATE_TRANSMISSION:
+        {
+          TbxCriticalSectionEnter();
+          uint16_t txDoneTimeCopy = tpCtx->txDoneTime;
+          TbxCriticalSectionExit();
+          /* Calculate the number of time ticks that elapsed since completing the packet
+           * transmission. Note that this calculation works, even if the timer counter
+           * overflowed.
            */
-          else
+          uint16_t deltaTicks = TbxMbPortTimerCount() - txDoneTimeCopy;
+          /* After t3_5 it's time to transition to the IDLE state. */
+          if (deltaTicks >= tpCtx->t3_5Ticks)
           {
-            /* Discard the newly received frame by transitioning back to IDLE. */
+            /* Transition back to the IDLE state. */
             TbxCriticalSectionEnter();
             tpCtx->state = TBX_MB_RTU_STATE_IDLE;
             TbxCriticalSectionExit();
+            /* Instruct the event task to stop calling our polling function. */
+            tTbxMbEvent newEvent;
+            newEvent.context = tpCtx;
+            newEvent.id = TBX_MB_EVENT_ID_STOP_POLLING;
+            TbxMbOsalEventPost(&newEvent, TBX_FALSE);
+            /* Post an event to the linked channel for inform them that the PDU
+             * transmission completed. Note that it's okay to reuse the event local.
+             */
+            TbxCriticalSectionEnter();
+            newEvent.context = tpCtx->channelCtx;
+            TbxCriticalSectionExit();
+            newEvent.id = TBX_MB_EVENT_ID_PDU_TRANSMITTED;
+            TbxMbOsalEventPost(&newEvent, TBX_FALSE);
           }
         }
-      }
-      break;
+        break;
 
-      case TBX_MB_RTU_STATE_TRANSMISSION:
-      {
-        TbxCriticalSectionEnter();
-        uint16_t txDoneTimeCopy = tpCtx->txDoneTime;
-        TbxCriticalSectionExit();
-        /* Calculate the number of time ticks that elapsed since completing the packet
-         * transmission. Note that this calculation works, even if the timer counter
-         * overflowed.
-         */
-        uint16_t deltaTicks = TbxMbPortTimerCount() - txDoneTimeCopy;
-        /* After t3_5 it's time to transition to the IDLE state. */
-        if (deltaTicks >= tpCtx->t3_5Ticks)
+        case TBX_MB_RTU_STATE_INIT:
         {
-          /* Transition back to the IDLE state. */
           TbxCriticalSectionEnter();
-          tpCtx->state = TBX_MB_RTU_STATE_IDLE;
+          uint16_t rxTimeCopy = tpCtx->rxTime;
           TbxCriticalSectionExit();
-          /* Instruct the event task to stop calling our polling function. */
-          tTbxMbEvent newEvent;
-          newEvent.context = tpCtx;
-          newEvent.id = TBX_MB_EVENT_ID_STOP_POLLING;
-          TbxMbOsalEventPost(&newEvent, TBX_FALSE);
-          /* Post an event to the linked channel for inform them that the PDU
-           * transmission completed. Note that it's okay to reuse the event local.
+          /* Calculate the number of time ticks that elapsed since entering the INIT
+           * state or the reception of the last byte, whichever one comes last. Note that
+           * this calculation works, even if the timer counter overflowed.
            */
-          TbxCriticalSectionEnter();
-          newEvent.context = tpCtx->channelCtx;
-          TbxCriticalSectionExit();
-          newEvent.id = TBX_MB_EVENT_ID_PDU_TRANSMITTED;
-          TbxMbOsalEventPost(&newEvent, TBX_FALSE);
+          uint16_t deltaTicks = TbxMbPortTimerCount() - rxTimeCopy;
+          /* After t3_5 it's time to transition to the IDLE state. */
+          if (deltaTicks >= tpCtx->t3_5Ticks)
+          {
+            /* Transition to the IDLE state. */
+            TbxCriticalSectionEnter();
+            tpCtx->state = TBX_MB_RTU_STATE_IDLE;
+            TbxCriticalSectionExit();
+            /* Instruct the event task to stop calling our polling function. */
+            tTbxMbEvent newEvent;
+            newEvent.context = tpCtx;
+            newEvent.id = TBX_MB_EVENT_ID_STOP_POLLING;
+            TbxMbOsalEventPost(&newEvent, TBX_FALSE);
+            /* Give the semaphore to sync the transmit function to this event. This is 
+             * needed for an RTU client, when transmit it called before being in the INIt
+             * state.
+             */
+            TbxMbOsalSemGive(tpCtx->initStateExitSem, TBX_FALSE);
+          }
         }
-      }
-      break;
+        break;
 
-      case TBX_MB_RTU_STATE_INIT:
-      {
-        TbxCriticalSectionEnter();
-        uint16_t rxTimeCopy = tpCtx->rxTime;
-        TbxCriticalSectionExit();
-        /* Calculate the number of time ticks that elapsed since entering the INIT state
-         * or the reception of the last byte, whichever one comes last. Note that this
-         * calculation works, even if the timer counter overflowed.
-         */
-        uint16_t deltaTicks = TbxMbPortTimerCount() - rxTimeCopy;
-        /* After t3_5 it's time to transition to the IDLE state. */
-        if (deltaTicks >= tpCtx->t3_5Ticks)
+        default:
         {
-          /* Transition to the IDLE state. */
-          TbxCriticalSectionEnter();
-          tpCtx->state = TBX_MB_RTU_STATE_IDLE;
-          TbxCriticalSectionExit();
-          /* Instruct the event task to stop calling our polling function. */
-          tTbxMbEvent newEvent;
-          newEvent.context = tpCtx;
-          newEvent.id = TBX_MB_EVENT_ID_STOP_POLLING;
-          TbxMbOsalEventPost(&newEvent, TBX_FALSE);
-          /* Give the semaphore to sync the transmit function to this event. This is 
-           * needed for an RTU client, when transmit it called before being in the INIt
-           * state.
-           */
-          TbxMbOsalSemGive(tpCtx->initStateExitSem, TBX_FALSE);
+          /* In the current state, nothing needs to be done. */
         }
+        break;
       }
-      break;
-
-      default:
-      {
-        /* In the current state, nothing needs to be done. */
-      }
-      break;
     }
   }
 } /*** end of TbxMbRtuPoll ***/
@@ -550,121 +559,126 @@ static uint8_t TbxMbRtuTransmit(tTbxMbTp transport)
     tTbxMbTpRtuCtx * tpCtx = (tTbxMbTpRtuCtx *)transport;
     /* Sanity check on the context type. */
     TBX_ASSERT(tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE);
-    /* Are we requested to transmit an exception response? */
-    TbxCriticalSectionEnter();
-    if ((tpCtx->txPacket.pdu.code & TBX_MB_FC_EXCEPTION_MASK) == 
-        TBX_MB_FC_EXCEPTION_MASK)
+    /* Only continue with a valid context type. */
+    if (tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE)
     {
-      /* Increment the total number of exception responses. */
-      tpCtx->diagInfo.busExcpErrCnt++;
-    }
-    /* Still in the INIT state and configured as a client? */
-    if ( (tpCtx->state == TBX_MB_RTU_STATE_INIT) && (tpCtx->isClient == TBX_TRUE) )
-    {
-      /* A client could start transmitting right after system initialization, when
-       * this instance is still in the INIT state. It's not user friendly to then make
-       * the transmit() fail right way, meaning that the user would always have to
-       * build in a wait loop hoping that this instance reached the IDLE state.
-       *
-       * For this reason, perform this waiting for the IDLE state right here. But with
-       * a timeout mechanism. The IDLE state is reached after the reception of the last
-       * byte of an ADU that a server might be transmitting, plus the t3_5 time to
-       * signal the end-of-frame.
-       *
-       * The largest ADU to receive is 256 bytes. Adding the t3_5 end-of-frame time, 
-       * means the longest time to wait for a transition to the IDLE state is:
-       * 256 + 3.5 = 259.5 characters. This is ceil(259.5/3.5) = 75 times the t3_5
-       * timer interval. Use this to calculate the timeout in ticks of the RTU timer.
-       */
-      uint16_t waitTimeoutTicks = tpCtx->t3_5Ticks * 75U;
-      /* Convert it to milliseconds. Knowing that the RTU timer always runs at 20 kHz,
-       * divide by 20. Just make sure to do integer roundup (A + (B-1)) / B.
-       */
-      uint16_t waitTimeoutMs = (waitTimeoutTicks + 19U) / 20U;
-      /* Wait for the transition from INIT to IDLE with the calculated timeout. Note
-       * that there is no need to check the return value. This would just mean that
-       * no transition to IDLE took place before the timeout. The IDLE state check is
-       * done later on in this function, so that error situation is already handled.
-       * Make sure to briefly leave the critical section for calling TbxMbOsalSemTake().
-       * With an RTOS this could lead to a context switch for which interrupts need to
-       * be enabled.
-       */
-      TbxCriticalSectionExit();
-      (void)TbxMbOsalSemTake(tpCtx->initStateExitSem, waitTimeoutMs);
+      /* Are we requested to transmit an exception response? */
       TbxCriticalSectionEnter();
-    }
-    /* New transmissions are only possible from the IDLE state. */
-    uint8_t okayToTransmit = TBX_FALSE;
-    if (tpCtx->state == TBX_MB_RTU_STATE_IDLE)
-    {
-      /* Should a response actually be transmitted? If we are a server, then upon
-       * reception packet validation, txPacket.node was already set to 
-       * TBX_MB_TP_NODE_ADDR_BROADCAST for us, in case of a broadcast request, which
-       * does not require a response.
-       */
-      if ( (tpCtx->isClient == TBX_FALSE) && 
-           (tpCtx->txPacket.node == TBX_MB_TP_NODE_ADDR_BROADCAST) )
+      if ((tpCtx->txPacket.pdu.code & TBX_MB_FC_EXCEPTION_MASK) == 
+          TBX_MB_FC_EXCEPTION_MASK)
       {
-        /* To bypass the actual response transmission, simply update the result to
-         * indicate success and keep the okayToTransmit set to its default TBX_FALSE.
-         */
-        result = TBX_OK;
+        /* Increment the total number of exception responses. */
+        tpCtx->diagInfo.busExcpErrCnt++;
       }
-      /* Okay to transmit the response. */
-      else
+      /* Still in the INIT state and configured as a client? */
+      if ( (tpCtx->state == TBX_MB_RTU_STATE_INIT) && (tpCtx->isClient == TBX_TRUE) )
       {
-        okayToTransmit = TBX_TRUE;
-        /* Transition to the TRANSMISSION state to lock access to the txPacket for the
-         * duration of the transmission. Note that the unlock happens once the state 
-         * transitions back to IDLE. This happens 3.5 character times after the 
-         * completion of the transmission.
+        /* A client could start transmitting right after system initialization, when
+         * this instance is still in the INIT state. It's not user friendly to then make
+         * the transmit() fail right way, meaning that the user would always have to
+         * build in a wait loop hoping that this instance reached the IDLE state.
+         *
+         * For this reason, perform this waiting for the IDLE state right here. But with
+         * a timeout mechanism. The IDLE state is reached after the reception of the last
+         * byte of an ADU that a server might be transmitting, plus the t3_5 time to
+         * signal the end-of-frame.
+         *
+         * The largest ADU to receive is 256 bytes. Adding the t3_5 end-of-frame time, 
+         * means the longest time to wait for a transition to the IDLE state is:
+         * 256 + 3.5 = 259.5 characters. This is ceil(259.5/3.5) = 75 times the t3_5
+         * timer interval. Use this to calculate the timeout in ticks of the RTU timer.
          */
-        tpCtx->state = TBX_MB_RTU_STATE_TRANSMISSION;
-      }
-    }
-    TbxCriticalSectionExit();
-    /* Only continue if no other packet transmission is already in progress. */
-    if (okayToTransmit == TBX_TRUE)
-    {
-      /* Determine ADU specific properties. The ADU starts at one byte before the PDU, 
-       * which is the last byte of head[]. The ADU's length is:
-       * - Node address (1 byte)
-       * - Function code (1 byte)
-       * - Packet data (dataLen bytes)
-       * - CRC16 (2 bytes)
-       */
-      uint8_t * aduPtr = &tpCtx->txPacket.head[TBX_MB_TP_ADU_HEAD_LEN_MAX-1U];
-      uint16_t  aduLen = tpCtx->txPacket.dataLen + 4U;
-      /* Populate the ADU head. For RTU it is the address field right in front of the
-       * PDU. For client->server transfers the address field is the servers's node
-       * address (unicast) or 0 (broadcast) and the client channel will have stored it in
-       * the txPacket.node element. For server->client transfers it's always the
-       * servers's node address as stored when creating the RTU transport layer context.
-       */
-      aduPtr[0] = (tpCtx->isClient == TBX_TRUE) ? tpCtx->txPacket.node : tpCtx->nodeAddr;
-      /* Populate the ADU tail. For RTU it is the CRC16 right after the PDU's data. */
-      uint16_t adu_crc = TbxMbRtuCalculatCrc(aduPtr, aduLen - 2U);
-      aduPtr[aduLen - 2U] = (uint8_t)adu_crc;                         /* CRC16 low.  */
-      aduPtr[aduLen - 1U] = (uint8_t)(adu_crc >> 8U);                 /* CRC16 high. */
-      /* Pass ADU transmit request on to the UART module. */
-      result = TbxMbUartTransmit(tpCtx->port, aduPtr, aduLen);
-      /* Transition back to the IDLE state, because the transmission could not be
-       * started. The unlocks access to txPacket for a possible future transmission.
-       */
-      if (result != TBX_OK)
-      {
+        uint16_t waitTimeoutTicks = tpCtx->t3_5Ticks * 75U;
+        /* Convert it to milliseconds. Knowing that the RTU timer always runs at 20 kHz,
+         * divide by 20. Just make sure to do integer roundup (A + (B-1)) / B.
+         */
+        uint16_t waitTimeoutMs = (waitTimeoutTicks + 19U) / 20U;
+        /* Wait for the transition from INIT to IDLE with the calculated timeout. Note
+         * that there is no need to check the return value. This would just mean that
+         * no transition to IDLE took place before the timeout. The IDLE state check is
+         * done later on in this function, so that error situation is already handled.
+         * Make sure to briefly leave the critical section for calling TbxMbOsalSemTake().
+         * With an RTOS this could lead to a context switch for which interrupts need to
+         * be enabled.
+         */
+        TbxCriticalSectionExit();
+        (void)TbxMbOsalSemTake(tpCtx->initStateExitSem, waitTimeoutMs);
         TbxCriticalSectionEnter();
-        tpCtx->state = TBX_MB_RTU_STATE_IDLE;
+      }
+      /* New transmissions are only possible from the IDLE state. */
+      uint8_t okayToTransmit = TBX_FALSE;
+      if (tpCtx->state == TBX_MB_RTU_STATE_IDLE)
+      {
+        /* Should a response actually be transmitted? If we are a server, then upon
+         * reception packet validation, txPacket.node was already set to 
+         * TBX_MB_TP_NODE_ADDR_BROADCAST for us, in case of a broadcast request, which
+         * does not require a response.
+         */
+        if ( (tpCtx->isClient == TBX_FALSE) && 
+            (tpCtx->txPacket.node == TBX_MB_TP_NODE_ADDR_BROADCAST) )
+        {
+          /* To bypass the actual response transmission, simply update the result to
+           * indicate success and keep the okayToTransmit set to its default TBX_FALSE.
+           */
+          result = TBX_OK;
+        }
+        /* Okay to transmit the response. */
+        else
+        {
+          okayToTransmit = TBX_TRUE;
+          /* Transition to the TRANSMISSION state to lock access to the txPacket for the
+           * duration of the transmission. Note that the unlock happens once the state 
+           * transitions back to IDLE. This happens 3.5 character times after the 
+           * completion of the transmission.
+           */
+          tpCtx->state = TBX_MB_RTU_STATE_TRANSMISSION;
+        }
+      }
+      TbxCriticalSectionExit();
+      /* Only continue if no other packet transmission is already in progress. */
+      if (okayToTransmit == TBX_TRUE)
+      {
+        /* Determine ADU specific properties. The ADU starts at one byte before the PDU, 
+         * which is the last byte of head[]. The ADU's length is:
+         * - Node address (1 byte)
+         * - Function code (1 byte)
+         * - Packet data (dataLen bytes)
+         * - CRC16 (2 bytes)
+         */
+        uint8_t * aduPtr = &tpCtx->txPacket.head[TBX_MB_TP_ADU_HEAD_LEN_MAX-1U];
+        uint16_t  aduLen = tpCtx->txPacket.dataLen + 4U;
+        /* Populate the ADU head. For RTU it is the address field right in front of the
+         * PDU. For client->server transfers the address field is the servers's node
+         * address (unicast) or 0 (broadcast) and the client channel will have stored it
+         * in the txPacket.node element. For server->client transfers it's always the
+         * servers's node address as stored when creating the RTU transport layer
+         * context.
+         */
+        aduPtr[0] = (tpCtx->isClient == TBX_TRUE) ? tpCtx->txPacket.node : tpCtx->nodeAddr;
+        /* Populate the ADU tail. For RTU it is the CRC16 right after the PDU's data. */
+        uint16_t adu_crc = TbxMbRtuCalculatCrc(aduPtr, aduLen - 2U);
+        aduPtr[aduLen - 2U] = (uint8_t)adu_crc;                         /* CRC16 low.  */
+        aduPtr[aduLen - 1U] = (uint8_t)(adu_crc >> 8U);                 /* CRC16 high. */
+        /* Pass ADU transmit request on to the UART module. */
+        result = TbxMbUartTransmit(tpCtx->port, aduPtr, aduLen);
+        /* Transition back to the IDLE state, because the transmission could not be
+         * started. The unlocks access to txPacket for a possible future transmission.
+         */
+        if (result != TBX_OK)
+        {
+          TbxCriticalSectionEnter();
+          tpCtx->state = TBX_MB_RTU_STATE_IDLE;
+          TbxCriticalSectionExit();
+        }
+      }
+      /* Problem detected that prevented the response from being sent? */
+      if (result == TBX_ERROR)
+      {
+        /* Increment the total number of not sent responses. */
+        TbxCriticalSectionEnter();
+        tpCtx->diagInfo.srvNoRespCnt++;
         TbxCriticalSectionExit();
       }
-    }
-    /* Problem detected that prevented the response from being sent? */
-    if (result == TBX_ERROR)
-    {
-      /* Increment the total number of not sent responses. */
-      TbxCriticalSectionEnter();
-      tpCtx->diagInfo.srvNoRespCnt++;
-      TbxCriticalSectionExit();
     }
   }
   /* Give the result back to the caller. */
@@ -692,23 +706,27 @@ static void TbxMbRtuReceptionDone(tTbxMbTp transport)
     tTbxMbTpRtuCtx * tpCtx = (tTbxMbTpRtuCtx *)transport;
     /* Sanity check on the context type. */
     TBX_ASSERT(tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE);
-    /* This function should only be called in the VALIDATION state. Verify this. */
-    TbxCriticalSectionEnter();
-    uint8_t currentState = tpCtx->state;
-    TbxCriticalSectionExit();
-    TBX_ASSERT(currentState == TBX_MB_RTU_STATE_VALIDATION);
-    /* Only continue in the VALIDATION state. Note that in the VALIDATION state, the data
-     * reception path is locked until a transition back to IDLE state is made, which is
-     * handled by this function.
-     */
-    if (currentState == TBX_MB_RTU_STATE_VALIDATION)
+    /* Only continue with a valid context type. */
+    if (tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE)
     {
-      /* Transistion back to the IDLE state to unlock the data reception path, allowing
-       * the reception of new packets.
-       */
+      /* This function should only be called in the VALIDATION state. Verify this. */
       TbxCriticalSectionEnter();
-      tpCtx->state = TBX_MB_RTU_STATE_IDLE;
+      uint8_t currentState = tpCtx->state;
       TbxCriticalSectionExit();
+      TBX_ASSERT(currentState == TBX_MB_RTU_STATE_VALIDATION);
+      /* Only continue in the VALIDATION state. Note that in the VALIDATION state, the
+       * data reception path is locked until a transition back to IDLE state is made, 
+       * which is handled by this function.
+       */
+      if (currentState == TBX_MB_RTU_STATE_VALIDATION)
+      {
+        /* Transistion back to the IDLE state to unlock the data reception path, allowing
+         * the reception of new packets.
+         */
+        TbxCriticalSectionEnter();
+        tpCtx->state = TBX_MB_RTU_STATE_IDLE;
+        TbxCriticalSectionExit();
+      }
     }
   }
 } /*** end of TbxMbRtuReceptionDone ****/
@@ -736,17 +754,21 @@ static tTbxMbTpPacket * TbxMbRtuGetRxPacket(tTbxMbTp transport)
     tTbxMbTpRtuCtx * tpCtx = (tTbxMbTpRtuCtx *)transport;
     /* Sanity check on the context type. */
     TBX_ASSERT(tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE);
-    /* Access to the reception packet by a channel is only allowed in the VALIDATION
-     * state. In this state the reception path is locked until a transition back to IDLE
-     * state is made. This happens once the channel called receptionDoneFcn().
-     */
-    TbxCriticalSectionEnter();
-    uint8_t currentState = tpCtx->state;
-    TbxCriticalSectionExit();
-    if (currentState == TBX_MB_RTU_STATE_VALIDATION)
+    /* Only continue with a valid context type. */
+    if (tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE)
     {
-      /* Update the result. */
-      result = &tpCtx->rxPacket;
+      /* Access to the reception packet by a channel is only allowed in the VALIDATION
+       * state. In this state the reception path is locked until a transition back to
+       * IDLE state is made. This happens once the channel called receptionDoneFcn().
+       */
+      TbxCriticalSectionEnter();
+      uint8_t currentState = tpCtx->state;
+      TbxCriticalSectionExit();
+      if (currentState == TBX_MB_RTU_STATE_VALIDATION)
+      {
+        /* Update the result. */
+        result = &tpCtx->rxPacket;
+      }
     }
   }
   /* Give the result back to the caller. */
@@ -777,18 +799,22 @@ static tTbxMbTpPacket * TbxMbRtuGetTxPacket(tTbxMbTp transport)
     tTbxMbTpRtuCtx * tpCtx = (tTbxMbTpRtuCtx *)transport;
     /* Sanity check on the context type. */
     TBX_ASSERT(tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE);
-    /* Access to the transmission packet by a channel is only allowed outside the 
-     * TRANSMISSION state. In this state the transmission path is locked until a
-     * transition back to IDLE state is made. This happens once the transport layer
-     * completed the packet transmission.
-     */
-    TbxCriticalSectionEnter();
-    uint8_t currentState = tpCtx->state;
-    TbxCriticalSectionExit();
-    if (currentState != TBX_MB_RTU_STATE_TRANSMISSION)
+    /* Only continue with a valid context type. */
+    if (tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE)
     {
-      /* Update the result. */
-      result = &tpCtx->txPacket;
+      /* Access to the transmission packet by a channel is only allowed outside the 
+       * TRANSMISSION state. In this state the transmission path is locked until a
+       * transition back to IDLE state is made. This happens once the transport layer
+       * completed the packet transmission.
+       */
+      TbxCriticalSectionEnter();
+      uint8_t currentState = tpCtx->state;
+      TbxCriticalSectionExit();
+      if (currentState != TBX_MB_RTU_STATE_TRANSMISSION)
+      {
+        /* Update the result. */
+        result = &tpCtx->txPacket;
+      }
     }
   }
   /* Give the result back to the caller. */
@@ -817,87 +843,91 @@ static uint8_t TbxMbRtuValidate(tTbxMbTp transport)
     tTbxMbTpRtuCtx * tpCtx = (tTbxMbTpRtuCtx *)transport;
     /* Sanity check on the context type. */
     TBX_ASSERT(tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE);
-    /* This function should only be called in the VALIDATION state. Verify this. */
-    TbxCriticalSectionEnter();
-    uint8_t currentState = tpCtx->state;
-    TbxCriticalSectionExit();
-    TBX_ASSERT(currentState == TBX_MB_RTU_STATE_VALIDATION);
-    /* Only continue in the VALIDATION state. Note that in the VALIDATION state, the data
-     * reception path is locked until a transition back to IDLE state is made.
-     * Consequenty, there is no need for critical sections when accessing the .rxXyz
-     * elements of the TP context. 
-     */
-    if (currentState == TBX_MB_RTU_STATE_VALIDATION)
+    /* Only continue with a valid context type. */
+    if (tpCtx->type == TBX_MB_RTU_CONTEXT_TYPE)
     {
-      /* Increment the total number of received packets, regardless of addressing or
-       * CRC.
-       */
+      /* This function should only be called in the VALIDATION state. Verify this. */
       TbxCriticalSectionEnter();
-      tpCtx->diagInfo.busMsgCnt++;
+      uint8_t currentState = tpCtx->state;
       TbxCriticalSectionExit();
-      /* The ADU for an RTU packet starts at one byte before the PDU, which is the last
-       * byte of head[]. Get the pointer of where the ADU starts in the rxPacket.
+      TBX_ASSERT(currentState == TBX_MB_RTU_STATE_VALIDATION);
+      /* Only continue in the VALIDATION state. Note that in the VALIDATION state, the
+       * data reception path is locked until a transition back to IDLE state is made.
+       * Consequenty, there is no need for critical sections when accessing the .rxXyz
+       * elements of the TP context. 
        */
-      uint8_t * aduPtr = &tpCtx->rxPacket.head[TBX_MB_TP_ADU_HEAD_LEN_MAX-1U];
-      /* The CRC16 is stored in the 2 bytes after the PDU data bytes:
-       * - Node address (1 byte)
-       * - Function code (1 byte)
-       * - Packet data (dataLen bytes)
-       * - CRC16 (2 bytes)
-       */
-      uint8_t const * crcPtr = &aduPtr[2U + tpCtx->rxPacket.dataLen];
-      /* Read out the CRC16 stored in the ADU packet. */
-      uint16_t packetCrc = crcPtr[0] | (uint16_t)(crcPtr[1] << 8U);
-      /* Calculate the CRC16 based on the packet contents. It's calculated over the
-       * entire ADU data, just excluding the last two byte with the CRC16.
-       */
-      uint16_t calcCrc = TbxMbRtuCalculatCrc(aduPtr, tpCtx->rxPacket.dataLen + 2U);
-      /* Are the two CRC16s a mismatch? */
-      if (packetCrc != calcCrc)
+      if (currentState == TBX_MB_RTU_STATE_VALIDATION)
       {
-        /* Increment the total number of received packets with an incorrect CRC. */
-        TbxCriticalSectionEnter();
-        tpCtx->diagInfo.busCommErrCnt++;
-        TbxCriticalSectionExit();
-      }
-      /* CRC16 check passed. */
-      else
-      {
-        /* Continue checking if the ADU is addressed to us. This check is different for a
-         * server and a client. Start with the server case.
+        /* Increment the total number of received packets, regardless of addressing or
+         * CRC.
          */
-        if (tpCtx->isClient == TBX_FALSE)
+        TbxCriticalSectionEnter();
+        tpCtx->diagInfo.busMsgCnt++;
+        TbxCriticalSectionExit();
+        /* The ADU for an RTU packet starts at one byte before the PDU, which is the last
+         * byte of head[]. Get the pointer of where the ADU starts in the rxPacket.
+         */
+        uint8_t * aduPtr = &tpCtx->rxPacket.head[TBX_MB_TP_ADU_HEAD_LEN_MAX-1U];
+        /* The CRC16 is stored in the 2 bytes after the PDU data bytes:
+         * - Node address (1 byte)
+         * - Function code (1 byte)
+         * - Packet data (dataLen bytes)
+         * - CRC16 (2 bytes)
+         */
+        uint8_t const * crcPtr = &aduPtr[2U + tpCtx->rxPacket.dataLen];
+        /* Read out the CRC16 stored in the ADU packet. */
+        uint16_t packetCrc = crcPtr[0] | (uint16_t)(crcPtr[1] << 8U);
+        /* Calculate the CRC16 based on the packet contents. It's calculated over the
+         * entire ADU data, just excluding the last two byte with the CRC16.
+         */
+        uint16_t calcCrc = TbxMbRtuCalculatCrc(aduPtr, tpCtx->rxPacket.dataLen + 2U);
+        /* Are the two CRC16s a mismatch? */
+        if (packetCrc != calcCrc)
         {
-          /* Only process frames that are addressed to us (unicast or broadcast). */
-          if ((tpCtx->rxPacket.node == tpCtx->nodeAddr) ||
-              (tpCtx->rxPacket.node == TBX_MB_TP_NODE_ADDR_BROADCAST))
-          {
-            /* Increment the total number of received packets with a correct CRC, that
-             * were addressed to us. Either via unicast of broadcast.
-             */
-            TbxCriticalSectionEnter();
-            tpCtx->diagInfo.srvMsgCnt++;
-            TbxCriticalSectionExit();
-            /* Set the node address in the txPacket node element. It is used during
-             * transmission to decide if the actual sending of the response should be
-             * suppressed, which is the case for TBX_MB_TP_NODE_ADDR_BROADCAST. No need
-             * for a critical section, because we are guaranteed not in the IDLE or
-             * TRANSMISSION states.
-             */
-            tpCtx->txPacket.node = tpCtx->rxPacket.node;
-            /* Packet is valid. Update the result accordingly. */
-            result = TBX_OK;
-          }
+          /* Increment the total number of received packets with an incorrect CRC. */
+          TbxCriticalSectionEnter();
+          tpCtx->diagInfo.busCommErrCnt++;
+          TbxCriticalSectionExit();
         }
-        /* Linked to a client channel. */
+        /* CRC16 check passed. */
         else
         {
-          /* Only process frames that are send from a valid server. */
-          if ( (tpCtx->rxPacket.node >= TBX_MB_TP_NODE_ADDR_MIN) ||
-               (tpCtx->rxPacket.node <= TBX_MB_TP_NODE_ADDR_MAX) )
+          /* Continue checking if the ADU is addressed to us. This check is different for
+           * a server and a client. Start with the server case.
+           */
+          if (tpCtx->isClient == TBX_FALSE)
           {
-            /* Packet is valid. Update the result accordingly. */
-            result = TBX_OK;
+            /* Only process frames that are addressed to us (unicast or broadcast). */
+            if ((tpCtx->rxPacket.node == tpCtx->nodeAddr) ||
+                (tpCtx->rxPacket.node == TBX_MB_TP_NODE_ADDR_BROADCAST))
+            {
+              /* Increment the total number of received packets with a correct CRC, that
+               * were addressed to us. Either via unicast of broadcast.
+               */
+              TbxCriticalSectionEnter();
+              tpCtx->diagInfo.srvMsgCnt++;
+              TbxCriticalSectionExit();
+              /* Set the node address in the txPacket node element. It is used during
+               * transmission to decide if the actual sending of the response should be
+               * suppressed, which is the case for TBX_MB_TP_NODE_ADDR_BROADCAST. No need
+               * for a critical section, because we are guaranteed not in the IDLE or
+               * TRANSMISSION states.
+               */
+              tpCtx->txPacket.node = tpCtx->rxPacket.node;
+              /* Packet is valid. Update the result accordingly. */
+              result = TBX_OK;
+            }
+          }
+          /* Linked to a client channel. */
+          else
+          {
+            /* Only process frames that are send from a valid server. */
+            if ( (tpCtx->rxPacket.node >= TBX_MB_TP_NODE_ADDR_MIN) ||
+                (tpCtx->rxPacket.node <= TBX_MB_TP_NODE_ADDR_MAX) )
+            {
+              /* Packet is valid. Update the result accordingly. */
+              result = TBX_OK;
+            }
           }
         }
       }
