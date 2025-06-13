@@ -221,6 +221,7 @@ tTbxMbTp TbxMbRtuCreate(uint8_t            nodeAddr,
       newTpCtx->receptionDoneFcn = TbxMbRtuReceptionDone;
       newTpCtx->getRxPacketFcn = TbxMbRtuGetRxPacket;
       newTpCtx->getTxPacketFcn = TbxMbRtuGetTxPacket;
+      newTpCtx->channelCtx = NULL;
       newTpCtx->nodeAddr = nodeAddr;
       newTpCtx->port = port;
       newTpCtx->state = TBX_MB_RTU_STATE_INIT;
