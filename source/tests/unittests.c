@@ -1031,7 +1031,7 @@ void test_TbxMbServerCreate_CanCreate(void)
   /* Free the server and transport layer. */
   TbxMbServerFree(mbServer);
   TbxMbRtuFree(tpRtu);
-} /*** end of test_TbxMbTpRtuCreate_CanCreate ***/
+} /*** end of test_TbxMbServerCreate_CanCreate ***/
 
 
 /************************************************************************************//**
@@ -1725,6 +1725,218 @@ void test_TbxMbServerSetCallbackCustomFunction_CanSet(void)
 
 
 /************************************************************************************//**
+** \brief     Tests that invalid parameters trigger an assertion and returns NULL.
+**
+****************************************************************************************/
+void test_TbxMbClientCreate_ShouldAssertOnInvalidParams(void)
+{
+  tTbxMbClient result;
+  size_t       heapFreeBefore;
+  size_t       heapFreeAfter;
+
+  assertionCnt = 0;
+  heapFreeBefore = TbxHeapGetFree();
+  result = TbxMbClientCreate(NULL, 1000U, 1000U);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an error was returned. */
+  TEST_ASSERT_EQUAL(NULL, result);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+} /*** end of test_TbxMbClientCreate_ShouldAssertOnInvalidParams ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that trying to link an already used transport layer trigger an
+**            assertion and returns NULL.
+**
+****************************************************************************************/
+void test_TbxMbClientCreate_ShouldAssertOnUsedTp(void)
+{
+  tTbxMbTp     tpRtu;
+  tTbxMbClient mbClient1;
+  tTbxMbClient mbClient2;
+
+  /* Create the transport layer. */
+  assertionCnt = 0;
+  tpRtu = TbxMbRtuCreate(0, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS, 
+                         TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  /* Make sure a valid context was returned. */
+  TEST_ASSERT_NOT_NULL(tpRtu);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Create first client that links the transport layer. */
+  assertionCnt = 0;
+  mbClient1 = TbxMbClientCreate(tpRtu, 1000U, 1000U);
+  /* Make sure a valid context was returned. */
+  TEST_ASSERT_NOT_NULL(mbClient1);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Create second client that tries the link the same transport layer. */
+  assertionCnt = 0;
+  mbClient2 = TbxMbClientCreate(tpRtu, 1000U, 1000U);
+  /* Make sure an error was returned. */
+  TEST_ASSERT_EQUAL(NULL, mbClient2);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+
+  /* Free the first server and transport layer. */
+  assertionCnt = 0;
+  TbxMbClientFree(mbClient1);
+  TbxMbRtuFree(tpRtu);
+} /*** end of test_TbxMbClientCreate_ShouldAssertOnUsedTp ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that a Modbus client can be created.
+**
+****************************************************************************************/
+void test_TbxMbClientCreate_CanCreate(void)
+{
+  tTbxMbTp     tpRtu;
+  tTbxMbClient mbClient;
+
+  assertionCnt = 0;
+  tpRtu = TbxMbRtuCreate(0, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS, 
+                         TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  /* Make sure a valid context was returned. */
+  TEST_ASSERT_NOT_NULL(tpRtu);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  assertionCnt = 0;
+  mbClient = TbxMbClientCreate(tpRtu, 1000U, 1000U);
+  /* Make sure a valid context was returned. */
+  TEST_ASSERT_NOT_NULL(mbClient);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Free the client and transport layer. */
+  TbxMbClientFree(mbClient);
+  TbxMbRtuFree(tpRtu);
+} /*** end of test_TbxMbClientCreate_CanCreate ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that a Modbus client can be recreated, meaning that no new memory is
+**            allocated from the heap via a memory pool.
+**
+****************************************************************************************/
+void test_TbxMbClientCreate_CanRecreate(void)
+{
+  tTbxMbTp     tpRtu;
+  tTbxMbClient mbClient;
+  size_t       heapFreeBefore;
+  size_t       heapFreeAfter;
+
+  assertionCnt = 0;
+  heapFreeBefore = TbxHeapGetFree();
+  tpRtu = TbxMbRtuCreate(0, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS, 
+                         TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  /* Make sure a valid context was returned. */
+  TEST_ASSERT_NOT_NULL(tpRtu);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  assertionCnt = 0;
+  mbClient = TbxMbClientCreate(tpRtu, 1000U, 1000U);
+  /* Make sure a valid context was returned. */
+  TEST_ASSERT_NOT_NULL(mbClient);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Free the server and transport layer. */
+  assertionCnt = 0;
+  TbxMbClientFree(mbClient);
+  TbxMbRtuFree(tpRtu);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+} /*** end of test_TbxMbClientCreate_CanRecreate ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that invalid parameters trigger an assertion.
+**
+****************************************************************************************/
+void test_TbxMbClientFree_ShouldAssertOnInvalidParams(void)
+{
+  size_t heapFreeBefore;
+  size_t heapFreeAfter;
+
+  /* Try NULL as a server context. */
+  assertionCnt = 0;
+  heapFreeBefore = TbxHeapGetFree();
+  TbxMbClientFree(NULL);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Try passing a dummy context with an invalid type as a server context. */
+  assertionCnt = 0;
+  heapFreeBefore = TbxHeapGetFree();
+  TbxMbClientFree(&invalidCtx);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+} /*** end of test_TbxMbClientFree_ShouldAssertOnInvalidParams ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that a Modbus client can be freed.
+**
+****************************************************************************************/
+void test_TbxMbClientFree_CanFree(void)
+{
+  tTbxMbTp     tpRtu;
+  tTbxMbClient mbClient;
+  size_t       heapFreeBefore;
+  size_t       heapFreeAfter;
+
+  assertionCnt = 0;
+  heapFreeBefore = TbxHeapGetFree();
+  tpRtu = TbxMbRtuCreate(0, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS, 
+                         TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  /* Make sure a valid context was returned. */
+  TEST_ASSERT_NOT_NULL(tpRtu);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  assertionCnt = 0;
+  mbClient = TbxMbClientCreate(tpRtu, 1000U, 1000U);
+  /* Make sure a valid context was returned. */
+  TEST_ASSERT_NOT_NULL(mbClient);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Free the server. */
+  assertionCnt = 0;
+  TbxMbClientFree(mbClient);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Free the transport layer. */
+  assertionCnt = 0;
+  TbxMbRtuFree(tpRtu);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+} /*** end of test_TbxMbClientFree_CanFree ***/
+
+
+/************************************************************************************//**
 ** \brief     Handles the running of the unit tests.
 ** \return    Test results.
 **
@@ -1779,12 +1991,15 @@ int runTests(void)
   RUN_TEST(test_TbxMbServerSetCallbackWriteHoldingReg_CanSet);
   RUN_TEST(test_TbxMbServerSetCallbackCustomFunction_ShouldAssertOnInvalidParams);
   RUN_TEST(test_TbxMbServerSetCallbackCustomFunction_CanSet);
-
-
-
-  /* TODO ##Vg Tests for the Modbus client API. Note that these also perform additional
-   *           tests with a server, otherwise the client API cannot be tested.
+  /* Tests for the Modbus client API. Note that these also perform additional run-time
+   * tests with an RTU server.
    */
+  RUN_TEST(test_TbxMbClientCreate_ShouldAssertOnInvalidParams);
+  RUN_TEST(test_TbxMbClientCreate_ShouldAssertOnUsedTp);
+  RUN_TEST(test_TbxMbClientCreate_CanCreate);
+  RUN_TEST(test_TbxMbClientCreate_CanRecreate);
+  RUN_TEST(test_TbxMbClientFree_ShouldAssertOnInvalidParams);
+  RUN_TEST(test_TbxMbClientFree_CanFree);
 
   /* Inform the framework that unit testing is done and return the result. */
   return UNITY_END();
