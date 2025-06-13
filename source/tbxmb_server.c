@@ -127,24 +127,31 @@ tTbxMbServer TbxMbServerCreate(tTbxMbTp transport)
                  (tpCtx->getRxPacketFcn != NULL) && (tpCtx->getTxPacketFcn != NULL) &&
                  (tpCtx->channelCtx == NULL) && (tpCtx->type != 0U) &&
                  (tpCtx->type !=TBX_MB_SERVER_CONTEXT_TYPE ));  
-      /* Initialize the channel context. */
-      newServerCtx->type = TBX_MB_SERVER_CONTEXT_TYPE;
-      newServerCtx->instancePtr = NULL;
-      newServerCtx->pollFcn = NULL;
-      newServerCtx->processFcn = TbxMbServerProcessEvent;
-      newServerCtx->readInputFcn = NULL;
-      newServerCtx->readCoilFcn = NULL;
-      newServerCtx->writeCoilFcn = NULL;
-      newServerCtx->readInputRegFcn = NULL;
-      newServerCtx->readHoldingRegFcn = NULL;
-      newServerCtx->writeHoldingRegFcn = NULL;
-      newServerCtx->customFunctionFcn = NULL;
-      /* Crosslink the transport layer. */
-      newServerCtx->tpCtx = tpCtx;
-      newServerCtx->tpCtx->channelCtx = newServerCtx;
-      newServerCtx->tpCtx->isClient = TBX_FALSE;
-      /* Update the result. */
-      result = newServerCtx;
+      /* Only continue if the sanity check passed. */
+      if ((tpCtx->transmitFcn != NULL) && (tpCtx->receptionDoneFcn != NULL) &&
+          (tpCtx->getRxPacketFcn != NULL) && (tpCtx->getTxPacketFcn != NULL) &&
+          (tpCtx->channelCtx == NULL) && (tpCtx->type != 0U) &&
+          (tpCtx->type !=TBX_MB_SERVER_CONTEXT_TYPE ))
+      {
+        /* Initialize the channel context. */
+        newServerCtx->type = TBX_MB_SERVER_CONTEXT_TYPE;
+        newServerCtx->instancePtr = NULL;
+        newServerCtx->pollFcn = NULL;
+        newServerCtx->processFcn = TbxMbServerProcessEvent;
+        newServerCtx->readInputFcn = NULL;
+        newServerCtx->readCoilFcn = NULL;
+        newServerCtx->writeCoilFcn = NULL;
+        newServerCtx->readInputRegFcn = NULL;
+        newServerCtx->readHoldingRegFcn = NULL;
+        newServerCtx->writeHoldingRegFcn = NULL;
+        newServerCtx->customFunctionFcn = NULL;
+        /* Crosslink the transport layer. */
+        newServerCtx->tpCtx = tpCtx;
+        newServerCtx->tpCtx->channelCtx = newServerCtx;
+        newServerCtx->tpCtx->isClient = TBX_FALSE;
+        /* Update the result. */
+        result = newServerCtx;
+      }
     }
   }
   /* Give the result back to the caller. */

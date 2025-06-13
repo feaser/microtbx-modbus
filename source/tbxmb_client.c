@@ -97,20 +97,27 @@ tTbxMbClient TbxMbClientCreate(tTbxMbTp transport,
                  (tpCtx->getRxPacketFcn != NULL) && (tpCtx->getTxPacketFcn != NULL) &&
                  (tpCtx->channelCtx == NULL) && (tpCtx->type != 0U) && 
                  (tpCtx->type != TBX_MB_CLIENT_CONTEXT_TYPE));
-      /* Initialize the channel context. */
-      newClientCtx->type = TBX_MB_CLIENT_CONTEXT_TYPE;
-      newClientCtx->instancePtr = NULL;
-      newClientCtx->pollFcn = NULL;
-      newClientCtx->processFcn = TbxMbClientProcessEvent;
-      newClientCtx->responseTimeout = responseTimeout;
-      newClientCtx->turnaroundDelay = turnaroundDelay;
-      newClientCtx->transceiveSem = TbxMbOsalSemCreate();
-      /* Crosslink the transport layer. */
-      newClientCtx->tpCtx = tpCtx;
-      newClientCtx->tpCtx->channelCtx = newClientCtx;
-      newClientCtx->tpCtx->isClient = TBX_TRUE;
-      /* Update the result. */
-      result = newClientCtx;
+      /* Only continue if the sanity check passed. */
+      if ((tpCtx->transmitFcn != NULL) && (tpCtx->receptionDoneFcn != NULL) &&
+          (tpCtx->getRxPacketFcn != NULL) && (tpCtx->getTxPacketFcn != NULL) &&
+          (tpCtx->channelCtx == NULL) && (tpCtx->type != 0U) && 
+          (tpCtx->type != TBX_MB_CLIENT_CONTEXT_TYPE))
+      {
+        /* Initialize the channel context. */
+        newClientCtx->type = TBX_MB_CLIENT_CONTEXT_TYPE;
+        newClientCtx->instancePtr = NULL;
+        newClientCtx->pollFcn = NULL;
+        newClientCtx->processFcn = TbxMbClientProcessEvent;
+        newClientCtx->responseTimeout = responseTimeout;
+        newClientCtx->turnaroundDelay = turnaroundDelay;
+        newClientCtx->transceiveSem = TbxMbOsalSemCreate();
+        /* Crosslink the transport layer. */
+        newClientCtx->tpCtx = tpCtx;
+        newClientCtx->tpCtx->channelCtx = newClientCtx;
+        newClientCtx->tpCtx->isClient = TBX_TRUE;
+        /* Update the result. */
+        result = newClientCtx;
+      }
     }
   }
   /* Give the result back to the caller. */
