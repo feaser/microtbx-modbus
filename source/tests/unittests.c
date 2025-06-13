@@ -717,6 +717,44 @@ void test_TbxMbEventTask_CanCall(void)
 
 
 /************************************************************************************//**
+** \brief     Tests that invalid parameters trigger an assertion.
+**
+****************************************************************************************/
+void test_TbxMbUartTransmitComplete_ShouldAssertOnInvalidParams(void)
+{
+  assertionCnt = 0;
+  TbxMbUartTransmitComplete(TBX_MB_UART_NUM_PORT);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+} /*** end of test_TbxMbUartTransmitComplete_ShouldAssertOnInvalidParams ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that invalid parameters trigger an assertion.
+**
+****************************************************************************************/
+void test_TbxMbUartDataReceived_ShouldAssertOnInvalidParams(void)
+{
+  uint8_t dummyRxData[2] = { 0xAAU, 0x55U };
+
+  assertionCnt = 0;
+  TbxMbUartDataReceived(TBX_MB_UART_NUM_PORT, dummyRxData, 2U);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+
+  assertionCnt = 0;
+  TbxMbUartDataReceived(TBX_MB_UART_PORT1, NULL, 2U);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+
+  assertionCnt = 0;
+  TbxMbUartDataReceived(TBX_MB_UART_PORT1, dummyRxData, 0U);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+} /*** end of test_TbxMbUartDataReceived_ShouldAssertOnInvalidParams ***/
+
+
+/************************************************************************************//**
 ** \brief     Tests that invalid parameters trigger an assertion and returns NULL.
 **
 ****************************************************************************************/
@@ -1711,8 +1749,9 @@ int runTests(void)
   RUN_TEST(test_TbxMbCommonStoreUInt16BE_CanStore);
   /* Tests for the Modbus event API. */
   RUN_TEST(test_TbxMbEventTask_CanCall);
-  /* TODO ##Vg Tests for the Modbus UART API. */
-
+  /* Tests for the Modbus UART API. */
+  RUN_TEST(test_TbxMbUartTransmitComplete_ShouldAssertOnInvalidParams);
+  RUN_TEST(test_TbxMbUartDataReceived_ShouldAssertOnInvalidParams);
   /* Tests for a Modbus RTU transport layer API. */
   RUN_TEST(test_TbxMbTpRtuCreate_ShouldAssertOnInvalidParams);
   RUN_TEST(test_TbxMbTpRtuCreate_CanCreate);
@@ -1740,6 +1779,9 @@ int runTests(void)
   RUN_TEST(test_TbxMbServerSetCallbackWriteHoldingReg_CanSet);
   RUN_TEST(test_TbxMbServerSetCallbackCustomFunction_ShouldAssertOnInvalidParams);
   RUN_TEST(test_TbxMbServerSetCallbackCustomFunction_CanSet);
+
+
+
   /* TODO ##Vg Tests for the Modbus client API. Note that these also perform additional
    *           tests with a server, otherwise the client API cannot be tested.
    */
