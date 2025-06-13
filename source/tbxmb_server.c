@@ -118,11 +118,15 @@ tTbxMbServer TbxMbServerCreate(tTbxMbTp transport)
       tTbxMbTpCtx * tpCtx = (tTbxMbTpCtx *)transport;
       /* Sanity check on the transport layer's interface function. That way there is 
        * no need to do it later on, making it more run-time efficient. Also check that
-       * it's not already linked to another channel.
+       * it's not already linked to another channel and do a bit of checking on the
+       * context type. Note that the exact context type value is not available here, 
+       * because by design, the context type macros are located in only the associated
+       * module's source-file. That way it cannot accidentally be used elsewhere.
        */
       TBX_ASSERT((tpCtx->transmitFcn != NULL) && (tpCtx->receptionDoneFcn != NULL) &&
                  (tpCtx->getRxPacketFcn != NULL) && (tpCtx->getTxPacketFcn != NULL) &&
-                 (tpCtx->channelCtx == NULL));  
+                 (tpCtx->channelCtx == NULL) && (tpCtx->type != 0U) &&
+                 (tpCtx->type !=TBX_MB_SERVER_CONTEXT_TYPE ));  
       /* Initialize the channel context. */
       newServerCtx->type = TBX_MB_SERVER_CONTEXT_TYPE;
       newServerCtx->instancePtr = NULL;
