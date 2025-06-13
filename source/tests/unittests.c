@@ -610,8 +610,110 @@ void test_TbxMbGeneric_TypesShouldBePresent(void)
   TEST_ASSERT_EQUAL_INT(TBX_MB_EVEN_PARITY,     1U);
   TEST_ASSERT_EQUAL_INT(TBX_MB_NO_PARITY,       2U);
   TEST_ASSERT_EQUAL_INT(TBX_MB_UART_NUM_PARITY, 3U);
-
 } /*** end of test_TbxMbGeneric_TypesShouldBePresent ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that invalid parameters trigger an assertion and returns zero.
+**
+****************************************************************************************/
+void test_TbxMbCommonExtractUInt16BE_ShouldAssertOnInvalidParams(void)
+{
+  uint16_t result;
+
+  assertionCnt = 0;
+  result = TbxMbCommonExtractUInt16BE(NULL);
+  /* Make sure zero is returned. */
+  TEST_ASSERT_EQUAL_UINT16(0, result);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+} /*** end of test_TbxMbCommonExtractUInt16BE_ShouldAssertOnInvalidParams ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that the 16-bit unsigned value can be extracted and returned in big
+**            endian format. 
+**
+****************************************************************************************/
+void test_TbxMbCommonExtractUInt16BE_CanExtract(void)
+{
+  uint16_t result;
+  uint8_t input[2] = { 0xA5U, 0x1FU };
+
+  assertionCnt = 0;
+  result = TbxMbCommonExtractUInt16BE(input);
+  /* Make sure the correct big endian 16-bit value is returned. */
+  TEST_ASSERT_EQUAL_UINT16(0xA51FU, result);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+} /*** end of test_TbxMbCommonExtractUInt16BE_CanExtract ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that invalid parameters trigger an assertion.
+**
+****************************************************************************************/
+void test_TbxMbCommonStoreUInt16BE_ShouldAssertOnInvalidParams(void)
+{
+  assertionCnt = 0;
+  TbxMbCommonStoreUInt16BE(0U, NULL);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+} /*** end of test_TbxMbCommonStoreUInt16BE_ShouldAssertOnInvalidParams ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that the 16-bit unsigned value can be store in the byte array in big
+**            endian format. 
+**
+****************************************************************************************/
+void test_TbxMbCommonStoreUInt16BE_CanStore(void)
+{
+  uint16_t input = 0xA51FU;
+  uint8_t  result[2] = { 0U, 0U };
+
+  assertionCnt = 0;
+  TbxMbCommonStoreUInt16BE(input, result);
+  /* Make sure the correct big endian 16-bit value is stored in the array. */
+  TEST_ASSERT_EQUAL_UINT8(0xA5U, result[0]);
+  TEST_ASSERT_EQUAL_UINT8(0x1FU, result[1]);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+} /*** end of test_TbxMbCommonStoreUInt16BE_CanStore ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that the event task can be called without triggering an assertion.
+**
+****************************************************************************************/
+void test_TbxMbEventTask_CanCall(void)
+{
+  tTbxMbTp     tpRtu;
+  tTbxMbServer mbServer;
+
+  /* First call it without any transport layers or channels created. */
+  assertionCnt = 0;
+  TbxMbEventTask();
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Now create a transport protocol context and a server context. */
+  tpRtu = TbxMbRtuCreate(10, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS, 
+                         TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  TEST_ASSERT_NOT_NULL(tpRtu);
+  mbServer = TbxMbServerCreate(tpRtu);
+  TEST_ASSERT_NOT_NULL(tpRtu);
+
+  /* Now call it with a transport layer and channel created. */
+  assertionCnt = 0;
+  TbxMbEventTask();
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Free the server and transport protocol. */
+  TbxMbServerFree(mbServer);
+  TbxMbRtuFree(tpRtu);
+} /*** end of test_TbxMbEventTask_CanCall ***/
 
 
 /************************************************************************************//**
@@ -818,11 +920,50 @@ void test_TbxMbServerCreate_ShouldAssertOnInvalidParams(void)
   TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
   /* Make sure no heap memory was allocated. */
   TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
-
-  /* TODO ##Vg Still need to add an extra test that tries to pass &invalidCtx and then
-   *           verifies that an assertion was triggers.
-   */
 } /*** end of test_TbxMbServerCreate_ShouldAssertOnInvalidParams ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that trying to link an already used transport layer trigger an
+**            assertion and returns NULL.
+**
+****************************************************************************************/
+void test_TbxMbServerCreate_ShouldAssertOnUsedTp(void)
+{
+  tTbxMbTp     tpRtu;
+  tTbxMbServer mbServer1;
+  tTbxMbServer mbServer2;
+
+  /* Create the transport layer. */
+  assertionCnt = 0;
+  tpRtu = TbxMbRtuCreate(10, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS, 
+                         TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  /* Make sure a valid context was returned. */
+  TEST_ASSERT_NOT_NULL(tpRtu);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Create first server that links the transport layer. */
+  assertionCnt = 0;
+  mbServer1 = TbxMbServerCreate(tpRtu);
+  /* Make sure a valid context was returned. */
+  TEST_ASSERT_NOT_NULL(mbServer1);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Create second server that tries the link the same transport layer. */
+  assertionCnt = 0;
+  mbServer2 = TbxMbServerCreate(tpRtu);
+  /* Make sure an error was returned. */
+  TEST_ASSERT_EQUAL(NULL, mbServer2);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+
+  /* Free the first server and transport layer. */
+  assertionCnt = 0;
+  TbxMbServerFree(mbServer1);
+  TbxMbRtuFree(tpRtu);
+} /*** end of test_TbxMbServerCreate_ShouldAssertOnUsedTp ***/
 
 
 /************************************************************************************//**
@@ -1563,14 +1704,24 @@ int runTests(void)
   RUN_TEST(test_TbxMbGeneric_TpNodeAddressMacrosShouldBePresent);
   RUN_TEST(test_TbxMbGeneric_TpPduMacrosShouldBePresent);
   RUN_TEST(test_TbxMbGeneric_TypesShouldBePresent);
-  /* Tests for a Modbus RTU transport layer. */
+  /* Tests for the Modbus common API. */
+  RUN_TEST(test_TbxMbCommonExtractUInt16BE_ShouldAssertOnInvalidParams);
+  RUN_TEST(test_TbxMbCommonExtractUInt16BE_CanExtract);
+  RUN_TEST(test_TbxMbCommonStoreUInt16BE_ShouldAssertOnInvalidParams);
+  RUN_TEST(test_TbxMbCommonStoreUInt16BE_CanStore);
+  /* Tests for the Modbus event API. */
+  RUN_TEST(test_TbxMbEventTask_CanCall);
+  /* TODO ##Vg Tests for the Modbus UART API. */
+
+  /* Tests for a Modbus RTU transport layer API. */
   RUN_TEST(test_TbxMbTpRtuCreate_ShouldAssertOnInvalidParams);
   RUN_TEST(test_TbxMbTpRtuCreate_CanCreate);
   RUN_TEST(test_TbxMbTpRtuCreate_CanRecreate);
   RUN_TEST(test_TbxMbTpRtuFree_ShouldAssertOnInvalidParams);
   RUN_TEST(test_TbxMbTpRtuFree_CanFree);
-  /* Tests for a Modbus server. */
+  /* Tests for a Modbus server API. */
   RUN_TEST(test_TbxMbServerCreate_ShouldAssertOnInvalidParams);
+  RUN_TEST(test_TbxMbServerCreate_ShouldAssertOnUsedTp);
   RUN_TEST(test_TbxMbServerCreate_CanCreate);
   RUN_TEST(test_TbxMbServerCreate_CanRecreate);
   RUN_TEST(test_TbxMbServerFree_ShouldAssertOnInvalidParams);
@@ -1589,13 +1740,9 @@ int runTests(void)
   RUN_TEST(test_TbxMbServerSetCallbackWriteHoldingReg_CanSet);
   RUN_TEST(test_TbxMbServerSetCallbackCustomFunction_ShouldAssertOnInvalidParams);
   RUN_TEST(test_TbxMbServerSetCallbackCustomFunction_CanSet);
-
-
-  /* TODO ##Vg Tests for a Modbus client. Note that these also perform addition test
-   *           with a server, otherwise the client API cannot be tested.
+  /* TODO ##Vg Tests for the Modbus client API. Note that these also perform additional
+   *           tests with a server, otherwise the client API cannot be tested.
    */
-
-   /* TODO ##Vg How about the other APIs, i.e. Event, Common and UART? */
 
   /* Inform the framework that unit testing is done and return the result. */
   return UNITY_END();
