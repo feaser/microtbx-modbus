@@ -189,6 +189,8 @@ void TbxMbServerFree(tTbxMbServer channel)
       serverCtx->pollFcn = NULL;
       serverCtx->processFcn = NULL;
       TbxCriticalSectionExit();
+      /* Purge possibly pending events from this channel's context. */
+      TbxMbEventPurge(channel);
       /* Give the channel context back to the memory pool. */
       TbxMemPoolRelease(serverCtx);
     }

@@ -56,6 +56,18 @@ typedef struct
 } tTbxMbEventCtx;
 
 
+/****************************************************************************************
+* Local data declarations
+****************************************************************************************/
+/** \brief Array with context for which its poll function should be called during the
+ *         event task.
+ */
+static tTbxMbEventCtx * pollerList[TBX_MB_EVENT_QUEUE_SIZE];
+
+/** \brief Flag to track if the pollerList has been initialized or not. */
+static uint8_t          pollerListInitialized = TBX_FALSE;
+
+
 /************************************************************************************//**
 ** \brief     Task function that drives the entire Modbus stack. It processes internally
 **            generated events. 
@@ -78,11 +90,9 @@ typedef struct
 ****************************************************************************************/
 void TbxMbEventTask(void)
 {
-  static tTbxMbEventCtx * pollerList[TBX_MB_EVENT_QUEUE_SIZE];
-  static uint8_t          pollerListInitialized = TBX_FALSE;
-  const  uint16_t         defaultWaitTimeoutMs = 5000U;
-  static uint16_t         waitTimeoutMS = 5000U;
-  tTbxMbEvent             newEvent = { 0 };
+  const  uint16_t  defaultWaitTimeoutMs = 5000U;
+  static uint16_t  waitTimeoutMS = 5000U;
+  tTbxMbEvent      newEvent = { 0 };
 
   /* Make sure the OSAL event module is initialized, just in case the application already
    * calls this task function, because it created a transport layer object.
@@ -209,6 +219,49 @@ void TbxMbEventTask(void)
    */
   waitTimeoutMS = (numPollerEntries > 0U) ? 1U : defaultWaitTimeoutMs;
 } /*** end of TbxMbEventTask ***/
+
+
+/************************************************************************************//**
+** \brief     Function that removes all entries from the event queue and the pollerlist,
+**            which are related to the specified context. This function should be called
+**            when free-ing a channel or transport layer.
+** \param     context The context of the channel or transport layer, for which the event
+**            queue and pollerlist should be purged.
+**
+****************************************************************************************/
+void TbxMbEventPurge(void const * context)
+{
+  /* Verify parameters. */
+  TBX_ASSERT(context != NULL);
+
+  /* Only continue with valid parameters. */
+  if (context != NULL)
+  {
+    /* Purge events from this context from the event queue. */
+    TbxMbOsalEventPurge(context);
+
+    /* Only need to purge the entries for this context from the poller list, it the list
+     * was actually initialized.
+     */
+    if (pollerListInitialized == TBX_TRUE)
+    {
+      /* Obtain mutual exclusive access to the poller list. */
+      TbxCriticalSectionEnter();
+      /* Loop through the array to locate entires that need to be purged. */
+      for (size_t listIdx = 0U; listIdx < TBX_MB_EVENT_QUEUE_SIZE; listIdx++)
+      {
+        /* Does this entrie equel the context to purge? */
+        if (pollerList[listIdx] == context)
+        {
+          /* Remove it from the array by setting its value back to NULL. */
+          pollerList[listIdx] = NULL;
+        }
+      }
+      /* Release mutual exclusive access to the poller list. */
+      TbxCriticalSectionExit();
+    }
+  }
+} /*** end of TbxMbEventPurge ***/
 
 
 /*********************************** end of tbxmb_event.c ******************************/

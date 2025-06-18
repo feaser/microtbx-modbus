@@ -160,6 +160,25 @@ uint8_t TbxMbOsalEventWait(tTbxMbEvent * event,
 
 
 /************************************************************************************//**
+** \brief     Removes all the events for the specified context from the event queue.
+** \param     context The context of the channel or transport layer, whose entries need
+**            to be removed from the event queue.
+**
+****************************************************************************************/
+void TbxMbOsalEventPurge(void const * context)
+{
+  /* Verify parameters. */
+  TBX_ASSERT(context != NULL);
+
+  /* Only continue with valid parameters. */
+  if (context != NULL)
+  {
+    /* TODO ##Vg Implement TbxMbOsalEventPurge(). */
+  }
+} /*** end of TbxMbOsalEventPurge ***/
+
+
+/************************************************************************************//**
 ** \brief     Creates a new binary semaphore object with an initial count of 0, meaning
 **            that it's taken.
 ** \return    Handle to the newly created binary semaphore object if successful, NULL

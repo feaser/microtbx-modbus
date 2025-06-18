@@ -158,6 +158,8 @@ void TbxMbClientFree(tTbxMbClient channel)
       clientCtx->processFcn = NULL;
       clientCtx->transceiveSem = NULL;
       TbxCriticalSectionExit();
+      /* Purge possibly pending events from this channel's context. */
+      TbxMbEventPurge(channel);
       /* Give the channel context back to the memory pool. */
       TbxMemPoolRelease(clientCtx);
     }

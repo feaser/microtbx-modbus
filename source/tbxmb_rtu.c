@@ -329,6 +329,8 @@ void TbxMbRtuFree(tTbxMbTp transport)
       tpCtx->pollFcn = NULL;
       tpCtx->processFcn = NULL;
       TbxCriticalSectionExit();
+      /* Purge possibly pending events from this transport layer's context. */
+      TbxMbEventPurge(transport);
       /* Give the transport layer context back to the memory pool. */
       TbxMemPoolRelease(tpCtx);
     }
