@@ -42,9 +42,10 @@ extern "C" {
 /****************************************************************************************
 * Function prototypes
 ****************************************************************************************/
+void setUp(void);
 void initializeTests(void);
-
 int  runTests(void);
+void tearDown(void);
 
 
 #ifdef __cplusplus

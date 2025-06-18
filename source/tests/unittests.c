@@ -41,7 +41,7 @@
 #include "microtbxmodbus.h"                      /* MicroTBX-Modbus global header      */
 #include "unity.h"                               /* Unity unit test framework          */
 #include "unittests.h"                           /* Unit tests header                  */
-#include <sys/time.h>                            /* Time definitions                   */
+#include <sys/time.h>                            /* time definitions                   */
 
 
 /****************************************************************************************
@@ -54,7 +54,7 @@ uint32_t assertionCnt = 0;
 uint8_t mbServerCoils[2] = { TBX_OFF, TBX_OFF };
 
 /** \brief Modbus server holding registers. */
-uint16_t mbServerHoldingRegs[2] = { 0U, 0U };
+uint16_t mbServerHoldingRegs[2] = { 0x789AU, 0xA51FU };
 
 /** \brief An invalid MicroTBX-Modbus context. The type is set to one that is not used
  *         by any of its internal contexts. 
@@ -126,7 +126,7 @@ tTbxMbServerResult mbServer_ReadInput(tTbxMbServer channel, uint16_t addr,
 **            TBX_MB_SERVER_ERR_DEVICE_FAILURE otherwise.
 **
 ****************************************************************************************/
-static tTbxMbServerResult mbServer_ReadCoil(tTbxMbServer channel, uint16_t addr,
+tTbxMbServerResult mbServer_ReadCoil(tTbxMbServer channel, uint16_t addr,
                                             uint8_t * value)
 {
   tTbxMbServerResult result = TBX_MB_SERVER_OK;
@@ -168,7 +168,7 @@ static tTbxMbServerResult mbServer_ReadCoil(tTbxMbServer channel, uint16_t addr,
 **            TBX_MB_SERVER_ERR_DEVICE_FAILURE otherwise.
 **
 ****************************************************************************************/
-static tTbxMbServerResult mbServer_WriteCoil(tTbxMbServer channel, uint16_t addr,
+tTbxMbServerResult mbServer_WriteCoil(tTbxMbServer channel, uint16_t addr,
                                              uint8_t value)
 {
 tTbxMbServerResult result = TBX_MB_SERVER_OK;
@@ -380,6 +380,33 @@ uint8_t mbServer_ReportServerIdCallback(tTbxMbServer channel, uint8_t const * rx
   /* Give the result back to the caller. */
   return result;
 }  /*** end of mbServer_ReportServerIdCallback ***/ 
+
+
+/************************************************************************************//**
+** \brief     In the simulated environment with both a Modbus server and client, the 
+**            event task is not called continuously, but only when the client is waiting
+**            for a response. To be able to perform run-time client-server interactions,
+**            both their transport layers need to be in the operational state. For this
+**            reason, the event task should run for a bit before the client attempts to
+**            communicate with the server.
+**
+****************************************************************************************/
+void startupModbusStack(void)
+{
+  /* Run the Modbus stack about 150ms.*/ 
+  uint16_t startTicks = TbxMbPortTimerCount();
+  uint16_t deltaTicks;
+  do
+  {
+    /* Run the Modbus stack. */
+    TbxMbEventTask();
+    /* Sleep a bit to not starve the CPU. */
+    //(void)usleep(1000U);    
+    /* Calculate number of 50us ticks that elapsed since the start of the loop. */
+    deltaTicks = TbxMbPortTimerCount() - startTicks;
+  } 
+  while (deltaTicks <= 3000U);
+} /*** end of startupModbusStack ***/
 
 
 /************************************************************************************//**
@@ -2054,6 +2081,9 @@ void test_TbxMbClientReadCoils_CanRead(void)
   /* Make sure no assertion was triggered. */
   TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
  
+  /* Bring the Modbus stack to an operational state in the simulated environment. */
+  startupModbusStack();
+
   /* Read the two coils supported by the server. */
   assertionCnt = 0;
   result = TbxMbClientReadCoils(mbClient, 10U, 0U, 2U, coils);
@@ -2111,6 +2141,9 @@ void test_TbxMbClientReadCoils_CannotReadUnsupported(void)
   /* Make sure no assertion was triggered. */
   TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
  
+  /* Bring the Modbus stack to an operational state in the simulated environment. */
+  startupModbusStack();
+
   /* Read the three coils, while knowing that the third one is not supported by the 
    * server. 
    */
@@ -2123,7 +2156,7 @@ void test_TbxMbClientReadCoils_CannotReadUnsupported(void)
 
   /* Read coils that are not supported by Modbus server.  */
   assertionCnt = 0;
-  result = TbxMbClientReadCoils(mbClient, 10U, 3U, 2U, coils);
+  result = TbxMbClientReadCoils(mbClient, 10U, 2U, 2U, coils);
   /* Make sure the client operation reported an error. */
   TEST_ASSERT_EQUAL(TBX_ERROR, result);
   /* Make sure no assertion was triggered. */
@@ -2138,6 +2171,880 @@ void test_TbxMbClientReadCoils_CannotReadUnsupported(void)
 
 
 /************************************************************************************//**
+** \brief     Tests that invalid parameters trigger an assertion and returns TBX_ERROR.
+**
+****************************************************************************************/
+void test_TbxMbClientReadInputs_ShouldAssertOnInvalidParams(void)
+{
+  uint8_t      result;
+  tTbxMbTp     tpRtu;
+  tTbxMbClient mbClient;
+  size_t       heapFreeBefore;
+  size_t       heapFreeAfter;
+  uint8_t      inputs[2] = { TBX_OFF, TBX_OFF };
+
+  /* Create a transport layer. */
+  assertionCnt = 0;
+  heapFreeBefore = TbxHeapGetFree();
+  tpRtu = TbxMbRtuCreate(0, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS, 
+                         TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  /* Make sure a valid context was returned. */
+  TEST_ASSERT_NOT_NULL(tpRtu);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Create a client channel. */
+  assertionCnt = 0;
+  mbClient = TbxMbClientCreate(tpRtu, 1000U, 1000U);
+  /* Make sure a valid context was returned. */
+  TEST_ASSERT_NOT_NULL(mbClient);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Try NULL as a client context. */
+  assertionCnt = 0;
+  TbxMbClientReadInputs(NULL, 10U, 10000U, 2U, inputs);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an error was returned. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Try 0 as number of inputs to read. */
+  assertionCnt = 0;
+  TbxMbClientReadInputs(mbClient, 10U, 10000U, 0U, inputs);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an error was returned. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Try 2001 as number of inputs to read. */
+  assertionCnt = 0;
+  TbxMbClientReadInputs(mbClient, 10U, 10000U, 2001U, inputs);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an error was returned. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Try NULL as the inputs data pointer. */
+  assertionCnt = 0;
+  TbxMbClientReadInputs(mbClient, 10U, 10000U, 2U, NULL);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an error was returned. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Free the client and transport layer. */
+  TbxMbClientFree(mbClient);
+  TbxMbRtuFree(tpRtu);
+} /*** end of test_TbxMbClientReadInputs_ShouldAssertOnInvalidParams ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that a Modbus client can read inputs from a Modbus server.
+**
+****************************************************************************************/
+void test_TbxMbClientReadInputs_CanRead(void)
+{
+  uint8_t      result;
+  tTbxMbTp     tpRtuServer;
+  tTbxMbTp     tpRtuClient;
+  tTbxMbServer mbServer;
+  tTbxMbClient mbClient;
+  uint8_t      inputs[2] = { TBX_OFF, TBX_ON };
+
+  /* Create a Modbus RTU server on serial port 1. */
+  assertionCnt = 0;
+  tpRtuServer = TbxMbRtuCreate(10, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS, 
+                              TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  mbServer = TbxMbServerCreate(tpRtuServer);
+  TEST_ASSERT_NOT_NULL(tpRtuServer);
+  TEST_ASSERT_NOT_NULL(mbServer);
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Create a Modbus RTU client on serial port 2. */
+  assertionCnt = 0;
+  tpRtuClient = TbxMbRtuCreate(0, TBX_MB_UART_PORT2, TBX_MB_UART_19200BPS, 
+                              TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  mbClient = TbxMbClientCreate(tpRtuClient, 1000U, 1000U);
+  TEST_ASSERT_NOT_NULL(tpRtuClient);
+  TEST_ASSERT_NOT_NULL(mbClient);
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Set the callback for the server. */
+  assertionCnt = 0;
+  TbxMbServerSetCallbackReadInput(mbServer, mbServer_ReadInput);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Bring the Modbus stack to an operational state in the simulated environment. */
+  startupModbusStack();
+
+  /* Read the two inputs supported by the server. */
+  assertionCnt = 0;
+  result = TbxMbClientReadInputs(mbClient, 10U, 10000U, 2U, inputs);
+  /* Make sure the client operation was successful. */
+  TEST_ASSERT_EQUAL(TBX_OK, result);
+  /* Make sure the read inputs were as expected. */
+  TEST_ASSERT_EQUAL_UINT8(TBX_ON, inputs[0]);
+  TEST_ASSERT_EQUAL_UINT8(TBX_OFF, inputs[1]);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Free the channels and transport layers. */
+  TbxMbClientFree(mbClient);
+  TbxMbServerFree(mbServer);
+  TbxMbRtuFree(tpRtuClient);
+  TbxMbRtuFree(tpRtuServer);
+} /*** end of test_TbxMbClientReadInputs_CanRead ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that a Modbus client cannot read inputs that are not supported by the
+**            Modbus server.
+**
+****************************************************************************************/
+void test_TbxMbClientReadInputs_CannotReadUnsupported(void)
+{
+  uint8_t      result;
+  tTbxMbTp     tpRtuServer;
+  tTbxMbTp     tpRtuClient;
+  tTbxMbServer mbServer;
+  tTbxMbClient mbClient;
+  uint8_t inputs[3] = { TBX_OFF, TBX_OFF, TBX_OFF };
+
+  /* Create a Modbus RTU server on serial port 1. */
+  assertionCnt = 0;
+  tpRtuServer = TbxMbRtuCreate(10, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS, 
+                              TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  mbServer = TbxMbServerCreate(tpRtuServer);
+  TEST_ASSERT_NOT_NULL(tpRtuServer);
+  TEST_ASSERT_NOT_NULL(mbServer);
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Create a Modbus RTU client on serial port 2. */
+  assertionCnt = 0;
+  tpRtuClient = TbxMbRtuCreate(0, TBX_MB_UART_PORT2, TBX_MB_UART_19200BPS, 
+                              TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  mbClient = TbxMbClientCreate(tpRtuClient, 1000U, 1000U);
+  TEST_ASSERT_NOT_NULL(tpRtuClient);
+  TEST_ASSERT_NOT_NULL(mbClient);
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Set the callback for the server. */
+  assertionCnt = 0;
+  TbxMbServerSetCallbackReadInput(mbServer, mbServer_ReadInput);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+ 
+  /* Bring the Modbus stack to an operational state in the simulated environment. */
+  startupModbusStack();
+
+  /* Read the three inputs, while knowing that the third one is not supported by the 
+   * server. 
+   */
+  assertionCnt = 0;
+  result = TbxMbClientReadInputs(mbClient, 10U, 10000U, 3U, inputs);
+  /* Make sure the client operation reported an error. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Read inputs that are not supported by Modbus server.  */
+  assertionCnt = 0;
+  result = TbxMbClientReadInputs(mbClient, 10U, 10002U, 2U, inputs);
+  /* Make sure the client operation reported an error. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Read inputs that are not supported by Modbus server.  */
+  assertionCnt = 0;
+  result = TbxMbClientReadInputs(mbClient, 10U, 9998U, 2U, inputs);
+  /* Make sure the client operation reported an error. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Free the channels and transport layers. */
+  TbxMbClientFree(mbClient);
+  TbxMbServerFree(mbServer);
+  TbxMbRtuFree(tpRtuClient);
+  TbxMbRtuFree(tpRtuServer);
+} /*** end of test_TbxMbClientReadInputs_CannotReadUnsupported ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that invalid parameters trigger an assertion and returns TBX_ERROR.
+**
+****************************************************************************************/
+void test_TbxMbClientReadInputRegs_ShouldAssertOnInvalidParams(void)
+{
+  uint8_t      result;
+  tTbxMbTp     tpRtu;
+  tTbxMbClient mbClient;
+  size_t       heapFreeBefore;
+  size_t       heapFreeAfter;
+  uint16_t     inputRegs[2] = { 0U, 0U };
+
+  /* Create a transport layer. */
+  assertionCnt = 0;
+  heapFreeBefore = TbxHeapGetFree();
+  tpRtu = TbxMbRtuCreate(0, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS, 
+                         TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  /* Make sure a valid context was returned. */
+  TEST_ASSERT_NOT_NULL(tpRtu);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Create a client channel. */
+  assertionCnt = 0;
+  mbClient = TbxMbClientCreate(tpRtu, 1000U, 1000U);
+  /* Make sure a valid context was returned. */
+  TEST_ASSERT_NOT_NULL(mbClient);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Try NULL as a client context. */
+  assertionCnt = 0;
+  TbxMbClientReadInputRegs(NULL, 10U, 30000U, 2U, inputRegs);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an error was returned. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Try 0 as number of input registers to read. */
+  assertionCnt = 0;
+  TbxMbClientReadInputRegs(mbClient, 10U, 30000U, 0U, inputRegs);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an error was returned. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Try 126 as number of input registers to read. */
+  assertionCnt = 0;
+  TbxMbClientReadInputRegs(mbClient, 10U, 30000U, 126U, inputRegs);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an error was returned. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Try NULL as the input registers' data pointer. */
+  assertionCnt = 0;
+  TbxMbClientReadInputRegs(mbClient, 10U, 30000U, 2U, NULL);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an error was returned. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Free the client and transport layer. */
+  TbxMbClientFree(mbClient);
+  TbxMbRtuFree(tpRtu);
+} /*** end of test_TbxMbClientReadInputRegs_ShouldAssertOnInvalidParams ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that a Modbus client can read input registers from a Modbus server.
+**
+****************************************************************************************/
+void test_TbxMbClientReadInputRegs_CanRead(void)
+{
+  uint8_t      result;
+  tTbxMbTp     tpRtuServer;
+  tTbxMbTp     tpRtuClient;
+  tTbxMbServer mbServer;
+  tTbxMbClient mbClient;
+  uint16_t     inputRegs[2] = { 0U, 0U };
+
+  /* Create a Modbus RTU server on serial port 1. */
+  assertionCnt = 0;
+  tpRtuServer = TbxMbRtuCreate(10, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS, 
+                              TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  mbServer = TbxMbServerCreate(tpRtuServer);
+  TEST_ASSERT_NOT_NULL(tpRtuServer);
+  TEST_ASSERT_NOT_NULL(mbServer);
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Create a Modbus RTU client on serial port 2. */
+  assertionCnt = 0;
+  tpRtuClient = TbxMbRtuCreate(0, TBX_MB_UART_PORT2, TBX_MB_UART_19200BPS, 
+                              TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  mbClient = TbxMbClientCreate(tpRtuClient, 1000U, 1000U);
+  TEST_ASSERT_NOT_NULL(tpRtuClient);
+  TEST_ASSERT_NOT_NULL(mbClient);
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Set the callback for the server. */
+  assertionCnt = 0;
+  TbxMbServerSetCallbackReadInputReg(mbServer, mbServer_ReadInputReg);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+ 
+  /* Bring the Modbus stack to an operational state in the simulated environment. */
+  startupModbusStack();
+
+  /* Read the two input registers supported by the server. */
+  assertionCnt = 0;
+  result = TbxMbClientReadInputRegs(mbClient, 10U, 30000U, 2U, inputRegs);
+  /* Make sure the client operation was successful. */
+  TEST_ASSERT_EQUAL(TBX_OK, result);
+  /* Make sure the read inputs were as expected. */
+  TEST_ASSERT_EQUAL_UINT16(0x1234U, inputRegs[0]);
+  TEST_ASSERT_EQUAL_UINT16(0x5678U, inputRegs[1]);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Free the channels and transport layers. */
+  TbxMbClientFree(mbClient);
+  TbxMbServerFree(mbServer);
+  TbxMbRtuFree(tpRtuClient);
+  TbxMbRtuFree(tpRtuServer);
+} /*** end of test_TbxMbClientReadInputRegs_CanRead ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that a Modbus client cannot read input registers that are not
+**            supported by the Modbus server.
+**
+****************************************************************************************/
+void test_TbxMbClientReadInputRegs_CannotReadUnsupported(void)
+{
+  uint8_t      result;
+  tTbxMbTp     tpRtuServer;
+  tTbxMbTp     tpRtuClient;
+  tTbxMbServer mbServer;
+  tTbxMbClient mbClient;
+  uint16_t     inputRegs[3] = { 0U, 0U, 0U };
+
+  /* Create a Modbus RTU server on serial port 1. */
+  assertionCnt = 0;
+  tpRtuServer = TbxMbRtuCreate(10, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS, 
+                              TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  mbServer = TbxMbServerCreate(tpRtuServer);
+  TEST_ASSERT_NOT_NULL(tpRtuServer);
+  TEST_ASSERT_NOT_NULL(mbServer);
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Create a Modbus RTU client on serial port 2. */
+  assertionCnt = 0;
+  tpRtuClient = TbxMbRtuCreate(0, TBX_MB_UART_PORT2, TBX_MB_UART_19200BPS, 
+                              TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  mbClient = TbxMbClientCreate(tpRtuClient, 1000U, 1000U);
+  TEST_ASSERT_NOT_NULL(tpRtuClient);
+  TEST_ASSERT_NOT_NULL(mbClient);
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Set the callback for the server. */
+  assertionCnt = 0;
+  TbxMbServerSetCallbackReadInputReg(mbServer, mbServer_ReadInputReg);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+ 
+  /* Bring the Modbus stack to an operational state in the simulated environment. */
+  startupModbusStack();
+
+  /* Read the three input registers, while knowing that the third one is not supported
+   * by the server. 
+   */
+  assertionCnt = 0;
+  result = TbxMbClientReadInputRegs(mbClient, 10U, 30000U, 3U, inputRegs);
+  /* Make sure the client operation reported an error. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Read input registers that are not supported by Modbus server.  */
+  assertionCnt = 0;
+  result = TbxMbClientReadInputRegs(mbClient, 10U, 30002U, 2U, inputRegs);
+  /* Make sure the client operation reported an error. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Read input registers that are not supported by Modbus server.  */
+  assertionCnt = 0;
+  result = TbxMbClientReadInputRegs(mbClient, 10U, 29998U, 2U, inputRegs);
+  /* Make sure the client operation reported an error. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Free the channels and transport layers. */
+  TbxMbClientFree(mbClient);
+  TbxMbServerFree(mbServer);
+  TbxMbRtuFree(tpRtuClient);
+  TbxMbRtuFree(tpRtuServer);
+} /*** end of test_TbxMbClientReadInputRegs_CannotReadUnsupported ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that invalid parameters trigger an assertion and returns TBX_ERROR.
+**
+****************************************************************************************/
+void test_TbxMbClientReadHoldingRegs_ShouldAssertOnInvalidParams(void)
+{
+  uint8_t      result;
+  tTbxMbTp     tpRtu;
+  tTbxMbClient mbClient;
+  size_t       heapFreeBefore;
+  size_t       heapFreeAfter;
+  uint16_t     holdingRegs[2] = { 0U, 0U };
+
+  /* Create a transport layer. */
+  assertionCnt = 0;
+  heapFreeBefore = TbxHeapGetFree();
+  tpRtu = TbxMbRtuCreate(0, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS, 
+                         TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  /* Make sure a valid context was returned. */
+  TEST_ASSERT_NOT_NULL(tpRtu);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Create a client channel. */
+  assertionCnt = 0;
+  mbClient = TbxMbClientCreate(tpRtu, 1000U, 1000U);
+  /* Make sure a valid context was returned. */
+  TEST_ASSERT_NOT_NULL(mbClient);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Try NULL as a client context. */
+  assertionCnt = 0;
+  TbxMbClientReadHoldingRegs(NULL, 10U, 40000U, 2U, holdingRegs);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an error was returned. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Try 0 as number of holding registers to read. */
+  assertionCnt = 0;
+  TbxMbClientReadHoldingRegs(mbClient, 10U, 40000U, 0U, holdingRegs);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an error was returned. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Try 126 as number of holding registers to read. */
+  assertionCnt = 0;
+  TbxMbClientReadHoldingRegs(mbClient, 10U, 40000U, 126U, holdingRegs);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an error was returned. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Try NULL as the holding registers' data pointer. */
+  assertionCnt = 0;
+  TbxMbClientReadHoldingRegs(mbClient, 10U, 40000U, 2U, NULL);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an error was returned. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Free the client and transport layer. */
+  TbxMbClientFree(mbClient);
+  TbxMbRtuFree(tpRtu);
+} /*** end of test_TbxMbClientReadHoldingRegs_ShouldAssertOnInvalidParams ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that a Modbus client can read holding registers from a Modbus server.
+**
+****************************************************************************************/
+void test_TbxMbClientReadHoldingRegs_CanRead(void)
+{
+  uint8_t      result;
+  tTbxMbTp     tpRtuServer;
+  tTbxMbTp     tpRtuClient;
+  tTbxMbServer mbServer;
+  tTbxMbClient mbClient;
+  uint16_t     holdingRegs[2] = { 0U, 0U };
+
+  /* Create a Modbus RTU server on serial port 1. */
+  assertionCnt = 0;
+  tpRtuServer = TbxMbRtuCreate(10, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS, 
+                              TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  mbServer = TbxMbServerCreate(tpRtuServer);
+  TEST_ASSERT_NOT_NULL(tpRtuServer);
+  TEST_ASSERT_NOT_NULL(mbServer);
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Create a Modbus RTU client on serial port 2. */
+  assertionCnt = 0;
+  tpRtuClient = TbxMbRtuCreate(0, TBX_MB_UART_PORT2, TBX_MB_UART_19200BPS, 
+                              TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  mbClient = TbxMbClientCreate(tpRtuClient, 1000U, 1000U);
+  TEST_ASSERT_NOT_NULL(tpRtuClient);
+  TEST_ASSERT_NOT_NULL(mbClient);
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Set the callback for the server. */
+  assertionCnt = 0;
+  TbxMbServerSetCallbackReadHoldingReg(mbServer, mbServer_ReadHoldingReg);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+ 
+  /* Bring the Modbus stack to an operational state in the simulated environment. */
+  startupModbusStack();
+
+  /* Read the two holding registers supported by the server. */
+  assertionCnt = 0;
+  result = TbxMbClientReadHoldingRegs(mbClient, 10U, 40000U, 2U, holdingRegs);
+  /* Make sure the client operation was successful. */
+  TEST_ASSERT_EQUAL(TBX_OK, result);
+  /* Make sure the read inputs were as expected. */
+  TEST_ASSERT_EQUAL_UINT16(0x789AU, holdingRegs[0]);
+  TEST_ASSERT_EQUAL_UINT16(0xA51FU, holdingRegs[1]);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Free the channels and transport layers. */
+  TbxMbClientFree(mbClient);
+  TbxMbServerFree(mbServer);
+  TbxMbRtuFree(tpRtuClient);
+  TbxMbRtuFree(tpRtuServer);
+} /*** end of test_TbxMbClientReadHoldingRegs_CanRead ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that a Modbus client cannot read holding registers that are not
+**            supported by the Modbus server.
+**
+****************************************************************************************/
+void test_TbxMbClientReadHoldingRegs_CannotReadUnsupported(void)
+{
+  uint8_t      result;
+  tTbxMbTp     tpRtuServer;
+  tTbxMbTp     tpRtuClient;
+  tTbxMbServer mbServer;
+  tTbxMbClient mbClient;
+  uint16_t     holdingRegs[3] = { 0U, 0U, 0U };
+
+  /* Create a Modbus RTU server on serial port 1. */
+  assertionCnt = 0;
+  tpRtuServer = TbxMbRtuCreate(10, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS, 
+                              TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  mbServer = TbxMbServerCreate(tpRtuServer);
+  TEST_ASSERT_NOT_NULL(tpRtuServer);
+  TEST_ASSERT_NOT_NULL(mbServer);
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Create a Modbus RTU client on serial port 2. */
+  assertionCnt = 0;
+  tpRtuClient = TbxMbRtuCreate(0, TBX_MB_UART_PORT2, TBX_MB_UART_19200BPS, 
+                              TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  mbClient = TbxMbClientCreate(tpRtuClient, 1000U, 1000U);
+  TEST_ASSERT_NOT_NULL(tpRtuClient);
+  TEST_ASSERT_NOT_NULL(mbClient);
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Set the callback for the server. */
+  assertionCnt = 0;
+  TbxMbServerSetCallbackReadHoldingReg(mbServer, mbServer_ReadHoldingReg);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+ 
+  /* Bring the Modbus stack to an operational state in the simulated environment. */
+  startupModbusStack();
+
+  /* Read the three holding registers, while knowing that the third one is not supported
+   * by the server. 
+   */
+  assertionCnt = 0;
+  result = TbxMbClientReadHoldingRegs(mbClient, 10U, 40000U, 3U, holdingRegs);
+  /* Make sure the client operation reported an error. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Read holding registers that are not supported by Modbus server.  */
+  assertionCnt = 0;
+  result = TbxMbClientReadHoldingRegs(mbClient, 10U, 40002U, 2U, holdingRegs);
+  /* Make sure the client operation reported an error. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Read holding registers that are not supported by Modbus server.  */
+  assertionCnt = 0;
+  result = TbxMbClientReadHoldingRegs(mbClient, 10U, 39998U, 2U, holdingRegs);
+  /* Make sure the client operation reported an error. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Free the channels and transport layers. */
+  TbxMbClientFree(mbClient);
+  TbxMbServerFree(mbServer);
+  TbxMbRtuFree(tpRtuClient);
+  TbxMbRtuFree(tpRtuServer);
+} /*** end of test_TbxMbClientReadHoldingRegs_CannotReadUnsupported ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that invalid parameters trigger an assertion and returns TBX_ERROR.
+**
+****************************************************************************************/
+void test_TbxMbClientWriteCoils_ShouldAssertOnInvalidParams(void)
+{
+  uint8_t      result;
+  tTbxMbTp     tpRtu;
+  tTbxMbClient mbClient;
+  size_t       heapFreeBefore;
+  size_t       heapFreeAfter;
+  uint8_t      coils[2] = { TBX_OFF, TBX_OFF };
+
+  /* Create a transport layer. */
+  assertionCnt = 0;
+  heapFreeBefore = TbxHeapGetFree();
+  tpRtu = TbxMbRtuCreate(0, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS, 
+                         TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  /* Make sure a valid context was returned. */
+  TEST_ASSERT_NOT_NULL(tpRtu);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Create a client channel. */
+  assertionCnt = 0;
+  mbClient = TbxMbClientCreate(tpRtu, 1000U, 1000U);
+  /* Make sure a valid context was returned. */
+  TEST_ASSERT_NOT_NULL(mbClient);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Try NULL as a client context. */
+  assertionCnt = 0;
+  TbxMbClientWriteCoils(NULL, 10U, 0U, 2U, coils);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an error was returned. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Try 0 as number of coils to write. */
+  assertionCnt = 0;
+  TbxMbClientWriteCoils(mbClient, 10U, 0U, 0U, coils);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an error was returned. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Try 1969 as number of coils to write. */
+  assertionCnt = 0;
+  TbxMbClientWriteCoils(mbClient, 10U, 0U, 1969U, coils);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an error was returned. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Try NULL as the coils data pointer. */
+  assertionCnt = 0;
+  TbxMbClientWriteCoils(mbClient, 10U, 0U, 2U, NULL);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an error was returned. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Free the client and transport layer. */
+  TbxMbClientFree(mbClient);
+  TbxMbRtuFree(tpRtu);
+} /*** end of test_TbxMbClientWriteCoils_ShouldAssertOnInvalidParams ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that a Modbus client can write coils to a Modbus server.
+**
+****************************************************************************************/
+void test_TbxMbClientWriteCoils_CanWrite(void)
+{
+  uint8_t      result;
+  tTbxMbTp     tpRtuServer;
+  tTbxMbTp     tpRtuClient;
+  tTbxMbServer mbServer;
+  tTbxMbClient mbClient;
+  uint8_t      coils[2] = { TBX_OFF, TBX_OFF };
+
+  /* Create a Modbus RTU server on serial port 1. */
+  assertionCnt = 0;
+  tpRtuServer = TbxMbRtuCreate(10, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS, 
+                              TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  mbServer = TbxMbServerCreate(tpRtuServer);
+  TEST_ASSERT_NOT_NULL(tpRtuServer);
+  TEST_ASSERT_NOT_NULL(mbServer);
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Create a Modbus RTU client on serial port 2. */
+  assertionCnt = 0;
+  tpRtuClient = TbxMbRtuCreate(0, TBX_MB_UART_PORT2, TBX_MB_UART_19200BPS, 
+                              TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  mbClient = TbxMbClientCreate(tpRtuClient, 1000U, 1000U);
+  TEST_ASSERT_NOT_NULL(tpRtuClient);
+  TEST_ASSERT_NOT_NULL(mbClient);
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Set the callback for the server. */
+  assertionCnt = 0;
+  TbxMbServerSetCallbackWriteCoil(mbServer, mbServer_WriteCoil);
+  TbxMbServerSetCallbackReadCoil(mbServer, mbServer_ReadCoil);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+ 
+  /* Bring the Modbus stack to an operational state in the simulated environment. */
+  startupModbusStack();
+
+  /* Write the two coils supported by the server to ON and OFF. */
+  assertionCnt = 0;
+  coils[0] = TBX_ON;
+  coils[1] = TBX_OFF;
+  result = TbxMbClientWriteCoils(mbClient, 10U, 0U, 2U, coils);
+  /* Make sure the client operation was successful. */
+  TEST_ASSERT_EQUAL(TBX_OK, result);
+  result = TbxMbClientReadCoils(mbClient, 10U, 0U, 2U, coils);
+  /* Make sure the client operation was successful. */
+  TEST_ASSERT_EQUAL(TBX_OK, result);
+  /* Make sure the read coils were as expected. */
+  TEST_ASSERT_EQUAL_UINT8(TBX_ON, coils[0]);
+  TEST_ASSERT_EQUAL_UINT8(TBX_OFF, coils[1]);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Write the two coils supported by the server to OFF and ON. */
+  assertionCnt = 0;
+  coils[0] = TBX_OFF;
+  coils[1] = TBX_ON;
+  result = TbxMbClientWriteCoils(mbClient, 10U, 0U, 2U, coils);
+  /* Make sure the client operation was successful. */
+  TEST_ASSERT_EQUAL(TBX_OK, result);
+  result = TbxMbClientReadCoils(mbClient, 10U, 0U, 2U, coils);
+  /* Make sure the client operation was successful. */
+  TEST_ASSERT_EQUAL(TBX_OK, result);
+  /* Make sure the read coils were as expected. */
+  TEST_ASSERT_EQUAL_UINT8(TBX_OFF, coils[0]);
+  TEST_ASSERT_EQUAL_UINT8(TBX_ON, coils[1]);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Free the channels and transport layers. */
+  TbxMbClientFree(mbClient);
+  TbxMbServerFree(mbServer);
+  TbxMbRtuFree(tpRtuClient);
+  TbxMbRtuFree(tpRtuServer);
+} /*** end of test_TbxMbClientWriteCoils_CanWrite ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that a Modbus client cannot write coils that are not supported by the
+**            Modbus server.
+**
+****************************************************************************************/
+void test_TbxMbClientWriteCoils_CannotWriteUnsupported(void)
+{
+  uint8_t      result;
+  tTbxMbTp     tpRtuServer;
+  tTbxMbTp     tpRtuClient;
+  tTbxMbServer mbServer;
+  tTbxMbClient mbClient;
+  uint8_t      coils[3] = { TBX_OFF, TBX_OFF, TBX_OFF };
+
+  /* Create a Modbus RTU server on serial port 1. */
+  assertionCnt = 0;
+  tpRtuServer = TbxMbRtuCreate(10, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS, 
+                              TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  mbServer = TbxMbServerCreate(tpRtuServer);
+  TEST_ASSERT_NOT_NULL(tpRtuServer);
+  TEST_ASSERT_NOT_NULL(mbServer);
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Create a Modbus RTU client on serial port 2. */
+  assertionCnt = 0;
+  tpRtuClient = TbxMbRtuCreate(0, TBX_MB_UART_PORT2, TBX_MB_UART_19200BPS, 
+                              TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  mbClient = TbxMbClientCreate(tpRtuClient, 1000U, 1000U);
+  TEST_ASSERT_NOT_NULL(tpRtuClient);
+  TEST_ASSERT_NOT_NULL(mbClient);
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Set the callback for the server. */
+  assertionCnt = 0;
+  TbxMbServerSetCallbackWriteCoil(mbServer, mbServer_WriteCoil);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+ 
+  /* Bring the Modbus stack to an operational state in the simulated environment. */
+  startupModbusStack();
+
+  /* Write the three coils, while knowing that the third one is not supported by the 
+   * server.
+   */
+  assertionCnt = 0;
+  result = TbxMbClientWriteCoils(mbClient, 10U, 0U, 3U, coils);
+  /* Make sure the client operation repored an error. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Write the coils that are not supported by the server. */
+  assertionCnt = 0;
+  result = TbxMbClientWriteCoils(mbClient, 10U, 2U, 2U, coils);
+  /* Make sure the client operation repored an error. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Free the channels and transport layers. */
+  TbxMbClientFree(mbClient);
+  TbxMbServerFree(mbServer);
+  TbxMbRtuFree(tpRtuClient);
+  TbxMbRtuFree(tpRtuServer);
+} /*** end of test_TbxMbClientWriteCoils_CannotWriteUnsupported ***/
+
+
+/************************************************************************************//**
 ** \brief     Handles the running of the unit tests.
 ** \return    Test results.
 **
@@ -2146,6 +3053,7 @@ int runTests(void)
 {
   /* Inform the framework that unit testing is about to start. */
   UNITY_BEGIN();
+
   /* Tests that are generic. */
   RUN_TEST(test_TbxMbGeneric_VersionMacrosShouldBePresent);
   RUN_TEST(test_TbxMbGeneric_FunctionCodeMacrosShouldBePresent);
@@ -2204,6 +3112,19 @@ int runTests(void)
   RUN_TEST(test_TbxMbClientReadCoils_ShouldAssertOnInvalidParams);
   RUN_TEST(test_TbxMbClientReadCoils_CanRead);
   RUN_TEST(test_TbxMbClientReadCoils_CannotReadUnsupported);
+  RUN_TEST(test_TbxMbClientReadInputs_ShouldAssertOnInvalidParams);
+  RUN_TEST(test_TbxMbClientReadInputs_CanRead);
+  RUN_TEST(test_TbxMbClientReadInputs_CannotReadUnsupported);
+  RUN_TEST(test_TbxMbClientReadInputRegs_ShouldAssertOnInvalidParams);
+  RUN_TEST(test_TbxMbClientReadInputRegs_CanRead);
+  RUN_TEST(test_TbxMbClientReadInputRegs_CannotReadUnsupported);
+  RUN_TEST(test_TbxMbClientReadHoldingRegs_ShouldAssertOnInvalidParams);
+  RUN_TEST(test_TbxMbClientReadHoldingRegs_CanRead);
+  RUN_TEST(test_TbxMbClientReadHoldingRegs_CannotReadUnsupported);
+  RUN_TEST(test_TbxMbClientWriteCoils_ShouldAssertOnInvalidParams);
+  RUN_TEST(test_TbxMbClientWriteCoils_CanWrite);
+  RUN_TEST(test_TbxMbClientWriteCoils_CannotWriteUnsupported);
+
   /* TODO ##Vg Continue with implementing unit tests for the other client APIs. */
 
   /* Inform the framework that unit testing is done and return the result. */
