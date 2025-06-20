@@ -173,7 +173,33 @@ void TbxMbOsalEventPurge(void const * context)
   /* Only continue with valid parameters. */
   if (context != NULL)
   {
-    /* TODO ##Vg Implement TbxMbOsalEventPurge(). */
+    TbxCriticalSectionEnter();
+    /* Obtain number of entries in the queue.*/
+    UBaseType_t numEntries = uxQueueMessagesWaiting(eventQueue);
+    /* Read each entry currently stored in the queue. */
+    for (UBaseType_t idx = 0U; idx < numEntries; idx++)
+    {
+      BaseType_t  queueResult;
+      tTbxMbEvent currentEvent;
+
+      /* Use timeout 0 to prevent this call from blocking. */
+      queueResult = xQueueReceive(eventQueue, &currentEvent, 0U);
+      TBX_ASSERT(queueResult == pdTRUE);
+      if (queueResult == pdTRUE)
+      {
+        /* Is this event NOT from a context to purge? */
+        if (currentEvent.context != context)
+        {
+          /* Store this one back into the queue. Use timeout 0 to prevent blocking. */
+          queueResult = xQueueSend(eventQueue, (void const *)&currentEvent, 0U);
+          /* Sanity check, the write must succeed since we just read an entry, meaning
+           * that there must be an empty spot in the queue.
+           */
+          TBX_ASSERT(queueResult == pdTRUE);
+        }
+      }
+    }
+    TbxCriticalSectionExit();
   }
 } /*** end of TbxMbOsalEventPurge ***/
 
