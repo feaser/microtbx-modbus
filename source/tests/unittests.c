@@ -3045,6 +3045,337 @@ void test_TbxMbClientWriteCoils_CannotWriteUnsupported(void)
 
 
 /************************************************************************************//**
+** \brief     Tests that invalid parameters trigger an assertion and returns TBX_ERROR.
+**
+****************************************************************************************/
+void test_TbxMbClientWriteHoldingRegs_ShouldAssertOnInvalidParams(void)
+{
+  uint8_t      result;
+  tTbxMbTp     tpRtu;
+  tTbxMbClient mbClient;
+  size_t       heapFreeBefore;
+  size_t       heapFreeAfter;
+  uint16_t     holdingRegs[2] = { 0U, 0U };
+
+  /* Create a transport layer. */
+  assertionCnt = 0;
+  heapFreeBefore = TbxHeapGetFree();
+  tpRtu = TbxMbRtuCreate(0, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS, 
+                         TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  /* Make sure a valid context was returned. */
+  TEST_ASSERT_NOT_NULL(tpRtu);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Create a client channel. */
+  assertionCnt = 0;
+  mbClient = TbxMbClientCreate(tpRtu, 1000U, 1000U);
+  /* Make sure a valid context was returned. */
+  TEST_ASSERT_NOT_NULL(mbClient);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Try NULL as a client context. */
+  assertionCnt = 0;
+  TbxMbClientWriteHoldingRegs(NULL, 10U, 40000U, 2U, holdingRegs);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an error was returned. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Try 0 as number of holding registers to write. */
+  assertionCnt = 0;
+  TbxMbClientWriteHoldingRegs(mbClient, 10U, 40000U, 0U, holdingRegs);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an error was returned. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Try 124 as number of holding registers to write. */
+  assertionCnt = 0;
+  TbxMbClientWriteHoldingRegs(mbClient, 10U, 40000U, 124U, holdingRegs);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an error was returned. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Try NULL as the holding registers data pointer. */
+  assertionCnt = 0;
+  TbxMbClientWriteHoldingRegs(mbClient, 10U, 40000U, 2U, NULL);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an error was returned. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Free the client and transport layer. */
+  TbxMbClientFree(mbClient);
+  TbxMbRtuFree(tpRtu);
+} /*** end of test_TbxMbClientWriteHoldingRegs_ShouldAssertOnInvalidParams ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that a Modbus client can write holding registers to a Modbus server.
+**
+****************************************************************************************/
+void test_TbxMbClientWriteHoldingRegs_CanWrite(void)
+{
+  uint8_t      result;
+  tTbxMbTp     tpRtuServer;
+  tTbxMbTp     tpRtuClient;
+  tTbxMbServer mbServer;
+  tTbxMbClient mbClient;
+  uint16_t     holdingRegs[2] = { 0U, 0U };
+
+  /* Create a Modbus RTU server on serial port 1. */
+  assertionCnt = 0;
+  tpRtuServer = TbxMbRtuCreate(10, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS, 
+                              TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  mbServer = TbxMbServerCreate(tpRtuServer);
+  TEST_ASSERT_NOT_NULL(tpRtuServer);
+  TEST_ASSERT_NOT_NULL(mbServer);
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Create a Modbus RTU client on serial port 2. */
+  assertionCnt = 0;
+  tpRtuClient = TbxMbRtuCreate(0, TBX_MB_UART_PORT2, TBX_MB_UART_19200BPS, 
+                              TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  mbClient = TbxMbClientCreate(tpRtuClient, 1000U, 1000U);
+  TEST_ASSERT_NOT_NULL(tpRtuClient);
+  TEST_ASSERT_NOT_NULL(mbClient);
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Set the callback for the server. */
+  assertionCnt = 0;
+  TbxMbServerSetCallbackWriteHoldingReg(mbServer, mbServer_WriteHoldingReg);
+  TbxMbServerSetCallbackReadHoldingReg(mbServer, mbServer_ReadHoldingReg);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+ 
+  /* Bring the Modbus stack to an operational state in the simulated environment. */
+  startupModbusStack();
+
+  /* Write the two holding registers supported by the server. */
+  assertionCnt = 0;
+  holdingRegs[0] = 1023;
+  holdingRegs[1] = 0xA5F1;
+  result = TbxMbClientWriteHoldingRegs(mbClient, 10U, 40000U, 2U, holdingRegs);
+  /* Make sure the client operation was successful. */
+  TEST_ASSERT_EQUAL(TBX_OK, result);
+  result = TbxMbClientReadHoldingRegs(mbClient, 10U, 40000U, 2U, holdingRegs);
+  /* Make sure the client operation was successful. */
+  TEST_ASSERT_EQUAL(TBX_OK, result);
+  /* Make sure the read holding registers were as expected. */
+  TEST_ASSERT_EQUAL_UINT16(1023, holdingRegs[0]);
+  TEST_ASSERT_EQUAL_UINT16(0xA5F1, holdingRegs[1]);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Write the two holding registers supported by the server to zero values. */
+  assertionCnt = 0;
+  holdingRegs[0] = 0x0000;
+  holdingRegs[1] = 0x0000;
+  result = TbxMbClientWriteHoldingRegs(mbClient, 10U, 40000U, 2U, holdingRegs);
+  /* Make sure the client operation was successful. */
+  TEST_ASSERT_EQUAL(TBX_OK, result);
+  result = TbxMbClientReadHoldingRegs(mbClient, 10U, 40000U, 2U, holdingRegs);
+  /* Make sure the client operation was successful. */
+  TEST_ASSERT_EQUAL(TBX_OK, result);
+  /* Make sure the read holding registers were as expected. */
+  TEST_ASSERT_EQUAL_UINT16(0x0000, holdingRegs[0]);
+  TEST_ASSERT_EQUAL_UINT16(0x0000, holdingRegs[1]);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Free the channels and transport layers. */
+  TbxMbClientFree(mbClient);
+  TbxMbServerFree(mbServer);
+  TbxMbRtuFree(tpRtuClient);
+  TbxMbRtuFree(tpRtuServer);
+} /*** end of test_TbxMbClientWriteHoldingRegs_CanWrite ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that a Modbus client cannot write holding registers that are not
+**            supported by the Modbus server.
+**
+****************************************************************************************/
+void test_TbxMbClientWriteHoldingRegs_CannotWriteUnsupported(void)
+{
+  uint8_t      result;
+  tTbxMbTp     tpRtuServer;
+  tTbxMbTp     tpRtuClient;
+  tTbxMbServer mbServer;
+  tTbxMbClient mbClient;
+  uint16_t     holdingRegs[3] = { 0U, 0U, 0U };
+
+  /* Create a Modbus RTU server on serial port 1. */
+  assertionCnt = 0;
+  tpRtuServer = TbxMbRtuCreate(10, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS, 
+                              TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  mbServer = TbxMbServerCreate(tpRtuServer);
+  TEST_ASSERT_NOT_NULL(tpRtuServer);
+  TEST_ASSERT_NOT_NULL(mbServer);
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Create a Modbus RTU client on serial port 2. */
+  assertionCnt = 0;
+  tpRtuClient = TbxMbRtuCreate(0, TBX_MB_UART_PORT2, TBX_MB_UART_19200BPS, 
+                              TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  mbClient = TbxMbClientCreate(tpRtuClient, 1000U, 1000U);
+  TEST_ASSERT_NOT_NULL(tpRtuClient);
+  TEST_ASSERT_NOT_NULL(mbClient);
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Set the callback for the server. */
+  assertionCnt = 0;
+  TbxMbServerSetCallbackWriteHoldingReg(mbServer, mbServer_WriteHoldingReg);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+ 
+  /* Bring the Modbus stack to an operational state in the simulated environment. */
+  startupModbusStack();
+
+  /* Write the three holding registers, while knowing that the third one is not supported
+   * by the server.
+   */
+  assertionCnt = 0;
+  result = TbxMbClientWriteHoldingRegs(mbClient, 10U, 40000U, 3U, holdingRegs);
+  /* Make sure the client operation repored an error. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Write the holding registers that are not supported by the server. */
+  assertionCnt = 0;
+  result = TbxMbClientWriteHoldingRegs(mbClient, 10U, 40002U, 2U, holdingRegs);
+  /* Make sure the client operation repored an error. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Write the holding registers that are not supported by the server. */
+  assertionCnt = 0;
+  result = TbxMbClientWriteHoldingRegs(mbClient, 10U, 39998U, 2U, holdingRegs);
+  /* Make sure the client operation repored an error. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Write a value to the first holding register that is outside of the range supported
+   * by the server. 
+   */
+  assertionCnt = 0;
+  holdingRegs[0] = 1024;
+  result = TbxMbClientWriteHoldingRegs(mbClient, 10U, 40000U, 1U, holdingRegs);
+  /* Make sure the client operation repored an error. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Free the channels and transport layers. */
+  TbxMbClientFree(mbClient);
+  TbxMbServerFree(mbServer);
+  TbxMbRtuFree(tpRtuClient);
+  TbxMbRtuFree(tpRtuServer);
+} /*** end of test_TbxMbClientWriteHoldingRegs_CannotWriteUnsupported ***/
+
+
+/************************************************************************************//**
+** \brief     Tests that invalid parameters trigger an assertion and returns TBX_ERROR.
+**
+****************************************************************************************/
+void test_TbxMbClientCustomFunction_ShouldAssertOnInvalidParams(void)
+{
+  uint8_t      result;
+  tTbxMbTp     tpRtu;
+  tTbxMbClient mbClient;
+  size_t       heapFreeBefore;
+  size_t       heapFreeAfter;
+  uint8_t      response[TBX_MB_TP_PDU_MAX_LEN]; 
+  uint8_t      request[1] = { 17U };
+  uint8_t      len = 1U;  
+
+  /* Create a transport layer. */
+  assertionCnt = 0;
+  heapFreeBefore = TbxHeapGetFree();
+  tpRtu = TbxMbRtuCreate(0, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS, 
+                         TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);
+  /* Make sure a valid context was returned. */
+  TEST_ASSERT_NOT_NULL(tpRtu);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Create a client channel. */
+  assertionCnt = 0;
+  mbClient = TbxMbClientCreate(tpRtu, 1000U, 1000U);
+  /* Make sure a valid context was returned. */
+  TEST_ASSERT_NOT_NULL(mbClient);
+  /* Make sure no assertion was triggered. */
+  TEST_ASSERT_EQUAL_UINT32(0, assertionCnt);
+
+  /* Try NULL as a client context. */
+  assertionCnt = 0;
+  TbxMbClientCustomFunction(NULL, 10U, request, response, &len);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an error was returned. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Try NULL as the transmit PDU packet data. */
+  assertionCnt = 0;
+  TbxMbClientCustomFunction(mbClient, 10U, NULL, response, &len);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an error was returned. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Try NULL as the reception PDU packet data. */
+  assertionCnt = 0;
+  TbxMbClientCustomFunction(mbClient, 10U, request, NULL, &len);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an error was returned. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Try NULL as the packet length. */
+  assertionCnt = 0;
+  TbxMbClientCustomFunction(mbClient, 10U, request, response, NULL);
+  heapFreeAfter = TbxHeapGetFree();
+  /* Make sure an error was returned. */
+  TEST_ASSERT_EQUAL(TBX_ERROR, result);
+  /* Make sure an assertion was triggered. */
+  TEST_ASSERT_GREATER_THAN_UINT32(0, assertionCnt);
+  /* Make sure no heap memory was allocated. */
+  TEST_ASSERT_EQUAL(heapFreeBefore, heapFreeAfter);
+
+  /* Free the client and transport layer. */
+  TbxMbClientFree(mbClient);
+  TbxMbRtuFree(tpRtu);
+} /*** end of test_TbxMbClientCustomFunction_ShouldAssertOnInvalidParams ***/
+
+
+/************************************************************************************//**
 ** \brief     Handles the running of the unit tests.
 ** \return    Test results.
 **
@@ -3124,8 +3455,10 @@ int runTests(void)
   RUN_TEST(test_TbxMbClientWriteCoils_ShouldAssertOnInvalidParams);
   RUN_TEST(test_TbxMbClientWriteCoils_CanWrite);
   RUN_TEST(test_TbxMbClientWriteCoils_CannotWriteUnsupported);
-
-  /* TODO ##Vg Continue with implementing unit tests for the other client APIs. */
+  RUN_TEST(test_TbxMbClientWriteHoldingRegs_ShouldAssertOnInvalidParams);
+  RUN_TEST(test_TbxMbClientWriteHoldingRegs_CanWrite);
+  RUN_TEST(test_TbxMbClientWriteHoldingRegs_CannotWriteUnsupported);
+  RUN_TEST(test_TbxMbClientCustomFunction_ShouldAssertOnInvalidParams);
 
   /* Inform the framework that unit testing is done and return the result. */
   return UNITY_END();
