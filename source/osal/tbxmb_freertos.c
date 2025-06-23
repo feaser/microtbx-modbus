@@ -160,6 +160,51 @@ uint8_t TbxMbOsalEventWait(tTbxMbEvent * event,
 
 
 /************************************************************************************//**
+** \brief     Removes all the events for the specified context from the event queue.
+** \param     context The context of the channel or transport layer, whose entries need
+**            to be removed from the event queue.
+**
+****************************************************************************************/
+void TbxMbOsalEventPurge(void const * context)
+{
+  /* Verify parameters. */
+  TBX_ASSERT(context != NULL);
+
+  /* Only continue with valid parameters. */
+  if (context != NULL)
+  {
+    TbxCriticalSectionEnter();
+    /* Obtain number of entries in the queue.*/
+    UBaseType_t numEntries = uxQueueMessagesWaiting(eventQueue);
+    /* Read each entry currently stored in the queue. */
+    for (UBaseType_t idx = 0U; idx < numEntries; idx++)
+    {
+      BaseType_t  queueResult;
+      tTbxMbEvent currentEvent;
+
+      /* Use timeout 0 to prevent this call from blocking. */
+      queueResult = xQueueReceive(eventQueue, &currentEvent, 0U);
+      TBX_ASSERT(queueResult == pdTRUE);
+      if (queueResult == pdTRUE)
+      {
+        /* Is this event NOT from a context to purge? */
+        if (currentEvent.context != context)
+        {
+          /* Store this one back into the queue. Use timeout 0 to prevent blocking. */
+          queueResult = xQueueSend(eventQueue, (void const *)&currentEvent, 0U);
+          /* Sanity check, the write must succeed since we just read an entry, meaning
+           * that there must be an empty spot in the queue.
+           */
+          TBX_ASSERT(queueResult == pdTRUE);
+        }
+      }
+    }
+    TbxCriticalSectionExit();
+  }
+} /*** end of TbxMbOsalEventPurge ***/
+
+
+/************************************************************************************//**
 ** \brief     Creates a new binary semaphore object with an initial count of 0, meaning
 **            that it's taken.
 ** \return    Handle to the newly created binary semaphore object if successful, NULL

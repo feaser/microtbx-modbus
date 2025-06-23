@@ -69,6 +69,12 @@ typedef void (* tTbxMbEventPoll)   (void        * context);
 typedef void (* tTbxMbEventProcess)(tTbxMbEvent * event);
 
 
+/****************************************************************************************
+* Function prototypes
+****************************************************************************************/
+void TbxMbEventPurge(void const * context);
+
+
 #ifdef __cplusplus
 }
 #endif
