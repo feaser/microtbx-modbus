@@ -1279,7 +1279,7 @@ uint8_t TbxMbClientDiagnostics(tTbxMbClient   channel,
         /* Transmit the request and wait for the response to a unicast request to come in
          * or the turnaround time to pass for a broadcast request.
          */
-       result = TbxMbClientTransceive(clientCtx, isBroadcast);
+        result = TbxMbClientTransceive(clientCtx, isBroadcast);
 
         /* Only continue with processing the response if all is okay so far and the
          * request was unicast.
