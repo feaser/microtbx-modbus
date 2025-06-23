@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="description" content="User Manual for MicroTBX-Modbus, a modern and flexible Modbus communication stack for microcontrollers." />
+      <link rel="shortcut icon" href="img/favicon.ico" />
+    <title>MicroTBX-Modbus User Manual</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Home";
+        var mkdocs_page_input_path = "index.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="." class="icon icon-home"> MicroTBX-Modbus User Manual
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Home</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#features">Features</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#supported-function-codes">Supported function codes</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#why-another-modbus-stack">Why another Modbus stack?</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#system-requirements">System requirements</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#next-steps">Next steps</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="gettingstarted/">Getting started</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="licensing/">Dual licensing</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="misra/">MISRA compliance</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="integration/">Integration</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="configuration/">Configuration</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="portation/">Portation</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="extras/">Extras</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="apiref/">API reference</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href=".">MicroTBX-Modbus User Manual</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Home</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/feaser/microtbx-modbus/edit/master/docs/index.md" class="icon icon-github"> Edit on GitHub</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="introduction-to-microtbx-modbus">Introduction to MicroTBX-Modbus</h1>
+<p>MicroTBX-Modbus is a modern Modbus communication stack, targeting microcontroller based embedded systems. Its aim is to be: easy to use, easy to port, high quality, well maintained, stable and flexible. The ideal solution for any embedded software engineer, with an interest in adding Modbus communication to their product.</p>
+<h2 id="features">Features</h2>
+<ul>
+<li>Carefully crafted application programming interface (<a href="apiref/">API</a>), focusing on ease of use.</li>
+<li>Written in the C programming language (C99) with high <a href="misra/">MISRA compliance</a>.</li>
+<li>Supports both Modbus client and Modbus server functionality.</li>
+<li>Supports multi channel for both the Modbus client and server.</li>
+<li>Flexible <a href="licensing/">dual licensing</a> model.</li>
+<li>Designed such that it can be used with and without and RTOS.</li>
+<li>Easy to <a href="integration/">integrate</a> into existing software projects, especially when using CMake.</li>
+<li>Includes <a href="extras/">C++ wrappers</a> for those preferring to develop in an object-oriented manner.</li>
+<li>Quick and simple to <a href="portation/">adjust</a> to your microcontroller system.</li>
+<li>No compile-time configuration needed.</li>
+<li>Option to implement additional and custom Modbus function codes.</li>
+</ul>
+<h2 id="supported-function-codes">Supported function codes</h2>
+<p>MicroTBX-Modbus currently supports the following Modbus function codes:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">Function Code</th>
+<th>Name</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">1</td>
+<td>Read Coils</td>
+</tr>
+<tr>
+<td style="text-align: center;">2</td>
+<td>Read Discrete Inputs</td>
+</tr>
+<tr>
+<td style="text-align: center;">3</td>
+<td>Read Holding Registers</td>
+</tr>
+<tr>
+<td style="text-align: center;">4</td>
+<td>Read Input Registers</td>
+</tr>
+<tr>
+<td style="text-align: center;">5</td>
+<td>Write Single Coil</td>
+</tr>
+<tr>
+<td style="text-align: center;">6</td>
+<td>Write Single Register</td>
+</tr>
+<tr>
+<td style="text-align: center;">8</td>
+<td>Diagnostics (sub codes: 0, 10, 11, 12, 13, 14, 15)</td>
+</tr>
+<tr>
+<td style="text-align: center;">15</td>
+<td>Write Multiple Coils</td>
+</tr>
+<tr>
+<td style="text-align: center;">16</td>
+<td>Write Multiple Registers</td>
+</tr>
+</tbody>
+</table>
+<p>Note that MicroTBX-Modbus includes functionality, enabling you to extend it by adding support for additional and custom function codes.</p>
+<h2 id="why-another-modbus-stack">Why another Modbus stack?</h2>
+<p>With Modbus being such a convenient and mature communication protocol, several other Modbus software stacks exist; Both closed sourced and open sourced. Why bother with developing and maintaining yet another one? It turns out that most of the existing ones all seem to be limiting on at least one front:</p>
+<ul>
+<li>No multi-channel support.</li>
+<li>Not including both client and server functionality.</li>
+<li>Not being able to add support for additional and custom function codes. </li>
+<li>Skipping features needed for protocol compliance.</li>
+<li>No open source option.</li>
+<li>Not actively maintained.</li>
+</ul>
+<p>MicroTBX-Modbus addresses all these limitations. Thanks to the flexible <a href="licensing/">dual licensing</a> model, you can start out right away with the open source GPLv3 version. Perfect for testing, evaluation and prototyping purposes. Once you're satisfied with it and would like to include MicroTBX-Modbus in your proprietary closed sourced product, you can move on to the commercial license.</p>
+<p>The only reason not to use MicroTBX-Modbus is that it currently only supports Modbus RTU communication. Note though that support for ASCII and TCP communication is planned for the future.</p>
+<h2 id="system-requirements">System requirements</h2>
+<p>With MicroTBX-Modbus being a modern communication stack, the focus is more on ease and flexibility of use for the developer, and less on keeping the ROM footprint low. Therefore the recommended system requirements are slightly higher than comparative Modbus software solutions:</p>
+<p>It is recommended to use a microcontroller with at least 32 KiB flash and 4 KiB RAM. However, it will run on a basic 8-bit microcontroller with just 10 KiB of flash and 1.5 KiB RAM. Although you then run out of storage space quickly, when adding your own firmware’s functionality.</p>
+<h2 id="next-steps">Next steps</h2>
+<p>The <a href="gettingstarted/">getting started</a> section of this user manual shows you how to quickly setup a Modbus server and client. Definitely worth a glance if you're new to MicroTBX-Modbus.</p>
+<p>For those who want to see MicroTBX-Modbus in action, you can find ready-to-run demo programs located in a separate repository. These demo programs target an ever growing collection of popular microcontroller evaluation boards and serve as a good starting point:</p>
+<ul>
+<li><a href="https://github.com/feaser/microtbx-demos">https://github.com/feaser/microtbx-demos</a></li>
+</ul>
+<p>If you're ready to integrate MicroTBX-Modbus into your own embedded software project, head over to the <a href="integration/">integration</a> section of this user manual for detailed instructions.</p>
+<p>MicroTBX-Modbus itself is hardware independent. To handle the hardware specifics of your microcontroller, you just need to implement a few port functions. A template source-file is provided. You can find detailed instructions in the <a href="portation/">portation</a> section of this user manual.</p>
+<p>Once you got everything up-and-running and would like to use MicroTBX-Modbus in the closed source proprietary firmware of your product, make sure to upgrade to the <a href="licensing/">commercial license</a>. The default GPLv3 licensed version is not suitable for that use case.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="gettingstarted/" class="btn btn-neutral float-right" title="Getting started">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/feaser/microtbx-modbus" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+    
+      <span><a href="gettingstarted/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = ".";</script>
+    <script src="js/theme_extra.js"></script>
+    <script src="js/theme.js"></script>
+      <script src="search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
+
+<!--
+MkDocs version : 1.6.1
+Build Date UTC : 2025-06-23 11:23:58.677597+00:00
+-->
