@@ -1,0 +1,2068 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>API reference - MicroTBX-Modbus User Manual</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "API reference";
+        var mkdocs_page_input_path = "apiref.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> MicroTBX-Modbus User Manual
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../gettingstarted/">Getting started</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../licensing/">Dual licensing</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../misra/">MISRA compliance</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../integration/">Integration</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../configuration/">Configuration</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../portation/">Portation</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../extras/">Extras</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">API reference</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#macros">Macros</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#version">Version</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#common">Common</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#transport-layer">Transport layer</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#types">Types</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#server">Server</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#ttbxmbserver">tTbxMbServer</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ttbxmbserverresult">tTbxMbServerResult</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ttbxmbserverreadinput">tTbxMbServerReadInput</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ttbxmbserverreadcoil">tTbxMbServerReadCoil</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ttbxmbserverwritecoil">tTbxMbServerWriteCoil</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ttbxmbserverreadinputreg">tTbxMbServerReadInputReg</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ttbxmbserverreadholdingreg">tTbxMbServerReadHoldingReg</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ttbxmbserverwriteholdingreg">tTbxMbServerWriteHoldingReg</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ttbxmbservercustomfunction">tTbxMbServerCustomFunction</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#client">Client</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#ttbxmbclient">tTbxMbClient</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#transport-layer_1">Transport layer</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#ttbxmbtp">tTbxMbTp</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#uart">UART</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#ttbxmbuartport">tTbxMbUartPort</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ttbxmbuartbaudrate">tTbxMbUartBaudrate</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ttbxmbuartdatabits">tTbxMbUartDatabits</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ttbxmbuartstopbits">tTbxMbUartStopbits</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ttbxmbuartparity">tTbxMbUartParity</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#functions">Functions</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#server_1">Server</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#tbxmbservercreate">TbxMbServerCreate</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tbxmbserverfree">TbxMbServerFree</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tbxmbserversetcallbackreadinput">TbxMbServerSetCallbackReadInput</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tbxmbserversetcallbackreadcoil">TbxMbServerSetCallbackReadCoil</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tbxmbserversetcallbackwritecoil">TbxMbServerSetCallbackWriteCoil</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tbxmbserversetcallbackreadinputreg">TbxMbServerSetCallbackReadInputReg</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tbxmbserversetcallbackreadholdingreg">TbxMbServerSetCallbackReadHoldingReg</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tbxmbserversetcallbackwriteholdingreg">TbxMbServerSetCallbackWriteHoldingReg</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tbxmbserversetcallbackcustomfunction">TbxMbServerSetCallbackCustomFunction</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#client_1">Client</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#tbxmbclientcreate">TbxMbClientCreate</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tbxmbclientfree">TbxMbClientFree</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tbxmbclientreadcoils">TbxMbClientReadCoils</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tbxmbclientreadinputs">TbxMbClientReadInputs</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tbxmbclientreadinputregs">TbxMbClientReadInputRegs</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tbxmbclientreadholdingregs">TbxMbClientReadHoldingRegs</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tbxmbclientwritecoils">TbxMbClientWriteCoils</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tbxmbclientwriteholdingregs">TbxMbClientWriteHoldingRegs</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tbxmbclientdiagnostics">TbxMbClientDiagnostics</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tbxmbclientcustomfunction">TbxMbClientCustomFunction</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#event">Event</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#tbxmbeventtask">TbxMbEventTask</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#common_1">Common</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#tbxmbcommonextractuint16be">TbxMbCommonExtractUInt16BE</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tbxmbcommonstoreuint16be">TbxMbCommonStoreUInt16BE</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#rtu">RTU</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#tbxmbrtucreate">TbxMbRtuCreate</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tbxmbrtufree">TbxMbRtuFree</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#uart_1">UART</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#tbxmbuarttransmitcomplete">TbxMbUartTransmitComplete</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#tbxmbuartdatareceived">TbxMbUartDataReceived</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">MicroTBX-Modbus User Manual</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">API reference</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/feaser/microtbx-modbus/edit/master/docs/apiref.md" class="icon icon-github"> Edit on GitHub</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="api-reference">API reference</h1>
+<p>This section provides a full reference of all the functions, macros and types that MicroTBX-Modbus offers.</p>
+<h2 id="macros">Macros</h2>
+<h3 id="version">Version</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Macro</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_VERSION_MAIN</code></td>
+<td style="text-align: left;">Main version number of MicroTBX-Modbus.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_VERSION_MINOR</code></td>
+<td style="text-align: left;">Minor version number of MicroTBX-Modbus.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_VERSION_PATCH</code></td>
+<td style="text-align: left;">Patch number of MicroTBX-Modbus.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="common">Common</h3>
+<p>Function codes.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Macro</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_FC01_READ_COILS</code></td>
+<td style="text-align: left;">Modbus function code 01 - Read Coils.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_FC02_READ_DISCRETE_INPUTS</code></td>
+<td style="text-align: left;">Modbus function code 02 - Read Discrete Inputs.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_FC03_READ_HOLDING_REGISTERS</code></td>
+<td style="text-align: left;">Modbus function code 03 - Read Holding Registers.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_FC04_READ_INPUT_REGISTERS</code></td>
+<td style="text-align: left;">Modbus function code 04 - Read Input Registers.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_FC05_WRITE_SINGLE_COIL</code></td>
+<td style="text-align: left;">Modbus function code 05 - Write Single Coil.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_FC06_WRITE_SINGLE_REGISTER</code></td>
+<td style="text-align: left;">Modbus function code 06 - Write Single Register.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_FC08_DIAGNOSTICS</code></td>
+<td style="text-align: left;">Modbus function code 08 - Diagnostics.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_FC15_WRITE_MULTIPLE_COILS</code></td>
+<td style="text-align: left;">Modbus function code 15 - Write Multiple Coils.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_FC16_WRITE_MULTIPLE_REGISTERS</code></td>
+<td style="text-align: left;">Modbus function code 16 - Write Multiple Registers.</td>
+</tr>
+</tbody>
+</table>
+<p>Exception codes.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Macro</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_EC01_ILLEGAL_FUNCTION</code></td>
+<td style="text-align: left;">Modbus exception code 01 - Illegal function.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_EC02_ILLEGAL_DATA_ADDRESS</code></td>
+<td style="text-align: left;">Modbus exception code 02 - Illegal data address.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_EC03_ILLEGAL_DATA_VALUE</code></td>
+<td style="text-align: left;">Modbus exception code 03 - Illegal data value.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_EC04_SERVER_DEVICE_FAILURE</code></td>
+<td style="text-align: left;">Modbus exception code 04 - Server device failure.</td>
+</tr>
+</tbody>
+</table>
+<p>Diagnostics sub function codes.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Macro</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_DIAG_SC_QUERY_DATA</code></td>
+<td style="text-align: left;">Diagnostics sub-function code - Return Query Data.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_DIAG_SC_CLEAR_COUNTERS</code></td>
+<td style="text-align: left;">Diagnostics sub-function code - Clear Counters.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_DIAG_SC_BUS_MESSAGE_COUNT</code></td>
+<td style="text-align: left;">Diagnostics sub-function code - Return Bus Message<br>Count.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_DIAG_SC_BUS_COMM_ERROR_COUNT</code></td>
+<td style="text-align: left;">Diagnostics sub-function code - Return Bus<br>Communication Error Count.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_DIAG_SC_BUS_EXCEPTION_ERROR_COUNT</code></td>
+<td style="text-align: left;">Diagnostics sub-function code - Return Bus Exception<br>Error Count.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_DIAG_SC_SERVER_MESSAGE_COUNT</code></td>
+<td style="text-align: left;">Diagnostics sub-function code - Return Server Message<br>Count.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_DIAG_SC_SERVER_NO_RESPONSE_COUNT</code></td>
+<td style="text-align: left;">Diagnostics sub-function code - Return Server No<br>Response Count.</td>
+</tr>
+</tbody>
+</table>
+<p>Miscellaneous.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Macro</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_FC_EXCEPTION_MASK</code></td>
+<td style="text-align: left;">Bit mask to OR to the function code to flag it as an exception response.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="transport-layer">Transport layer</h3>
+<p>Node address.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Macro</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_TP_NODE_ADDR_BROADCAST</code></td>
+<td style="text-align: left;">Node address value for broadcast purposes.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_TP_NODE_ADDR_MIN</code></td>
+<td style="text-align: left;">Minimum value of a valid node address.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_TP_NODE_ADDR_MAX</code></td>
+<td style="text-align: left;">Maximum value of a valid node address.</td>
+</tr>
+</tbody>
+</table>
+<p>Protocol data unit (PDU).</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Macro</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_TP_PDU_CODE_LEN_MAX</code></td>
+<td style="text-align: left;">Maximum size of the "Function code" at the start of a PDU.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_TP_PDU_DATA_LEN_MAX</code></td>
+<td style="text-align: left;">Maximum number of data bytes inside a PDU. This excludes the<br>function code.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>TBX_MB_TP_PDU_MAX_LEN</code></td>
+<td style="text-align: left;">Maximum length of a PDU.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="types">Types</h2>
+<h3 id="server">Server</h3>
+<h4 id="ttbxmbserver">tTbxMbServer</h4>
+<pre><code class="language-c">typedef void * tTbxMbServer
+</code></pre>
+<p>Handle to a Modbus server channel object, in the format of an opaque pointer.</p>
+<h4 id="ttbxmbserverresult">tTbxMbServerResult</h4>
+<pre><code class="language-c">typedef enum
+{
+  TBX_MB_SERVER_OK = 0U,
+  TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR,
+  TBX_MB_SERVER_ERR_DEVICE_FAILURE
+} tTbxMbServerResult
+</code></pre>
+<p>numerated type with all supported return values for the callbacks.</p>
+<h4 id="ttbxmbserverreadinput">tTbxMbServerReadInput</h4>
+<pre><code class="language-c">typedef tTbxMbServerResult (* tTbxMbServerReadInput)(tTbxMbServer   channel, 
+                                                     uint16_t       addr, 
+                                                     uint8_t      * value)
+</code></pre>
+<p>Modbus server callback function for reading a discrete input.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>channel</code></td>
+<td>Handle to the Modbus server channel object that triggered the callback.</td>
+</tr>
+<tr>
+<td><code>addr</code></td>
+<td>Element address (<code>0</code>..<code>65535</code>).</td>
+</tr>
+<tr>
+<td><code>value</code></td>
+<td>Pointer to write the value of the input to. Use <code>TBX_ON</code> if the input is on, <code>TBX_OFF</code><br>otherwise.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Return value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TBX_MB_SERVER_OK</code> if successful, <code>TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR</code> if the specific data element<br>address is not supported by this server, <code>TBX_MB_SERVER_ERR_DEVICE_FAILURE</code> otherwise.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="ttbxmbserverreadcoil">tTbxMbServerReadCoil</h4>
+<pre><code class="language-c">typedef tTbxMbServerResult (* tTbxMbServerReadCoil)(tTbxMbServer   channel, 
+                                                    uint16_t       addr, 
+                                                    uint8_t      * value)
+</code></pre>
+<p>Modbus server callback function for reading a coil.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>channel</code></td>
+<td>Handle to the Modbus server channel object that triggered the callback.</td>
+</tr>
+<tr>
+<td><code>addr</code></td>
+<td>Element address (<code>0</code>..<code>65535</code>).</td>
+</tr>
+<tr>
+<td><code>value</code></td>
+<td>Pointer to write the value of the coil to. Use <code>TBX_ON</code> if the coils is on, <code>TBX_OFF</code><br>otherwise.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Return value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TBX_MB_SERVER_OK</code> if successful, <code>TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR</code> if the specific data element<br>address is not supported by this server, <code>TBX_MB_SERVER_ERR_DEVICE_FAILURE</code> otherwise.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="ttbxmbserverwritecoil">tTbxMbServerWriteCoil</h4>
+<pre><code class="language-c">typedef tTbxMbServerResult (* tTbxMbServerWriteCoil)(tTbxMbServer channel, 
+                                                     uint16_t     addr, 
+                                                     uint8_t      value)
+</code></pre>
+<p>Modbus server callback function for writing a coil.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>channel</code></td>
+<td>Handle to the Modbus server channel object that triggered the callback.</td>
+</tr>
+<tr>
+<td><code>addr</code></td>
+<td>Element address (<code>0</code>..<code>65535</code>).</td>
+</tr>
+<tr>
+<td><code>value</code></td>
+<td>Coil value. Use <code>TBX_ON</code> to activate the coil, <code>TBX_OFF</code> otherwise.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Return value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TBX_MB_SERVER_OK</code> if successful, <code>TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR</code> if the specific data element<br>address is not supported by this server, <code>TBX_MB_SERVER_ERR_DEVICE_FAILURE</code> otherwise.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="ttbxmbserverreadinputreg">tTbxMbServerReadInputReg</h4>
+<pre><code class="language-c">typedef tTbxMbServerResult (* tTbxMbServerReadInputReg)(tTbxMbServer   channel, 
+                                                        uint16_t       addr, 
+                                                        uint16_t     * value)
+</code></pre>
+<p>Modbus server callback function for reading an input register.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>channel</code></td>
+<td>Handle to the Modbus server channel object that triggered the callback.</td>
+</tr>
+<tr>
+<td><code>addr</code></td>
+<td>Element address (<code>0</code>..<code>65535</code>).</td>
+</tr>
+<tr>
+<td><code>value</code></td>
+<td>Pointer to write the value of the input register to.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Return value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TBX_MB_SERVER_OK</code> if successful, <code>TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR</code> if the specific data element<br>address is not supported by this server, <code>TBX_MB_SERVER_ERR_DEVICE_FAILURE</code> otherwise.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="ttbxmbserverreadholdingreg">tTbxMbServerReadHoldingReg</h4>
+<pre><code class="language-c">typedef tTbxMbServerResult (* tTbxMbServerReadHoldingReg)(tTbxMbServer   channel, 
+                                                          uint16_t       addr, 
+                                                          uint16_t     * value)
+</code></pre>
+<p>Modbus server callback function for reading a holding register.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>channel</code></td>
+<td>Handle to the Modbus server channel object that triggered the callback.</td>
+</tr>
+<tr>
+<td><code>addr</code></td>
+<td>Element address (<code>0</code>..<code>65535</code>).</td>
+</tr>
+<tr>
+<td><code>value</code></td>
+<td>Pointer to write the value of the holding register to.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Return value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TBX_MB_SERVER_OK</code> if successful, <code>TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR</code> if the specific data element<br>address is not supported by this server, <code>TBX_MB_SERVER_ERR_DEVICE_FAILURE</code> otherwise.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="ttbxmbserverwriteholdingreg">tTbxMbServerWriteHoldingReg</h4>
+<pre><code class="language-c">typedef tTbxMbServerResult (* tTbxMbServerWriteHoldingReg)(tTbxMbServer channel, 
+                                                           uint16_t     addr, 
+                                                           uint16_t     value)
+</code></pre>
+<p>Modbus server callback function for writing a holding register.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>channel</code></td>
+<td>Handle to the Modbus server channel object that triggered the callback.</td>
+</tr>
+<tr>
+<td><code>addr</code></td>
+<td>Element address (<code>0</code>..<code>65535</code>).</td>
+</tr>
+<tr>
+<td><code>value</code></td>
+<td>Value of the holding register.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Return value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TBX_MB_SERVER_OK</code> if successful, <code>TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR</code> if the specific data element<br>address is not supported by this server, <code>TBX_MB_SERVER_ERR_DEVICE_FAILURE</code> otherwise.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="ttbxmbservercustomfunction">tTbxMbServerCustomFunction</h4>
+<pre><code class="language-c">typedef uint8_t (* tTbxMbServerCustomFunction)(tTbxMbServer    channel,
+                                               uint8_t const * rxPdu,
+                                               uint8_t       * txPdu,
+                                               uint8_t       * len)
+</code></pre>
+<p>Modbus server callback function for implementing custom function code handling. Thanks to this functionality, the user can support Modbus function codes that are either currently not supported or user defined extensions.</p>
+<p>The <code>rxPdu</code> and <code>txPdu</code> parameters are pointers to the byte array of the PDU. The first byte (i.e. <code>rxPdu[0]</code>) contains the function code, followed by its data bytes. Upon calling the callback, the <code>len</code> parameter contains the length of <code>rxPdu</code>. When preparing the response, you can write the length of the <code>txPdu</code> response to <code>len</code> as well.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>channel</code></td>
+<td>Handle to the Modbus server channel object that triggered the callback.</td>
+</tr>
+<tr>
+<td><code>rxPdu</code></td>
+<td>Pointer to a byte array for reading the received PDU.</td>
+</tr>
+<tr>
+<td><code>txPdu</code></td>
+<td>Pointer to a byte array for writing the response PDU.</td>
+</tr>
+<tr>
+<td><code>len</code></td>
+<td>Pointer to the PDU length, including the function code.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Return value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TBX_TRUE</code> if the callback function handled the received function code and prepared a response PDU.<br><code>TBX_FALSE</code> otherwise.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="client">Client</h3>
+<h4 id="ttbxmbclient">tTbxMbClient</h4>
+<pre><code class="language-c">typedef void * tTbxMbClient
+</code></pre>
+<p>Handle to a Modbus client channel object, in the format of an opaque pointer.</p>
+<h3 id="transport-layer_1">Transport layer</h3>
+<h4 id="ttbxmbtp">tTbxMbTp</h4>
+<pre><code class="language-c">typedef void * tTbxMbTp
+</code></pre>
+<p>Handle to a Modbus transport layer object, in the format of an opaque pointer.</p>
+<h3 id="uart">UART</h3>
+<h4 id="ttbxmbuartport">tTbxMbUartPort</h4>
+<pre><code class="language-c">typedef enum
+{
+  TBX_MB_UART_PORT1 = 0U,
+  TBX_MB_UART_PORT2,
+  TBX_MB_UART_PORT3,
+  TBX_MB_UART_PORT4,
+  TBX_MB_UART_PORT5,
+  TBX_MB_UART_PORT6,
+  TBX_MB_UART_PORT7,
+  TBX_MB_UART_PORT8,
+  TBX_MB_UART_NUM_PORT
+} tTbxMbUartPort
+</code></pre>
+<p>Enumerated type with all supported UART ports.</p>
+<h4 id="ttbxmbuartbaudrate">tTbxMbUartBaudrate</h4>
+<pre><code class="language-c">typedef enum
+{
+  TBX_MB_UART_1200BPS = 0U,
+  TBX_MB_UART_2400BPS,
+  TBX_MB_UART_4800BPS,
+  TBX_MB_UART_9600BPS,
+  TBX_MB_UART_19200BPS,
+  TBX_MB_UART_38400BPS,
+  TBX_MB_UART_57600BPS,
+  TBX_MB_UART_115200BPS,
+  TBX_MB_UART_NUM_BAUDRATE
+} tTbxMbUartBaudrate
+</code></pre>
+<p>Enumerated type with all supported UART baudrates.</p>
+<h4 id="ttbxmbuartdatabits">tTbxMbUartDatabits</h4>
+<pre><code class="language-c">typedef enum
+{
+  TBX_MB_UART_7_DATABITS = 0U,
+  TBX_MB_UART_8_DATABITS,
+  TBX_MB_UART_NUM_DATABITS
+} tTbxMbUartDatabits
+</code></pre>
+<p>Enumerated type with all supported UART data bits modes.</p>
+<h4 id="ttbxmbuartstopbits">tTbxMbUartStopbits</h4>
+<pre><code class="language-c">typedef enum
+{
+  TBX_MB_UART_1_STOPBITS = 0U,
+  TBX_MB_UART_2_STOPBITS,
+  TBX_MB_UART_NUM_STOPBITS
+} tTbxMbUartStopbits
+</code></pre>
+<p>Enumerated type with all supported parity modes.</p>
+<h4 id="ttbxmbuartparity">tTbxMbUartParity</h4>
+<pre><code class="language-c">typedef enum
+{
+  TBX_MB_ODD_PARITY = 0U,
+  TBX_MB_EVEN_PARITY,
+  TBX_MB_NO_PARITY,
+  TBX_MB_UART_NUM_PARITY
+} tTbxMbUartParity
+</code></pre>
+<p>Enumerated type with all supported parity modes.</p>
+<h2 id="functions">Functions</h2>
+<h3 id="server_1">Server</h3>
+<h4 id="tbxmbservercreate">TbxMbServerCreate</h4>
+<pre><code class="language-c">tTbxMbServer TbxMbServerCreate(tTbxMbTp transport)
+</code></pre>
+<p>Creates a Modbus server channel object and assigns the specified Modbus transport layer to the channel for packet transmission and reception.</p>
+<p>This example creates a Modbus RTU server channel object for a node with address <code>10</code>:</p>
+<pre><code class="language-c">/* Construct a Modbus RTU transport layer object. */
+tTbxMbTp modbusTp = TbxMbRtuCreate(10U, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS,
+                                   TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY); 
+/* Construct a Modbus server object. */
+tTbxMbServer modbusServer = TbxMbServerCreate(modbusTp);  
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>transport</code></td>
+<td>Handle to a previously created Modbus transport layer object to assign to the channel.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Return value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Handle to the newly created Modbus server channel object if successful, <code>NULL</code> otherwise.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="tbxmbserverfree">TbxMbServerFree</h4>
+<pre><code class="language-c">void TbxMbServerFree(tTbxMbServer channel)
+</code></pre>
+<p>Releases a Modbus server channel object, previously created with <a href="#tbxmbservercreate">TbxMbServerCreate()</a>.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>channel</code></td>
+<td>Handle to the Modbus server channel object to release.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="tbxmbserversetcallbackreadinput">TbxMbServerSetCallbackReadInput</h4>
+<pre><code class="language-c">void TbxMbServerSetCallbackReadInput(tTbxMbServer          channel,
+                                     tTbxMbServerReadInput callback)
+</code></pre>
+<p>Registers the callback function that this server calls, whenever a client requests the reading of a specific discrete input.</p>
+<p>The example connects the state of two digital inputs to the Modbus discrete inputs at addresses <code>10000</code> to <code>10001</code>:</p>
+<pre><code class="language-c">tTbxMbServerResult AppReadInput(tTbxMbServer   channel,
+                                uint16_t       addr,
+                                uint8_t      * value)
+{
+  tTbxMbServerResult result = TBX_MB_SERVER_OK;
+
+  /* Filter on the requested discrete input address. */
+  switch (addr)
+  {
+  case 10000U:
+    *value = BspDigitalIn(BSP_DIGITAL_IN1);
+    break;
+
+  case 10001U:
+    *value = BspDigitalIn(BSP_DIGITAL_IN2);
+    break;
+
+  default:
+    /* Unsupported discrete input address. */
+    result = TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
+    break;
+  }
+
+  /* Give the result back to the caller. */
+  return result;
+}
+
+/* Set the callback for reading the Modbus discrete inputs. */
+TbxMbServerSetCallbackReadInput(modbusServer, AppReadInput);
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>channel</code></td>
+<td>Handle to the Modbus server channel object.</td>
+</tr>
+<tr>
+<td><code>callback</code></td>
+<td>Pointer to the callback function.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="tbxmbserversetcallbackreadcoil">TbxMbServerSetCallbackReadCoil</h4>
+<pre><code class="language-c">void TbxMbServerSetCallbackReadCoil(tTbxMbServer         channel,
+                                    tTbxMbServerReadCoil callback)
+</code></pre>
+<p>Registers the callback function that this server calls, whenever a client requests the reading of a specific coil.</p>
+<p>The example assumes the application stores the state of two coils in an array with name <code>appCoils[]</code> . Whenever a client requests the reading of the Modbus coils at addresses <code>0</code> to <code>1</code>, the currently stored values in the <code>appCoils[]</code> array are returned:</p>
+<pre><code class="language-c">uint8_t appCoils[2] = { TBX_ON, TBX_OFF };
+
+tTbxMbServerResult AppReadCoil(tTbxMbServer   channel,
+                               uint16_t       addr,
+                               uint8_t      * value)
+{
+  tTbxMbServerResult result = TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
+
+  /* Supported coil address? */
+  if (addr &lt;= 1U)
+  {
+    /* Store the current coil state. */
+    *value = appCoils[addr];
+    result = TBX_MB_SERVER_OK;
+  }    
+  /* Give the result back to the caller. */
+  return result;
+}
+
+/* Set the callback for reading the Modbus coils. */
+TbxMbServerSetCallbackReadCoil(modbusServer, AppReadCoil);
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>channel</code></td>
+<td>Handle to the Modbus server channel object.</td>
+</tr>
+<tr>
+<td><code>callback</code></td>
+<td>Pointer to the callback function.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="tbxmbserversetcallbackwritecoil">TbxMbServerSetCallbackWriteCoil</h4>
+<pre><code class="language-c">void TbxMbServerSetCallbackWriteCoil(tTbxMbServer          channel,
+                                     tTbxMbServerWriteCoil callback)
+</code></pre>
+<p>Registers the callback function that this server calls, whenever a client requests the writing of a specific coil.</p>
+<p>The example connects the Modbus coil addresses <code>0</code> to <code>1</code> to the  state of two digital outputs:</p>
+<pre><code class="language-c">tTbxMbServerResult AppWriteCoil(tTbxMbServer   channel,
+                                uint16_t       addr,
+                                uint8_t        value)
+{
+  tTbxMbServerResult result = TBX_MB_SERVER_OK;
+
+  /* Filter on the requested coil address. */
+  switch (addr)
+  {
+  case 0U:
+    BspDigitalOut(BSP_DIGITAL_OUT1, value);
+    break;
+
+  case 1U:
+    BspDigitalOut(BSP_DIGITAL_OUT2, value);
+    break;
+
+  default:
+    /* Unsupported coil address. */
+    result = TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
+    break;
+  }
+
+  /* Give the result back to the caller. */
+  return result;
+}
+
+/* Set the callback for writing the Modbus coils. */
+TbxMbServerSetCallbackWriteCoil(modbusServer, AppWriteCoil);
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>channel</code></td>
+<td>Handle to the Modbus server channel object.</td>
+</tr>
+<tr>
+<td><code>callback</code></td>
+<td>Pointer to the callback function.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="tbxmbserversetcallbackreadinputreg">TbxMbServerSetCallbackReadInputReg</h4>
+<pre><code class="language-c">void TbxMbServerSetCallbackReadInputReg(tTbxMbServer                channel,
+                                        tTbxMbServerReadInputReg    callback)
+</code></pre>
+<p>Registers the callback function that this server calls, whenever a client requests the reading of a specific input register.</p>
+<p>The example connects the state of two analog inputs to the Modbus input registers at addresses <code>30000</code> to <code>30001</code>:</p>
+<pre><code class="language-c">tTbxMbServerResult AppReadInputReg(tTbxMbServer  channel,
+                                    uint16_t      addr, 
+                                    uint16_t    * value)
+{
+  tTbxMbServerResult result = TBX_MB_SERVER_OK;
+
+  /* Filter on the requested input register address. */
+  switch (addr)
+  {
+  case 30000U:
+    *value = BspAnalogIn(BSP_ANALOG_IN1);
+    break;
+
+  case 30001U:
+    *value = BspAnalogIn(BSP_ANALOG_IN2);
+    break;
+
+  default:
+    /* Unsupported input register address. */
+    result = TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
+    break;
+  }
+
+  /* Give the result back to the caller. */
+  return result;
+}
+
+/* Set the callback for reading the Modbus input registers. */
+TbxMbServerSetCallbackReadInputReg(modbusServer, AppReadInputReg);
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>channel</code></td>
+<td>Handle to the Modbus server channel object.</td>
+</tr>
+<tr>
+<td><code>callback</code></td>
+<td>Pointer to the callback function.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="tbxmbserversetcallbackreadholdingreg">TbxMbServerSetCallbackReadHoldingReg</h4>
+<pre><code class="language-c">void TbxMbServerSetCallbackReadHoldingReg(tTbxMbServer                channel,
+                                          tTbxMbServerReadHoldingReg  callback)
+</code></pre>
+<p>Registers the callback function that this server calls, whenever a client requests the reading of a specific holding register.</p>
+<p>The example assumes the application stores the state of two holding registers in an array with name <code>appHoldingRegs[]</code> . Whenever a client requests the reading of the Modbus holding registers at addresses <code>40000</code> to <code>40001</code>, the currently stored values in the <code>appHoldingRegs[]</code> array are returned:</p>
+<pre><code class="language-c">uint16_t appHoldingRegs[2] = { 1234, 5678 };
+
+tTbxMbServerResult AppReadHoldingReg(tTbxMbServer   channel,
+                                     uint16_t       addr,
+                                     uint16_t     * value)
+{
+  tTbxMbServerResult result = TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
+
+  /* Supported holding register address? */
+  if ( (addr &gt;= 40000) &amp;&amp; (addr &lt;= 40001U) )
+  {
+    /* Store the holding register state. */
+    *value = appHoldingReg[addr - 40000U];
+    result = TBX_MB_SERVER_OK;
+  }    
+  /* Give the result back to the caller. */
+  return result;
+}
+
+/* Set the callback for reading the Modbus holding registers. */
+TbxMbServerSetCallbackReadHoldingReg(modbusServer, AppReadHoldingReg);
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>channel</code></td>
+<td>Handle to the Modbus server channel object.</td>
+</tr>
+<tr>
+<td><code>callback</code></td>
+<td>Pointer to the callback function.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="tbxmbserversetcallbackwriteholdingreg">TbxMbServerSetCallbackWriteHoldingReg</h4>
+<pre><code class="language-c">void TbxMbServerSetCallbackWriteHoldingReg(tTbxMbServer                channel,
+                                           tTbxMbServerWriteHoldingReg callback)
+</code></pre>
+<p>Registers the callback function that this server calls, whenever a client requests the writing of a specific holding register.</p>
+<p>The example connects the Modbus holding registers addresses <code>40000</code> to <code>40001</code> to two 8-bit PWM output signals:</p>
+<pre><code class="language-c">tTbxMbServerResult AppWriteHoldingReg(tTbxMbServer channel,
+                                      uint16_t     addr, 
+                                      uint16_t     value)
+{
+  tTbxMbServerResult result = TBX_MB_SERVER_OK;
+
+  /* Filter on the requested holding register address. */
+  switch (addr)
+  {
+  case 40000U:
+    /* PWM supports 8-bit duty cycle. */
+    if (value &lt;= 255U)
+    {
+      BspPwmOut(BSP_PWM_OUT1, (uint8_t)value);
+    }
+    else
+    {
+      result = TBX_MB_SERVER_ERR_DEVICE_FAILURE;
+    }
+    break;
+
+  case 40001U:
+    /* PWM supports 8-bit duty cycle. */
+    if (value &lt;= 255U)
+    {
+      BspPwmOut(BSP_PWM_OUT2, (uint8_t)value);
+    }
+    else
+    {
+      result = TBX_MB_SERVER_ERR_DEVICE_FAILURE;
+    }
+    break;
+
+  default:
+    /* Unsupported holding register address. */
+    result = TBX_MB_SERVER_ERR_ILLEGAL_DATA_ADDR;
+    break;
+  }
+
+  /* Give the result back to the caller. */
+  return result;
+}
+
+/* Set the callback for writing the Modbus holding registers. */
+TbxMbServerSetCallbackWriteHoldingReg(modbusServer, AppWriteHoldingReg);
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>channel</code></td>
+<td>Handle to the Modbus server channel object.</td>
+</tr>
+<tr>
+<td><code>callback</code></td>
+<td>Pointer to the callback function.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="tbxmbserversetcallbackcustomfunction">TbxMbServerSetCallbackCustomFunction</h4>
+<pre><code class="language-c">void TbxMbServerSetCallbackCustomFunction (tTbxMbServer                channel,
+                                           tTbxMbServerCustomFunction  callback)
+</code></pre>
+<p>Registers the callback function that this server calls, whenever it received a PDU containing a function code not currently supported. With the aid of this callback function the user can implement support for new function codes.</p>
+<p>The example shows how to add support for function code 17 (<em>Report Server ID</em>). It's the counter-part to the example for <a href="#tbxmbclientcustomfunction">TbxMbClientCustomFunction()</a>. According to the Modbus protocol, the response to the <em>Report Server ID</em> request is device specific. The device implementation decides the number of bytes for the Server ID and if additional data is added to the response. The following code snippet implements support for <em>Report Server ID</em>, where the actual server ID is 16-bits and the response contains no additional data:</p>
+<pre><code class="language-c">uint8_t AppReportServerIdCallback(tTbxMbServer    channel,
+                                  uint8_t const * rxPdu,
+                                  uint8_t       * txPdu,
+                                  uint8_t       * len)
+{
+  uint8_t result = TBX_FALSE;
+
+  /* Function code 17 - Report Server ID? */
+  if (rxPdu[0] == 17U)
+  {
+    /* Check the expected request length. */
+    if (*len == 1U)
+    {
+      /* Prepare the response. */
+      txPdu[0] = 17U; /* Function code. */
+      txPdu[1] = 3U;  /* Byte count. */
+      TbxMbCommonStoreUInt16BE(0x1234U, &amp;txPdu[2]); /* server ID. */
+      txPdu[4] = 0xFFU; /* Run indicator status = ON. */
+      *len = 5U;
+      /* Function code handled. */
+      result = TBX_TRUE;
+    }
+  }
+
+  /* Give the result back to the caller. */
+  return result;
+}     
+
+/* Set the callback for handling custom function codes. */
+TbxMbServerSetCallbackCustomFunction(modbusServer, AppReportServerIdCallback);
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>channel</code></td>
+<td>Handle to the Modbus server channel object.</td>
+</tr>
+<tr>
+<td><code>callback</code></td>
+<td>Pointer to the callback function.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="client_1">Client</h3>
+<h4 id="tbxmbclientcreate">TbxMbClientCreate</h4>
+<pre><code class="language-c">tTbxMbClient TbxMbClientCreate(tTbxMbTp transport,
+                               uint16_t responseTimeout,
+                               uint16_t turnaroundDelay)
+</code></pre>
+<p>Creates a Modbus client channel object and assigns the specified Modbus transport layer to the channel for packet transmission and reception.</p>
+<p>This example creates a Modbus RTU client channel object. Note the the <code>nodeAddr</code> parameter of function <a href="#tbxmbrtucreate">TbxMbRtuCreate()</a> is not applicable when used on a client and should simply be set to a value of <code>0</code>:</p>
+<pre><code class="language-c">/* Construct a Modbus RTU transport layer object. */
+tTbxMbTp modbusTp = TbxMbRtuCreate(0U, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS,
+                                   TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY); 
+/* Construct a Modbus client object. */
+tTbxMbClient modbusClient = TbxMbClientCreate(modbusTp, 1000U, 100U);
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>transport</code></td>
+<td>Handle to a previously created Modbus transport layer object to assign to the<br>channel.</td>
+</tr>
+<tr>
+<td><code>responseTimeout</code></td>
+<td>Maximum time in milliseconds to wait for a response from the Modbus server,<br>after sending a PDU.</td>
+</tr>
+<tr>
+<td><code>turnaroundDelay</code></td>
+<td>Delay time in milliseconds after sending a broadcast PDU to give all recipients<br>sufficient time to process the PDU.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Return value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Handle to the newly created Modbus client channel object if successful, <code>NULL</code> otherwise.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="tbxmbclientfree">TbxMbClientFree</h4>
+<pre><code class="language-c">void TbxMbClientFree(tTbxMbClient channel)
+</code></pre>
+<p>Releases a Modbus client channel object, previously created with <a href="#tbxmbclientcreate">TbxMbClientCreate()</a>.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>channel</code></td>
+<td>Handle to the Modbus client channel object to release.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="tbxmbclientreadcoils">TbxMbClientReadCoils</h4>
+<pre><code class="language-c">uint8_t TbxMbClientReadCoils(tTbxMbClient   channel,
+                             uint8_t        node,
+                             uint16_t       addr,
+                             uint16_t       num,
+                             uint8_t      * coils)
+</code></pre>
+<p>Reads the coil(s) from the server with the specified node address.</p>
+<p>The example reads the state of two coils at Modbus addresses <code>0</code> to <code>1</code>, from a Modbus server with node address <code>10</code>:</p>
+<pre><code class="language-c">uint8_t coils[2] = { 0 };
+
+TbxMbClientReadCoils(modbusClient, 10U, 0U, 2U, coils);
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>channel</code></td>
+<td>Handle to the Modbus client channel for the requested operation.</td>
+</tr>
+<tr>
+<td><code>node</code></td>
+<td>The address of the server. This parameter is transport layer dependent. It is needed on<br>RTU/ASCII, yet don't care for TCP unless it is a gateway to an RTU network. If it's don't<br>care, set it to a value of <code>255</code>.</td>
+</tr>
+<tr>
+<td><code>addr</code></td>
+<td>Starting element address (0..65535) in the Modbus data table for the coil read operation.</td>
+</tr>
+<tr>
+<td><code>num</code></td>
+<td>Number of elements to read from the coils data table. Range can be <code>1</code>..<code>2000</code>.</td>
+</tr>
+<tr>
+<td><code>coils</code></td>
+<td>Pointer to array with <code>TBX_ON</code> / <code>TBX_OFF</code> values where the coil state will be written to.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Return value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TBX_OK</code> if successful, <code>TBX_ERROR</code> otherwise.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="tbxmbclientreadinputs">TbxMbClientReadInputs</h4>
+<pre><code class="language-c">uint8_t TbxMbClientReadInputs(tTbxMbClient   channel,
+                              uint8_t        node,
+                              uint16_t       addr,
+                              uint16_t       num,
+                              uint8_t      * inputs)
+</code></pre>
+<p>Reads the discrete input(s) from the server with the specified node address.</p>
+<p>The example reads the state of two discrete inputs at Modbus addresses <code>10000</code> to <code>10001</code>, from a Modbus server with node address <code>10</code>:</p>
+<pre><code class="language-c">uint8_t inputs[2] = { 0 };
+
+TbxMbClientReadInputs(modbusClient, 10U, 10000U, 2U, inputs);
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>channel</code></td>
+<td>Handle to the Modbus client channel for the requested operation.</td>
+</tr>
+<tr>
+<td><code>node</code></td>
+<td>The address of the server. This parameter is transport layer dependent. It is needed on<br>RTU/ASCII, yet don't care for TCP unless it is a gateway to an RTU network. If it's don't<br>care, set it to a value of <code>255</code>.</td>
+</tr>
+<tr>
+<td><code>addr</code></td>
+<td>Starting element address (0..65535) in the Modbus data table for the discrete input<br>read operation.</td>
+</tr>
+<tr>
+<td><code>num</code></td>
+<td>Number of elements to read from the discrete inputs data table. Range can be <code>1</code>..<code>2000</code>.</td>
+</tr>
+<tr>
+<td><code>inputs</code></td>
+<td>Pointer to array with <code>TBX_ON</code> / <code>TBX_OFF</code> values where the discrete input state will be<br>written to.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Return value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TBX_OK</code> if successful, <code>TBX_ERROR</code> otherwise.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="tbxmbclientreadinputregs">TbxMbClientReadInputRegs</h4>
+<pre><code class="language-c">uint8_t TbxMbClientReadInputRegs(tTbxMbClient   channel,
+                                 uint8_t        node,
+                                 uint16_t       addr,
+                                 uint8_t        num,
+                                 uint16_t     * inputRegs)
+</code></pre>
+<p>Reads the input register(s) from the server with the specified node address.</p>
+<p>The example reads two input registers at Modbus addresses <code>30000</code> to <code>30001</code>, from a Modbus server with node address <code>10</code>:</p>
+<pre><code class="language-c">uint16_t inputRegs[2] = { 0 };
+
+TbxMbClientReadInputRegs(modbusClient, 10U, 30000U, 2U, inputRegs);
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>channel</code></td>
+<td>Handle to the Modbus client channel for the requested operation.</td>
+</tr>
+<tr>
+<td><code>node</code></td>
+<td>The address of the server. This parameter is transport layer dependent. It is needed on<br>RTU/ASCII, yet don't care for TCP unless it is a gateway to an RTU network. If it's don't<br>care, set it to a value of <code>255</code>.</td>
+</tr>
+<tr>
+<td><code>addr</code></td>
+<td>Starting element address (0..65535) in the Modbus data table for the input register<br>read operation.</td>
+</tr>
+<tr>
+<td><code>num</code></td>
+<td>Number of elements to read from the input registers data table. Range can be <code>1</code>..<code>125</code>.</td>
+</tr>
+<tr>
+<td><code>inputRegs</code></td>
+<td>Pointer to array where the input register values will be written to.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Return value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TBX_OK</code> if successful, <code>TBX_ERROR</code> otherwise.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="tbxmbclientreadholdingregs">TbxMbClientReadHoldingRegs</h4>
+<pre><code class="language-c">uint8_t TbxMbClientReadHoldingRegs(tTbxMbClient   channel,
+                                   uint8_t        node,
+                                   uint16_t       addr,
+                                   uint8_t        num,
+                                   uint16_t     * holdingRegs)
+</code></pre>
+<p>Reads the holding register(s) from the server with the specified node address.</p>
+<p>The example reads two holding registers at Modbus addresses <code>40000</code> to <code>40001</code>, from a Modbus server with node address <code>10</code>:</p>
+<pre><code class="language-c">uint16_t holdingRegs[2] = { 0 };
+
+TbxMbClientReadHoldingRegs(modbusClient, 10U, 40000U, 2U, holdingRegs);
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>channel</code></td>
+<td>Handle to the Modbus client channel for the requested operation.</td>
+</tr>
+<tr>
+<td><code>node</code></td>
+<td>The address of the server. This parameter is transport layer dependent. It is needed on<br>RTU/ASCII, yet don't care for TCP unless it is a gateway to an RTU network. If it's don't<br>care, set it to a value of <code>255</code>.</td>
+</tr>
+<tr>
+<td><code>addr</code></td>
+<td>Starting element address (0..65535) in the Modbus data table for the holding register<br>read operation.</td>
+</tr>
+<tr>
+<td><code>num</code></td>
+<td>Number of elements to read from the holding registers data table. Range can be<br><code>1</code>..<code>125</code>.</td>
+</tr>
+<tr>
+<td><code>holdingRegs</code></td>
+<td>Pointer to array where the holding register values will be written to.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Return value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TBX_OK</code> if successful, <code>TBX_ERROR</code> otherwise.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="tbxmbclientwritecoils">TbxMbClientWriteCoils</h4>
+<pre><code class="language-c">uint8_t TbxMbClientWriteCoils(tTbxMbClient         channel,
+                              uint8_t              node,
+                              uint16_t             addr,
+                              uint16_t             num,
+                              uint8_t      const * coils)
+</code></pre>
+<p>Writes the coil(s) to the server with the specified node address.</p>
+<p>The example writes the state of two coils at Modbus addresses <code>0</code> to <code>1</code>, to a Modbus server with node address <code>10</code>:</p>
+<pre><code class="language-c">uint8_t coils[2] = { TBX_OFF, TBX_OFF };
+
+TbxMbClientWriteCoils(modbusClient, 10U, 0U, 2U, coils);
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>channel</code></td>
+<td>Handle to the Modbus client channel for the requested operation.</td>
+</tr>
+<tr>
+<td><code>node</code></td>
+<td>The address of the server. This parameter is transport layer dependent. It is needed on<br>RTU/ASCII, yet don't care for TCP unless it is a gateway to an RTU network. If it's don't<br>care, set it to a value of <code>255</code>.</td>
+</tr>
+<tr>
+<td><code>addr</code></td>
+<td>Starting element address (0..65535) in the Modbus data table for the coil write operation.</td>
+</tr>
+<tr>
+<td><code>num</code></td>
+<td>Number of elements to write to the coils data table. Range can be <code>1</code>..<code>1968</code>.</td>
+</tr>
+<tr>
+<td><code>coils</code></td>
+<td>Pointer to array with the desired <code>TBX_ON</code> / <code>TBX_OFF</code> coil values.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Return value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TBX_OK</code> if successful, <code>TBX_ERROR</code> otherwise.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="tbxmbclientwriteholdingregs">TbxMbClientWriteHoldingRegs</h4>
+<pre><code class="language-c">uint8_t TbxMbClientWriteHoldingRegs(tTbxMbClient         channel,
+                                    uint8_t              node,
+                                    uint16_t             addr,
+                                    uint8_t              num,
+                                    uint16_t     const * holdingRegs)
+</code></pre>
+<p>Writes the holding register(s) to the server with the specified node address.</p>
+<p>The example writes two holding registers at Modbus addresses <code>40000</code> to <code>40001</code>, to a Modbus server with node address <code>10</code>:</p>
+<pre><code class="language-c">uint16_t holdingRegs[2] = { 63U, 127U };
+
+TbxMbClientWriteHoldingRegs(modbusClient, 10U, 40000U, 2U, holdingRegs);
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>channel</code></td>
+<td>Handle to the Modbus client channel for the requested operation.</td>
+</tr>
+<tr>
+<td><code>node</code></td>
+<td>The address of the server. This parameter is transport layer dependent. It is needed on<br>RTU/ASCII, yet don't care for TCP unless it is a gateway to an RTU network. If it's don't<br>care, set it to a value of <code>255</code>.</td>
+</tr>
+<tr>
+<td><code>addr</code></td>
+<td>Starting element address (0..65535) in the Modbus data table for the holding register<br>write operation.</td>
+</tr>
+<tr>
+<td><code>num</code></td>
+<td>Number of elements to write to the holding registers data table. Range can be<br><code>1</code>..<code>123</code>.</td>
+</tr>
+<tr>
+<td><code>holdingRegs</code></td>
+<td>Pointer to array with the desired holding register values.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Return value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TBX_OK</code> if successful, <code>TBX_ERROR</code> otherwise.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="tbxmbclientdiagnostics">TbxMbClientDiagnostics</h4>
+<pre><code class="language-c">uint8_t TbxMbClientDiagnostics(tTbxMbClient         channel,
+                               uint8_t              node,
+                               uint16_t             subcode,
+                               uint16_t           * count)
+</code></pre>
+<p>Perform diagnostic operation on the server for checking the communication system.</p>
+<p>The example obtains the number of packets with a correct CRC, received by a Modbus server with node address <code>10</code>:</p>
+<pre><code class="language-c">uint16_t count = 0U;
+
+TbxMbClientDiagnostics(modbusClient, 10U, TBX_MB_DIAG_SC_SERVER_MESSAGE_COUNT, &amp;count);
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>channel</code></td>
+<td>Handle to the Modbus client channel for the requested operation.</td>
+</tr>
+<tr>
+<td><code>node</code></td>
+<td>The address of the server. This parameter is transport layer dependent. It is needed on<br>RTU/ASCII, yet don't care for TCP unless it is a gateway to an RTU network. If it's don't<br>care, set it to a value of <code>255</code>.</td>
+</tr>
+<tr>
+<td><code>subcode</code></td>
+<td>Sub-function code for specifying the diagnostic operation to perform. Currently<br>supported values:<br>- <code>TBX_MB_DIAG_SC_QUERY_DATA</code><br>- <code>TBX_MB_DIAG_SC_CLEAR_COUNTERS</code><br>- <code>TBX_MB_DIAG_SC_BUS_MESSAGE_COUNT</code><br>- <code>TBX_MB_DIAG_SC_BUS_COMM_ERROR_COUNT</code><br>- <code>TBX_MB_DIAG_SC_BUS_EXCEPTION_ERROR_COUNT</code><br>- <code>TBX_MB_DIAG_SC_SERVER_MESSAGE_COUNT</code><br>- <code>TBX_MB_DIAG_SC_SERVER_NO_RESPONSE_COUNT</code></td>
+</tr>
+<tr>
+<td><code>count</code></td>
+<td>Location where the retrieved count value will be written to. Only applicable for the<br>sub-function codes that end with <code>_COUNT</code>.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Return value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TBX_OK</code> if successful, <code>TBX_ERROR</code> otherwise.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="tbxmbclientcustomfunction">TbxMbClientCustomFunction</h4>
+<pre><code class="language-c">uint8_t TbxMbClientCustomFunction(tTbxMbClient         channel,
+                                  uint8_t              node,
+                                  uint8_t      const * txPdu,
+                                  uint8_t            * rxPdu,
+                                  uint8_t            * len)
+</code></pre>
+<p>Send a custom function code PDU to the server and receive its response PDU. Thanks to this functionality, the user can support Modbus function codes that are either currently not supported or user defined extensions. </p>
+<p>The <code>txPdu</code> and <code>rxPdu</code> parameters are pointers to the byte array of the PDU. The first byte (i.e. <code>txPdu[0]</code>) contains the function code, followed by its data bytes. When calling this function, set the <code>len</code> parameter to the length of the <code>txPdu</code>. This function updates the <code>len</code> parameter with the length of the received PDU, which it stores in <code>rxPdu</code>.</p>
+<p>The example shows how to add support for function code 17 (<em>Report Server ID</em>). It's the counter-part to the example for <a href="#tbxmbserversetcallbackcustomfunction">TbxMbServerSetCallbackCustomFunction()</a>. According to the Modbus protocol, the response to the <em>Report Server ID</em> request is device specific. The device implementation decides the number of bytes for the Server ID and if additional data is added to the response. The following code snippet implements support for <em>Report Server ID</em>, where it reads out the 16-bit server ID of a Modbus server with node address <code>10</code>:</p>
+<pre><code class="language-c">uint16_t AppReportServerId(tTbxMbClient channel,
+                           uint8_t      node)
+{
+  /* static to lower stack load. */
+  static uint8_t response[TBX_MB_TP_PDU_MAX_LEN]; 
+  uint8_t        request[1] = { 17U };
+  uint8_t        len = 1U;
+  uint16_t       result = 0U;
+
+  /* Transceive function code 17 - Report Server ID. */
+  if (TbxMbClientCustomFunction(channel, node, request, 
+                                response, &amp;len) == TBX_OK)
+  {
+    /* Response length as expected? */
+    if (len == 5U)
+    {
+      /* Not an exception response and byte count correct? */
+      if ((response[0] == 17U) &amp;&amp; (response[1] == 3U))
+      {
+        /* Read out the received server ID. */
+        result = TbxMbCommonExtractUInt16BE(&amp;response[2]);
+      }
+    }
+  }
+
+  /* Give the result back to the caller. */
+  return result;
+}                          
+
+/* Read the server ID. */
+uint16_t serverId = AppReportServerId(modbusClient, 10U);
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>channel</code></td>
+<td>Handle to the Modbus client channel for the requested operation.</td>
+</tr>
+<tr>
+<td><code>node</code></td>
+<td>The address of the server. This parameter is transport layer dependent. It is needed on<br>RTU/ASCII, yet don't care for TCP unless it is a gateway to an RTU network. If it's don't<br>care, set it to a value of <code>255</code>.</td>
+</tr>
+<tr>
+<td><code>txPdu</code></td>
+<td>Pointer to a byte array with the PDU to transmit.</td>
+</tr>
+<tr>
+<td><code>rxPdu</code></td>
+<td>Pointer to a byte array with the received response PDU.</td>
+</tr>
+<tr>
+<td><code>len</code></td>
+<td>Pointer to the PDU length, including the function code.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Return value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TBX_OK</code> if successful, <code>TBX_ERROR</code> otherwise.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="event">Event</h3>
+<h4 id="tbxmbeventtask">TbxMbEventTask</h4>
+<pre><code class="language-c">void TbxMbEventTask(void)
+</code></pre>
+<p>Task function that drives the entire Modbus stack. It processes internally generated events. How to call this function depends on the selected operating system abstraction layer (OSAL), which you determine based on the <code>source/osal/tbxmb_XXX.c</code> source file you compile and link with your firmware.</p>
+<p>In a traditional superloop application (<code>tbxmb_superloop.c</code>), call this function continuously in the infinite program loop:</p>
+<pre><code class="language-c">#include &lt;microtbx.h&gt;
+#include &lt;microtbxmodbus.h&gt;
+
+void main(void)
+{
+  /* TODO Initialize the clock, enable peripherals and configure GPIO pins. */
+  /* TODO Construct a Modbus transport layer object. */
+  /* TODO Construct a Modbus client or server object. */
+
+  /* Enter the program's infinite loop. */  
+  for(;;)
+  {
+    /* Continuously call the Modbus stack event task function. */
+    TbxMbEventTask();    
+  } 
+}
+</code></pre>
+<p>When using an RTOS (e.g. <code>tbxmb_freertos.c</code>), create a new task during application initialization and call this function from this task's infinite loop:</p>
+<pre><code class="language-c">#include &lt;microtbx.h&gt;
+#include &lt;microtbxmodbus.h&gt;
+#include &quot;FreeRTOS.h&quot;
+#include &quot;task.h&quot;
+
+void AppModbusTask(void * pvParameters);
+
+void main(void)
+{
+  /* TODO Initialize the clock, enable peripherals and configure GPIO pins. */
+  /* TODO Construct a Modbus transport layer object. */
+  /* TODO Construct a Modbus client or server object. */
+
+  /* Create the Modbus task. */
+  xTaskCreate(AppModbusTask, &quot;ModbusTask&quot;, configMINIMAL_STACK_SIZE, NULL, 4U, NULL);    
+  /* Start the RTOS scheduler. Note that this function does not return. */
+  vTaskStartScheduler();
+}
+
+void AppModbusTask(void * pvParameters)
+{
+  /* Enter infinite task loop. */
+  for (;;)
+  {
+    /* Continuously call the Modbus stack event task function. */
+    TbxMbEventTask();
+  }
+}
+</code></pre>
+<p>There is one exception: When using a traditional super application in combination with just a Modbus client. In this case you can omit the call to this task function. With this combination, the communication with a Modbus server happens in a blocking manner and the event task is automatically called internally, while blocking. Convenient and easy, but not optimal from a run-time performance. For this reason it is recommended to use an RTOS in combination with a Modbus client.</p>
+<h3 id="common_1">Common</h3>
+<h4 id="tbxmbcommonextractuint16be">TbxMbCommonExtractUInt16BE</h4>
+<pre><code class="language-c">uint16_t TbxMbCommonExtractUInt16BE(uint8_t const * data)
+</code></pre>
+<p>Helper function to extract an unsigned 16-bit value from the data of a Modbus packet, where 16-bit values are always stored in the big endian format.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>data</code></td>
+<td>Pointer to the byte array that holds the two bytes to extract, stored in the big endian<br>format.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Return value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The 16-bit unsigned integer value.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="tbxmbcommonstoreuint16be">TbxMbCommonStoreUInt16BE</h4>
+<pre><code class="language-c">void TbxMbCommonStoreUInt16BE(uint16_t   value,
+                              uint8_t  * data)
+</code></pre>
+<p>Helper function to store an unsigned 16-bit value in the data of a Modbus packet, where 16-bit values are always stored in the big endian format.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>value</code></td>
+<td>The unsigned 16-bit value to store.</td>
+</tr>
+<tr>
+<td><code>data</code></td>
+<td>Pointer to the byte array where to store the value in the big endian format.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="rtu">RTU</h3>
+<h4 id="tbxmbrtucreate">TbxMbRtuCreate</h4>
+<pre><code class="language-c">tTbxMbTp TbxMbRtuCreate(uint8_t            nodeAddr, 
+                        tTbxMbUartPort     port, 
+                        tTbxMbUartBaudrate baudrate,
+                        tTbxMbUartStopbits stopbits,
+                        tTbxMbUartParity   parity)
+</code></pre>
+<p>Creates a Modbus RTU transport layer object, which can later on be linked to a Modbus client or server channel.</p>
+<p>Example for the following communication settings:</p>
+<ul>
+<li>First serial port on the board.</li>
+<li>Baudrate 19200 bits/second.</li>
+<li>8 data-bits (default and fixed for an RTU transport layer).</li>
+<li>even parity.</li>
+<li>1 stop-bit.</li>
+<li>Node address 10.</li>
+</ul>
+<pre><code class="language-c">tTbxMbTp modbusTp = TbxMbRtuCreate(10U, TBX_MB_UART_PORT1, TBX_MB_UART_19200BPS,
+                                   TBX_MB_UART_1_STOPBITS, TBX_MB_EVEN_PARITY);   
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>nodeAddr</code></td>
+<td>The address of the node. Can be in the range <code>1</code>..<code>247</code> for a server node. Set it to <code>0</code> for<br>a client.</td>
+</tr>
+<tr>
+<td><code>port</code></td>
+<td>The serial port to use. The actual meaning of the serial port is hardware dependent. It<br>typically maps to the UART peripheral number. E.g. <code>TBX_MB_UART_PORT1</code> = USART1 on<br>an STM32.</td>
+</tr>
+<tr>
+<td><code>baudrate</code></td>
+<td>The desired communication speed.</td>
+</tr>
+<tr>
+<td><code>stopbits</code></td>
+<td>Number of stop bits at the end of a character.</td>
+</tr>
+<tr>
+<td><code>parity</code></td>
+<td>Parity bit type to use.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Return value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Handle to the newly created RTU transport layer object if successful, <code>NULL</code> otherwise.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="tbxmbrtufree">TbxMbRtuFree</h4>
+<pre><code class="language-c">void TbxMbRtuFree(tTbxMbTp transport)
+</code></pre>
+<p>Releases a Modbus RTU transport layer object, previously created with <a href="#tbxmbrtucreate">TbxMbRtuCreate()</a>.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>transport</code></td>
+<td>Handle to RTU transport layer object to release.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="uart_1">UART</h3>
+<h4 id="tbxmbuarttransmitcomplete">TbxMbUartTransmitComplete</h4>
+<pre><code class="language-c">void TbxMbUartTransmitComplete(tTbxMbUartPort port)
+</code></pre>
+<p>Event function to signal to the UART module that the entire transfer, initiated by <code>TbxMbPortUartTransmit</code>, completed. This function should be called by the hardware specific UART port (located in <code>tbxmb_port.c</code>) at TX interrupt level.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>port</code></td>
+<td>The serial port that the transfer completed on.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="tbxmbuartdatareceived">TbxMbUartDataReceived</h4>
+<pre><code class="language-c">void TbxMbUartDataReceived(tTbxMbUartPort         port, 
+                           uint8_t        const * data, 
+                           uint8_t                len)
+</code></pre>
+<p>Event function to signal the reception of new data to the UART module. This function should be called by the hardware specific UART port (located in <code>tbxmb_port.c</code>) at RX interrupt level.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>port</code></td>
+<td>The serial port that the transfer completed on.</td>
+</tr>
+<tr>
+<td><code>data</code></td>
+<td>Byte array with newly received data.</td>
+</tr>
+<tr>
+<td><code>len</code></td>
+<td>Number of newly received bytes.</td>
+</tr>
+</tbody>
+</table>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../extras/" class="btn btn-neutral float-left" title="Extras"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/feaser/microtbx-modbus" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../extras/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
